@@ -1,0 +1,99 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  passwordHash   String?   @map("password_hash")
+  displayName    String?   @map("display_name")
+  avatarUrl      String?   @map("avatar_url")
+  googleId       String?   @unique @map("google_id")
+  role           Role      @default(USER)
+  emailVerified  Boolean   @default(false) @map("email_verified")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  recipes        Recipe[]
+  refreshTokens  RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  userAgent String?  @map("user_agent")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Recipe {
+  id            String   @id @default(uuid())
+  title         String
+  slug          String   @unique
+  description   String?
+  instructions  String?
+  prepTime      Int?     @map("prep_time")
+  cookTime      Int?     @map("cook_time")
+  servings      Int?
+  difficulty    Difficulty?
+  imageUrl      String?  @map("image_url")
+  authorId      String   @map("author_id")
+  categoryId    String?  @map("category_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  author   User       @relation(fields: [authorId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+  tags     RecipeTag[]
+
+  @@index([authorId])
+  @@index([categoryId])
+  @@map("recipes")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  recipes Recipe[]
+
+  @@map("categories")
+}
+
+model RecipeTag {
+  id       String @id @default(uuid())
+  name     String
+  recipeId String @map("recipe_id")
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([name, recipeId])
+  @@map("recipe_tags")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
