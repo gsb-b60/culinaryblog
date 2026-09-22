@@ -1,4 +1,4 @@
-import { slugify } from 'slugify';
+import slugify from 'slugify';
 
 export class Slug {
   private readonly value: string;
