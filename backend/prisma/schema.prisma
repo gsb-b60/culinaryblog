@@ -7,93 +7,191 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id             String    @id @default(uuid())
-  email          String    @unique
-  passwordHash   String?   @map("password_hash")
-  displayName    String?   @map("display_name")
-  avatarUrl      String?   @map("avatar_url")
-  googleId       String?   @unique @map("google_id")
-  role           Role      @default(USER)
-  emailVerified  Boolean   @default(false) @map("email_verified")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+// ============================================
+// ENUMS
+// ============================================
 
-  recipes        Recipe[]
-  refreshTokens  RefreshToken[]
+enum Role {
+  GUEST
+  AUTHOR
+  ADMIN
+}
+
+enum RecipeDifficulty {
+  EASY
+  MEDIUM
+  HARD
+  EXPERT
+}
+
+enum RecipeStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// ============================================
+// BASE MODEL FIELDS (Shared via Prisma middleware)
+// All models have: id, createdAt, updatedAt, isDeleted, version
+// ============================================
+
+model User {
+  id                 String    @id @default(uuid())
+  email              String    @unique @db.VarChar(256)
+  passwordHash       String?   @db.VarChar(255) @map("password_hash")
+  displayName        String    @db.VarChar(100) @map("display_name")
+  avatarUrl          String?   @db.VarChar(500) @map("avatar_url")
+  bio                String?   @db.Text
+  googleId           String?   @unique @db.VarChar(256) @map("google_id")
+  role               Role      @default(AUTHOR)
+  emailVerified      Boolean   @default(false) @map("email_verified")
+  isActive           Boolean   @default(true) @map("is_active")
+  twoFactorEnabled   Boolean   @default(false) @map("two_factor_enabled")
+  lockoutEnabled     Boolean   @default(false) @map("lockout_enabled")
+  accessFailedCount  Int       @default(0) @map("access_failed_count")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  isDeleted          Boolean   @default(false) @map("is_deleted")
+  version            Int       @default(1)
+
+  recipes            Recipe[]
+  refreshTokens      RefreshToken[]
 
   @@map("users")
 }
 
 model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String   @map("user_id")
-  userAgent String?  @map("user_agent")
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
+  id                   String   @id @default(uuid())
+  tokenHash            String   @unique @db.VarChar(64) @map("token_hash")
+  userId               String   @map("user_id")
+  userAgent            String?  @db.VarChar(500) @map("user_agent")
+  expiresAt            DateTime @map("expires_at")
+  revokedAt            DateTime? @map("revoked_at")
+  replacedByTokenHash  String?  @db.VarChar(64) @map("replaced_by_token_hash")
+  createdAt            DateTime @default(now()) @map("created_at")
+  createdByIp          String?  @db.VarChar(45) @map("created_by_ip")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("refresh_tokens")
 }
 
-model Recipe {
-  id            String   @id @default(uuid())
-  title         String
-  slug          String   @unique
-  description   String?
-  instructions  String?
-  prepTime      Int?     @map("prep_time")
-  cookTime      Int?     @map("cook_time")
-  servings      Int?
-  difficulty    Difficulty?
-  imageUrl      String?  @map("image_url")
-  authorId      String   @map("author_id")
-  categoryId    String?  @map("category_id")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  author   User       @relation(fields: [authorId], references: [id])
-  category Category? @relation(fields: [categoryId], references: [id])
-  tags     RecipeTag[]
-
-  @@index([authorId])
-  @@index([categoryId])
-  @@map("recipes")
-}
-
 model Category {
   id          String   @id @default(uuid())
-  name        String   @unique
-  slug        String   @unique
-  description String?
+  name        String   @unique @db.VarChar(100)
+  slug        String   @unique @db.VarChar(120)
+  description String?  @db.Text
+  imageUrl    String?  @db.VarChar(500) @map("image_url")
+  orderIndex  Int      @default(0) @map("order_index")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+  isDeleted   Boolean  @default(false) @map("is_deleted")
+  version     Int      @default(1)
 
   recipes Recipe[]
 
+  @@index([slug])
   @@map("categories")
 }
 
-model RecipeTag {
-  id       String @id @default(uuid())
-  name     String
-  recipeId String @map("recipe_id")
+model Recipe {
+  id            String           @id @default(uuid())
+  title         String           @db.VarChar(200)
+  slug          String           @unique @db.VarChar(220)
+  description   String           @db.Text
+  instructions  String?          @db.Text
+  prepTime      Int              @map("prep_time")
+  cookTime      Int              @map("cook_time")
+  servings      Int
+  difficulty    RecipeDifficulty @default(EASY)
+  status        RecipeStatus     @default(DRAFT)
+  categoryId    String           @map("category_id")
+  authorId      String           @map("author_id")
+  // searchVector is handled via raw SQL migration (tsvector for FTS)
+  publishedAt   DateTime?        @map("published_at")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  isDeleted     Boolean          @default(false) @map("is_deleted")
+  version       Int              @default(1)
+
+  // Owned entity - RecipeNutrition (embedded in Recipe table)
+  nutritionCalories       Decimal? @db.Decimal(8, 2) @map("nutrition_calories")
+  nutritionProtein        Decimal? @db.Decimal(8, 2) @map("nutrition_protein")
+  nutritionCarbohydrates  Decimal? @db.Decimal(8, 2) @map("nutrition_carbohydrates")
+  nutritionFat            Decimal? @db.Decimal(8, 2) @map("nutrition_fat")
+  nutritionFiber          Decimal? @db.Decimal(8, 2) @map("nutrition_fiber")
+  nutritionSodium         Decimal? @db.Decimal(8, 2) @map("nutrition_sodium")
+
+  author   User       @relation(fields: [authorId], references: [id])
+  category Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  steps    RecipeStep[]
+  ingredients RecipeIngredient[]
+  images   RecipeImage[]
+
+  @@index([authorId], map: "idx_recipe_author_id")
+  @@index([categoryId], map: "idx_recipe_category_id")
+  @@index([difficulty], map: "idx_recipe_difficulty")
+  @@index([status], map: "idx_recipe_status")
+  @@index([publishedAt], map: "idx_recipe_published_at")
+  @@index([isDeleted], map: "idx_recipe_is_deleted", where: "is_deleted = false")
+  @@map("recipes")
+}
+
+model RecipeStep {
+  id            String   @id @default(uuid())
+  recipeId      String   @map("recipe_id")
+  stepNumber    Int      @map("step_number")
+  title         String   @db.VarChar(200)
+  description   String   @db.Text
+  timerMinutes  Int?     @map("timer_minutes")
+  imageUrl      String?  @db.VarChar(500) @map("image_url")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  isDeleted     Boolean  @default(false) @map("is_deleted")
+  version       Int      @default(1)
 
   recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
-  @@unique([name, recipeId])
-  @@map("recipe_tags")
+  @@unique([recipeId, stepNumber], map: "uq_recipe_step_number")
+  @@index([recipeId])
+  @@map("recipe_steps")
 }
 
-enum Role {
-  USER
-  ADMIN
+model RecipeIngredient {
+  id          String   @id @default(uuid())
+  recipeId    String   @map("recipe_id")
+  name        String   @db.VarChar(200)
+  quantity    Decimal? @db.Decimal(10, 3)
+  unit        String?  @db.VarChar(50)
+  notes       String?  @db.VarChar(500)
+  orderIndex  Int      @default(0) @map("order_index")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  isDeleted   Boolean  @default(false) @map("is_deleted")
+  version     Int      @default(1)
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
+  @@map("recipe_ingredients")
 }
 
-enum Difficulty {
-  EASY
-  MEDIUM
-  HARD
+model RecipeImage {
+  id            String   @id @default(uuid())
+  recipeId      String   @map("recipe_id")
+  originalUrl   String   @db.VarChar(500) @map("original_url")
+  mediumUrl     String?  @db.VarChar(500) @map("medium_url")
+  thumbnailUrl  String?  @db.VarChar(500) @map("thumbnail_url")
+  altText       String?  @db.VarChar(200) @map("alt_text")
+  isPrimary     Boolean  @default(false) @map("is_primary")
+  orderIndex    Int      @default(0) @map("order_index")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  isDeleted     Boolean  @default(false) @map("is_deleted")
+  version       Int      @default(1)
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
+  @@map("recipe_images")
 }
