@@ -133,7 +133,7 @@ model Recipe {
   @@index([difficulty], map: "idx_recipe_difficulty")
   @@index([status], map: "idx_recipe_status")
   @@index([publishedAt], map: "idx_recipe_published_at")
-  @@index([isDeleted], map: "idx_recipe_is_deleted", where: "is_deleted = false")
+  @@index([isDeleted], map: "idx_recipe_is_deleted")
   @@map("recipes")
 }
 
