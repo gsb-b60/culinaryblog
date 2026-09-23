@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import dotenv from 'dotenv';
+import { z } from 'zod';
 
 dotenv.config();
 
@@ -20,6 +20,9 @@ const envSchema = z.object({
   GOOGLE_CALLBACK_URL: z.string().optional(),
 
   CORS_ORIGINS: z.string().default('http://localhost:5173'),
+
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
+  RATE_LIMIT_AUTH: z.coerce.number().default(10),
 
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().optional(),
