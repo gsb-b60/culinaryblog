@@ -9,7 +9,7 @@ export class GetCategoriesQuery extends Query<CategoryDto[]> {
   }
 }
 
-export class GetCategoryBySlugQuery extends Query<import('../dtos/CategoryDto.js').CategoryDetailDto | null> {
+export class GetCategoryBySlugQuery extends Query<import('../../dtos/CategoryDto.js').CategoryDetailDto | null> {
   readonly type = 'GetCategoryBySlugQuery';
 
   constructor(
