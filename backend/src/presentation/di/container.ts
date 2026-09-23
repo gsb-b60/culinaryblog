@@ -16,6 +16,16 @@ import { MinioFileStorageService } from '../../infrastructure/file-storage/Minio
 import { NodemailerEmailService } from '../../infrastructure/email/NodemailerEmailService.js';
 import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
 import { healthCheckService } from '../../infrastructure/health/HealthCheckService.js';
+import {
+  AddRecipeIngredientCommandHandler,
+  DeleteRecipeIngredientCommandHandler,
+  UpdateRecipeIngredientCommandHandler,
+} from '../../application/handlers/RecipeIngredientCommandHandlers.js';
+import {
+  AddRecipeIngredientCommand,
+  DeleteRecipeIngredientCommand,
+  UpdateRecipeIngredientCommand,
+} from '../../application/commands/recipes/RecipeCommands.js';
 
 export interface Container {
   prisma: PrismaClient;
@@ -45,6 +55,10 @@ export function createContainer(): Container {
   const jwtService = new JwtService();
   const fileStorageService = new MinioFileStorageService();
   const emailService = new NodemailerEmailService();
+
+  commandBus.registerCommandHandler(AddRecipeIngredientCommand.name, new AddRecipeIngredientCommandHandler(prisma));
+  commandBus.registerCommandHandler(UpdateRecipeIngredientCommand.name, new UpdateRecipeIngredientCommandHandler(prisma));
+  commandBus.registerCommandHandler(DeleteRecipeIngredientCommand.name, new DeleteRecipeIngredientCommandHandler(prisma));
 
   container = {
     prisma,

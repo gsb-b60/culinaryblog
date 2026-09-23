@@ -253,8 +253,8 @@ router.post('/:id/ingredients', authenticateJwt, authorizeOwnerOrAdmin(async (re
       input.notes,
       input.orderIndex
     );
-    const ingredientId = await commandBus.executeCommand(command);
-    res.status(201).json({ id: ingredientId, message: 'Ingredient added successfully' });
+    const ingredient = await commandBus.executeCommand(command);
+    res.status(201).json(ingredient);
   } catch (error) {
     next(error);
   }
@@ -281,8 +281,8 @@ router.put('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAd
       input.notes,
       input.orderIndex
     );
-    await commandBus.executeCommand(command);
-    res.json({ message: 'Ingredient updated successfully' });
+    const ingredient = await commandBus.executeCommand(command);
+    res.json(ingredient);
   } catch (error) {
     next(error);
   }
