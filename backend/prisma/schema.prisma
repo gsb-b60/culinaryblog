@@ -8,30 +8,56 @@ generator client {
 }
 
 model User {
-  id             String    @id @default(uuid())
-  email          String    @unique
-  passwordHash   String?   @map("password_hash")
-  displayName    String?   @map("display_name")
-  avatarUrl      String?   @map("avatar_url")
-  googleId       String?   @unique @map("google_id")
-  role           Role      @default(USER)
-  emailVerified  Boolean   @default(false) @map("email_verified")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  id             String     @id @default(uuid())
+  email          String     @unique
+  userName       String     @unique @map("user_name")
+  fullName       String     @map("full_name")
+  passwordHash   String?    @map("password_hash")
+  avatarUrl      String?    @map("avatar_url")
+  googleId       String?    @unique @map("google_id")
+  isActive       Boolean    @default(true) @map("is_active")
+  emailVerified  Boolean    @default(false) @map("email_verified")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
 
   recipes        Recipe[]
   refreshTokens  RefreshToken[]
+  userRoles      UserRole[]
 
   @@map("users")
 }
 
+model Role {
+  id       String     @id @default(uuid())
+  name     String     @unique
+  users    UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId     String   @map("user_id")
+  roleId     String   @map("role_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
 model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String   @map("user_id")
-  userAgent String?  @map("user_agent")
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
+  id                 String    @id @default(uuid())
+  tokenHash          String    @unique @map("token_hash")
+  userId             String    @map("user_id")
+  userAgent          String?   @map("user_agent")
+  createdByIp        String?   @map("created_by_ip")
+  expiresAt          DateTime  @map("expires_at")
+  isRevoked          Boolean   @default(false) @map("is_revoked")
+  revokedAt          DateTime? @map("revoked_at")
+  replacedByTokenHash String?  @map("replaced_by_token_hash")
+  createdAt          DateTime  @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -39,20 +65,20 @@ model RefreshToken {
 }
 
 model Recipe {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   title         String
-  slug          String   @unique
+  slug          String    @unique
   description   String?
   instructions  String?
-  prepTime      Int?     @map("prep_time")
-  cookTime      Int?     @map("cook_time")
+  prepTime      Int?      @map("prep_time")
+  cookTime      Int?      @map("cook_time")
   servings      Int?
   difficulty    Difficulty?
-  imageUrl      String?  @map("image_url")
-  authorId      String   @map("author_id")
-  categoryId    String?  @map("category_id")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  imageUrl      String?   @map("image_url")
+  authorId      String    @map("author_id")
+  categoryId    String?   @map("category_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   author   User       @relation(fields: [authorId], references: [id])
   category Category? @relation(fields: [categoryId], references: [id])
@@ -85,11 +111,6 @@ model RecipeTag {
 
   @@unique([name, recipeId])
   @@map("recipe_tags")
-}
-
-enum Role {
-  USER
-  ADMIN
 }
 
 enum Difficulty {
