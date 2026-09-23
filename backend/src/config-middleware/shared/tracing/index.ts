@@ -7,6 +7,8 @@ export function initTracing(): void {
   }
 
   try {
+    /* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    // Lazy require so missing optional OTel packages only disable tracing.
     const { NodeSDK } = require('@opentelemetry/sdk-node');
     const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
     const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express');
@@ -25,6 +27,7 @@ export function initTracing(): void {
     });
 
     sdk.start();
+    /* eslint-enable @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
     logger.info('OpenTelemetry tracing initialized');
   } catch {
     logger.warn('OpenTelemetry packages not available, tracing disabled');
