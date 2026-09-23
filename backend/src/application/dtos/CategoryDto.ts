@@ -3,10 +3,7 @@ export interface CategoryDto {
   name: string;
   slug: string;
   description?: string;
-  imageUrl?: string;
-  orderIndex: number;
-  recipeCount?: number;
-  createdAt: Date;
+  recipeCount: number;
 }
 
 export interface CategoryDetailDto extends CategoryDto {
