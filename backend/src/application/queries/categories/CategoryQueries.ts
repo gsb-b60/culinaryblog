@@ -1,14 +1,10 @@
 import { Query } from '../command-bus.js';
-import { CategoryFilters } from '../../domain/repositories/ICategoryRepository.js';
+import { CategoryDto } from '../../dtos/CategoryDto.js';
 
-export class GetCategoriesQuery extends Query<import('../dtos/PagedResult.js').PagedResult<import('../dtos/CategoryDto.js').CategoryDto>> {
+export class GetCategoriesQuery extends Query<CategoryDto[]> {
   readonly type = 'GetCategoriesQuery';
 
-  constructor(
-    public readonly filters: CategoryFilters,
-    public readonly page: number,
-    public readonly pageSize: number
-  ) {
+  constructor() {
     super();
   }
 }
