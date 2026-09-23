@@ -47,6 +47,10 @@ Array of `{ id, name, slug, description, recipeCount }`. Served from cache when 
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M4 — Danh mục (`#m4`) + M1 home grid (`#m1`)
+**UI notes:** states: populated, loading, empty
 ### Issue #16 — FR-CAT-002: View Category Detail and Recipes
 
 | | |
@@ -90,6 +94,10 @@ Return detailed info for a specific category (by Slug) along with a paginated li
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M5 — Chi tiết danh mục (`#m5`)
+**UI notes:** states: populated, loading, 404
 ### Issue #17 — FR-CAT-003: Create New Category [Admin]
 
 | | |
@@ -137,6 +145,10 @@ New category created. Category cache deleted. Location header → `/api/v1/categ
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M13 — Quản trị danh mục (`#m13`)
+**UI notes:** create dialog: empty, saving, 422, 409
 ### Issue #18 — FR-CAT-004: Update Category [Admin]
 
 | | |
@@ -179,6 +191,10 @@ Category info updated. Cache invalidated. Slug unchanged.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M13 — Quản trị danh mục (`#m13`)
+**UI notes:** edit dialog: loaded, saving, error
 ### Issue #19 — FR-CAT-005: Delete Category [Admin]
 
 | | |
@@ -221,6 +237,10 @@ Category deleted from database. HTTP 204 returned.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M13 — Quản trị danh mục (`#m13`)
+**UI notes:** delete confirm + global 409 state (`#g409`)
 ### Issue #20 — FR-RCP-001: View Recipe List (Paginated + Filtered + Sorted)
 
 | | |
@@ -273,6 +293,10 @@ Returns a paginated list of recipes. Guests/Authors see Published only; Authors 
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M2 — Danh sách công thức (`#m2`)
+**UI notes:** states: populated, loading, empty, filtered
 ### Issue #21 — FR-RCP-002: View Recipe Detail
 
 | | |
@@ -315,3 +339,8 @@ Full RecipeDetailDto including all nested data.
 - [ ] Non-existent slug returns 404
 - [ ] Result cached (60-min TTL)
 - [ ] No N+1 queries (eager loading via Prisma `include`)
+
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M3 — Chi tiết công thức (`#m3`)
+**UI notes:** states: populated, loading, 404, 403 draft

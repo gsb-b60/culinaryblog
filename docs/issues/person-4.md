@@ -48,6 +48,10 @@ Welcome email sent. Registration does not fail if email fails.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M8 — Đăng ký (`#m8`) — post-register
+**UI notes:** email sent async; no dedicated screen
 ### Issue #31 — FR-JOB-003: Sitemap Generation Job
 
 | | |
@@ -94,6 +98,10 @@ sitemap.xml generated, stored, and Google notified.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** none (backend-only)
+**UI notes:** no dedicated screen; SEO output sitemap.xml
 ### Issue #32 — FR-OBS-001: Health Check Endpoints
 
 | | |
@@ -134,6 +142,10 @@ Health endpoints return correct status based on dependency health.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** none (backend-only)
+**UI notes:** no dedicated screen; see global network state (`#gnet`)
 ### Issue #33 — FR-OBS-002: Structured Logging
 
 | | |
@@ -174,6 +186,10 @@ Every request logged with correlation ID and timing. Slow queries warned.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** none (backend-only)
+**UI notes:** no dedicated screen; structured logs only
 ### Issue #34 — FR-OBS-003: Distributed Tracing & Metrics
 
 | | |
@@ -215,3 +231,8 @@ Distributed traces for HTTP + DB operations. Business metrics collected.
 - [ ] Metric: error rate (4xx, 5xx counts)
 - [ ] Works in dev (Seq OTLP) and prod (Grafana Tempo / Jaeger)
 - [ ] No performance degradation from instrumentation overhead
+
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** none (backend-only)
+**UI notes:** no dedicated screen; traces/metrics only

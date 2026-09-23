@@ -50,6 +50,10 @@ Recipe status changed. Cache invalidated.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M10 — Công thức của bạn (`#m10`)
+**UI notes:** publish/unpublish action + status badge
 ### Issue #23 — FR-RCP-006: Archive Recipe
 
 | | |
@@ -88,6 +92,10 @@ Recipe archived. Hidden from public listings, still in DB.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M10 — Công thức của bạn (`#m10`)
+**UI notes:** archive action + status badge
 ### Issue #24 — FR-RCP-007: Delete Recipe
 
 | | |
@@ -133,6 +141,10 @@ Recipe and all children deleted. HTTP 204 returned. MinIO files cleaned up async
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M10 — Công thức của bạn (`#m10`)
+**UI notes:** delete confirm + global 404 (`#g404`)
 ### Issue #25 — FR-RCP-009: Ingredient Management (CRUD)
 
 | | |
@@ -170,6 +182,10 @@ Ingredient CRUD operations succeed with correct status codes.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M11 / M12 (`#m11`, `#m12`) — ingredients form
+**UI notes:** add/update/remove rows
 ### Issue #26 — FR-RCP-010: Steps Management (CRUD)
 
 | | |
@@ -207,6 +223,10 @@ Step CRUD succeeds. Auto-renumbering after delete.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M11 / M12 (`#m11`, `#m12`) — steps form
+**UI notes:** add/update/remove + renumber
 ### Issue #27 — FR-SRCH-002: Filtering Recipes
 
 | | |
@@ -244,6 +264,10 @@ Filtered recipe list. Filters combine with AND.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M2 — filter bar (`#m2`)
+**UI notes:** category, difficulty, time filters combined
 ### Issue #28 — FR-SRCH-003: Sorting Recipes
 
 | | |
@@ -280,6 +304,10 @@ Recipes sorted by specified field and direction.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M2 — sort dropdown (`#m2`)
+**UI notes:** sort options incl. -createdAt default
 ### Issue #29 — FR-SRCH-004: Pagination
 
 | | |
@@ -317,3 +345,8 @@ Paginated results with metadata: `{ items, totalCount, page, pageSize, totalPage
 - [ ] `page < 1` or `pageSize > 50` → 422
 - [ ] Last page returns remaining items (not padded)
 - [ ] Page beyond range returns empty items array with 200
+
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M2 — pagination (`#m2`)
+**UI notes:** page controls + totals

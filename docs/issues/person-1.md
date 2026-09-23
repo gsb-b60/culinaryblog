@@ -59,6 +59,10 @@ New account created, "Author" role assigned, refresh token persisted, welcome em
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M8 — Đăng ký (`#m8`)
+**UI notes:** states: populated, loading, validation error
 ### Issue #2 — FR-AUTH-002: Local Login (Email/Password)
 
 | | |
@@ -106,6 +110,10 @@ New access token and refresh token created and returned. Refresh token persisted
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M7 — Đăng nhập (`#m7`)
+**UI notes:** states: populated, loading, error
 ### Issue #3 — FR-AUTH-003: Google OAuth 2.0 Login
 
 | | |
@@ -154,6 +162,10 @@ User is logged in (or auto-registered) and receives AuthResponseDto.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M7 — Đăng nhập (`#m7`) · Google button
+**UI notes:** states: redirect flow, error
 ### Issue #4 — FR-AUTH-004: Refresh Access Token
 
 | | |
@@ -201,6 +213,10 @@ Old refresh token invalidated. New access token (15 min) and new refresh token (
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M7 / M9 (`#m7`, `#m9`) — session persistence
+**UI notes:** no dedicated screen; token refresh keeps UI logged in
 ### Issue #5 — FR-AUTH-005: Logout / Token Revocation
 
 | | |
@@ -243,6 +259,10 @@ Refresh token marked `isRevoked = true` in the database.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M9 / M14 (`#m9`, `#m14`) — logout action
+**UI notes:** returns UI to guest state
 ### Issue #6 — FR-AUTH-006: View Profile
 
 | | |
@@ -284,6 +304,10 @@ Returns the user's full profile excluding sensitive data (password hash).
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M14 — Hồ sơ cá nhân (`#m14`)
+**UI notes:** states: populated, loading
 ### Issue #7 — FR-AUTH-007: Update Profile
 
 | | |
@@ -325,6 +349,10 @@ User profile updated in the database. Returns the new profile.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M14 — Hồ sơ cá nhân (`#m14`)
+**UI notes:** edit states: populated, saving, error
 ### Issue #8 — FR-RCP-003: Create New Recipe ⭐ HARDEST
 
 | | |
@@ -374,6 +402,10 @@ New recipe created with Status = Draft, Slug auto-generated.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M11 — Tạo công thức mới (`#m11`)
+**UI notes:** states: form, saving, validation error, 409 slug
 ### Issue #9 — FR-RCP-004: Update Recipe (Optimistic Concurrency)
 
 | | |
@@ -422,6 +454,10 @@ Recipe updated, cache invalidated, returns latest RecipeDto.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M12 — Chỉnh sửa công thức (`#m12`)
+**UI notes:** states: form loaded, saving, 409 conflict
 ### Issue #10 — FR-FILE-001: Upload File to MinIO
 
 | | |
@@ -466,6 +502,10 @@ File stored on MinIO, public URL returned.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M11 / M12 (`#m11`, `#m12`) — image upload area
+**UI notes:** states: uploading %, success, 400 invalid file
 ### Issue #11 — FR-FILE-002: Delete File from MinIO
 
 | | |
@@ -506,6 +546,10 @@ File deleted from MinIO. Idempotent on repeated calls.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M12 — Chỉnh sửa công thức (`#m12`) — remove image
+**UI notes:** async cleanup after delete
 ### Issue #12 — FR-RCP-008: Recipe Image Management
 
 | | |
@@ -547,6 +591,10 @@ Images uploaded, primary set, deleted with async MinIO cleanup.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M11 / M12 (`#m11`, `#m12`) — image gallery, set primary
+**UI notes:** states: gallery, primary badge, empty
 ### Issue #13 — FR-SRCH-001: Full-Text Search (Algorithm)
 
 | | |
@@ -593,6 +641,10 @@ Ranked list of published recipes matching the search query.
 
 ---
 
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M6 — Kết quả tìm kiếm (`#m6`)
+**UI notes:** states: populated, empty, loading
 ### Issue #14 — FR-JOB-002: Thumbnail Generation Job (Algorithm)
 
 | | |
@@ -634,3 +686,8 @@ After a recipe image upload succeeds, generate a thumbnail (300×300px) and medi
 - [ ] `RecipeImage.thumbnailUrl` and `mediumUrl` updated in DB
 - [ ] Job retries up to 3 times on failure
 - [ ] On total failure, original image still displays (no broken UI)
+
+---
+**UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)
+**Screen:** M2 / M3 (`#m2`, `#m3`) — card & detail images
+**UI notes:** medium/thumbnail variants displayed
