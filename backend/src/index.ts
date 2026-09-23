@@ -49,7 +49,7 @@ app.use(generalRateLimiter);
 app.get('/health', async (_req, res) => {
   const container = createContainer();
   const result = await container.healthCheckService.checkAll();
-  const statusCode = result.status === 'healthy' ? 200 : result.status === 'degraded' ? 200 : 503;
+  const statusCode = result.status === 'Healthy' ? 200 : 503;
   res.status(statusCode).json(result);
 });
 
@@ -62,7 +62,7 @@ app.get('/health/live', async (_req, res) => {
 app.get('/health/ready', async (_req, res) => {
   const container = createContainer();
   const result = await container.healthCheckService.checkReadiness();
-  const statusCode = result.status === 'healthy' ? 200 : 503;
+  const statusCode = result.status === 'Healthy' ? 200 : 503;
   res.status(statusCode).json(result);
 });
 
