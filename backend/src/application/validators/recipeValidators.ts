@@ -1,5 +1,7 @@
 import { z } from 'zod';
+
 import { RecipeDifficulty } from '../../domain/enums/RecipeDifficulty.js';
+import { RecipeStatus } from '../../domain/enums/RecipeStatus.js';
 
 export const createRecipeStepSchema = z.object({
   stepNumber: z.number().int().positive(),
@@ -60,7 +62,7 @@ export const updateRecipeSchema = z.object({
 export const recipeFiltersSchema = z.object({
   categoryId: z.string().uuid().optional(),
   difficulty: z.nativeEnum(RecipeDifficulty).optional(),
-  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
+  status: z.nativeEnum(RecipeStatus).optional(),
   authorId: z.string().uuid().optional(),
   minPrepTime: z.number().int().nonnegative().optional(),
   maxPrepTime: z.number().int().nonnegative().optional(),

@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { z } from 'zod';
+
 import { commandBus } from '../../application/command-bus.js';
 import { 
   RegisterCommand, 
@@ -8,15 +10,14 @@ import {
   LogoutCommand 
 } from '../../application/commands/auth/AuthCommands.js';
 import { GetCurrentUserQuery } from '../../application/queries/auth/AuthQueries.js';
-import { authenticateJwt, AuthenticatedRequest } from '../middleware/AuthMiddleware.js';
-import { authRateLimiter } from '../middleware/RateLimitMiddleware.js';
 import { 
   registerSchema, 
   loginSchema, 
   refreshTokenSchema, 
   googleAuthSchema 
 } from '../../application/validators/authValidators.js';
-import { z } from 'zod';
+import { authenticateJwt, AuthenticatedRequest } from '../middleware/AuthMiddleware.js';
+import { authRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 const router = Router();
 
@@ -93,7 +94,7 @@ router.patch('/me', authenticateJwt, async (req: AuthenticatedRequest, res, next
       bio: z.string().max(2000).optional(),
     });
     
-    const input = updateProfileSchema.parse(req.body);
+    updateProfileSchema.parse(req.body);
     // TODO: Implement UpdateProfileCommand
     res.json({ message: 'Profile updated successfully' });
   } catch (error) {

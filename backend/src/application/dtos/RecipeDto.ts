@@ -1,5 +1,5 @@
-import { RecipeDifficulty } from '../../../domain/enums/RecipeDifficulty.js';
-import { RecipeStatus } from '../../../domain/enums/RecipeStatus.js';
+import { RecipeDifficulty } from '../../domain/enums/RecipeDifficulty.js';
+import { RecipeStatus } from '../../domain/enums/RecipeStatus.js';
 
 export interface RecipeNutritionDto {
   calories?: number;

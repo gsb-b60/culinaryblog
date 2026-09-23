@@ -1,11 +1,12 @@
 import { Worker, Job } from 'bullmq';
+
 import { env } from '../../../config-middleware/config/env.js';
-import { imageResizeQueue, ImageResizeJobData } from '../queues/imageResizeQueue.js';
+import { ImageResizeJobData } from '../queues/imageResizeQueue.js';
 
 const worker = new Worker<ImageResizeJobData>(
   'image-resize',
   async (job: Job<ImageResizeJobData>) => {
-    const { recipeId, imageId, originalUrl } = job.data;
+    const { recipeId, imageId } = job.data;
     console.log(`Processing image resize for recipe ${recipeId}, image ${imageId}`);
     
     // TODO: Implement actual image processing with sharp

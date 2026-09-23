@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
+
+import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { env } from '../../config-middleware/config/env.js';
-import { IEmailService } from '../../../application/interfaces/IEmailService.js';
 
 export class NodemailerEmailService implements IEmailService {
   private transporter: nodemailer.Transporter;
@@ -114,3 +115,5 @@ export class NodemailerEmailService implements IEmailService {
     });
   }
 }
+
+export const emailService = new NodemailerEmailService();

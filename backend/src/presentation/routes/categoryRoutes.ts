@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { z } from 'zod';
+
 import { commandBus } from '../../application/command-bus.js';
 import { 
   CreateCategoryCommand, 
@@ -9,8 +11,6 @@ import {
   GetCategoriesQuery, 
   GetCategoryBySlugQuery 
 } from '../../application/queries/categories/CategoryQueries.js';
-import { authenticateJwt, AuthenticatedRequest, authorize } from '../middleware/AuthMiddleware.js';
-import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 import { 
   createCategorySchema, 
   updateCategorySchema,
@@ -18,7 +18,8 @@ import {
   categoryPaginationSchema 
 } from '../../application/validators/categoryValidators.js';
 import { UserRole } from '../../domain/enums/UserRole.js';
-import { z } from 'zod';
+import { authenticateJwt, AuthenticatedRequest, authorize } from '../middleware/AuthMiddleware.js';
+import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 const router = Router();
 
@@ -50,7 +51,7 @@ router.get('/:slug', generalRateLimiter, async (req, res, next) => {
     const pagination = paginationSchema.parse(req.query);
 
     const query = new GetCategoryBySlugQuery(
-      req.params.slug,
+      req.params.slug!,
       pagination.page,
       pagination.pageSize,
       (req as AuthenticatedRequest).user?.id,
@@ -89,7 +90,7 @@ router.post('/', authenticateJwt, authorize(UserRole.ADMIN), async (req, res, ne
 router.put('/:id', authenticateJwt, authorize(UserRole.ADMIN), async (req, res, next) => {
   try {
     const input = updateCategorySchema.parse(req.body);
-    const command = new UpdateCategoryCommand(req.params.id, input);
+    const command = new UpdateCategoryCommand(req.params.id!, input);
     await commandBus.executeCommand(command);
     res.json({ message: 'Category updated successfully' });
   } catch (error) {
@@ -99,7 +100,7 @@ router.put('/:id', authenticateJwt, authorize(UserRole.ADMIN), async (req, res, 
 
 router.delete('/:id', authenticateJwt, authorize(UserRole.ADMIN), async (req, res, next) => {
   try {
-    const command = new DeleteCategoryCommand(req.params.id);
+    const command = new DeleteCategoryCommand(req.params.id!);
     await commandBus.executeCommand(command);
     res.status(204).send();
   } catch (error) {

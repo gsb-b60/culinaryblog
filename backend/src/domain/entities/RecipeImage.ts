@@ -37,16 +37,27 @@ export class RecipeImage {
   }
 
   get id(): string { return this.props.id; }
+
   get recipeId(): string { return this.props.recipeId; }
+
   get originalUrl(): string { return this.props.originalUrl; }
+
   get mediumUrl(): string | undefined { return this.props.mediumUrl; }
+
   get thumbnailUrl(): string | undefined { return this.props.thumbnailUrl; }
+
   get altText(): string | undefined { return this.props.altText; }
+
   get isPrimary(): boolean { return this.props.isPrimary; }
+
   get orderIndex(): number { return this.props.orderIndex; }
+
   get createdAt(): Date { return this.props.createdAt; }
+
   get updatedAt(): Date { return this.props.updatedAt; }
+
   get isDeleted(): boolean { return this.props.isDeleted; }
+
   get version(): number { return this.props.version; }
 
   setAsPrimary(): void {

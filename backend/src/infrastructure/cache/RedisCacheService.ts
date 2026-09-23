@@ -1,8 +1,10 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
+
 import { env } from '../../config-middleware/config/env.js';
 
 class RedisCacheService {
   private client: Redis | null = null;
+
   private isConnected = false;
 
   async connect(): Promise<void> {

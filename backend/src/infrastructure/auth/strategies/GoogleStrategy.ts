@@ -1,10 +1,10 @@
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { PassportStatic } from 'passport';
-import { UserRepository } from '../../persistence/repositories/UserRepository.js';
 import { PrismaClient } from '@prisma/client';
-import { PasswordService } from '../PasswordService.js';
-import { UserRole } from '../../../domain/enums/UserRole.js';
+import { PassportStatic } from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+
+import { User } from '../../../domain/entities/User.js';
 import { EmailAddress } from '../../../domain/value-objects/EmailAddress.js';
+import { UserRepository } from '../../persistence/repositories/UserRepository.js';
 
 const prisma = new PrismaClient();
 const userRepository = new UserRepository(prisma);
@@ -19,7 +19,7 @@ export function configureGoogleStrategy(passport: PassportStatic): void {
         scope: ['openid', 'email', 'profile'],
         passReqToCallback: true,
       },
-      async (req, accessToken, refreshToken, profile, done) => {
+      async (_req, _accessToken, _refreshToken, profile, done) => {
         try {
           if (!profile.emails || !profile.emails[0]) {
             return done(new Error('No email found in Google profile'), false);
@@ -29,25 +29,24 @@ export function configureGoogleStrategy(passport: PassportStatic): void {
           let user = await userRepository.findByEmail(email);
 
           if (!user) {
-            // Create new user from Google profile
             const displayName = profile.displayName || profile.name?.givenName || 'User';
-            user = await userRepository.save(
-              // User.create would need to be called, but we need to handle the googleId
-              // For now, we'll create a user object manually
-            );
+            const newUser = User.create({
+              email: profile.emails[0].value,
+              displayName,
+              avatarUrl: profile.photos?.[0]?.value,
+              googleId: profile.id,
+            });
+            user = await userRepository.save(newUser);
           }
 
-          if (user && !user.googleId) {
-            // Link Google account if not already linked
-            // This would require updating the user
-          }
+          // TODO: Link Google account if not already linked
 
           const currentUser = {
-            id: user!.id,
-            email: user!.email.getValue(),
-            displayName: user!.displayName,
-            roles: [user!.role],
-            isActive: user!.isActive,
+            id: user.id,
+            email: user.email.getValue(),
+            displayName: user.displayName,
+            roles: [user.role],
+            isActive: user.isActive,
           };
 
           return done(null, currentUser);

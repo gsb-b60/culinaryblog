@@ -1,5 +1,5 @@
-import { Category, CategoryProps } from '../entities/Category.js';
 import { PagedResult } from '../../application/dtos/PagedResult.js';
+import { Category } from '../entities/Category.js';
 
 export interface CategoryFilters {
   searchQuery?: string;

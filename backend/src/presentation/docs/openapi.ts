@@ -1,4 +1,5 @@
 import { Router } from 'express';
+
 import { createContainer } from '../di/container.js';
 
 export function setupRoutes(app: Router): void {

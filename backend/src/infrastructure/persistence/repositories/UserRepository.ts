@@ -1,7 +1,9 @@
-import { PrismaClient, User as PrismaUser, Role } from '@prisma/client';
-import { IUserRepository } from '../../../domain/repositories/IUserRepository.js';
+import { PrismaClient, User as PrismaUser } from '@prisma/client';
+
 import { User, UserProps } from '../../../domain/entities/User.js';
+import { IUserRepository } from '../../../domain/repositories/IUserRepository.js';
 import { EmailAddress } from '../../../domain/value-objects/EmailAddress.js';
+import { UserRole } from '../../../domain/enums/UserRole.js';
 
 export class UserRepository implements IUserRepository {
   constructor(private prisma: PrismaClient) {}
@@ -15,7 +17,7 @@ export class UserRepository implements IUserRepository {
       avatarUrl: prismaUser.avatarUrl ?? undefined,
       bio: prismaUser.bio ?? undefined,
       googleId: prismaUser.googleId ?? undefined,
-      role: prismaUser.role,
+      role: prismaUser.role as UserRole,
       emailVerified: prismaUser.emailVerified,
       isActive: prismaUser.isActive,
       twoFactorEnabled: prismaUser.twoFactorEnabled,

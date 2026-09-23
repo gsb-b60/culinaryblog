@@ -37,7 +37,7 @@ export class HealthCheckService {
     return this.checkAll();
   }
 
-  private async checkDatabase(): Promise<{ status: 'healthy' | 'unhealthy'; latency: number }> {
+  private async checkDatabase(): Promise<{ status: 'healthy' | 'unhealthy'; latency: number; error?: string }> {
     const start = Date.now();
     try {
       await prisma.$queryRaw`SELECT 1`;
@@ -47,7 +47,7 @@ export class HealthCheckService {
     }
   }
 
-  private async checkRedis(): Promise<{ status: 'healthy' | 'unhealthy'; latency: number }> {
+  private async checkRedis(): Promise<{ status: 'healthy' | 'unhealthy'; latency: number; error?: string }> {
     const start = Date.now();
     try {
       if (!cacheService.isReady()) {

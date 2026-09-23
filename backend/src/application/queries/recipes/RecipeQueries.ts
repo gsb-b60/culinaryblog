@@ -1,7 +1,7 @@
-import { Query } from '../command-bus.js';
-import { RecipeFilters, RecipeSortOptions } from '../../domain/repositories/IRecipeRepository.js';
+import { RecipeFilters, RecipeSortOptions } from '../../../domain/repositories/IRecipeRepository.js';
+import { Query } from '../../command-bus.js';
 
-export class GetRecipesQuery extends Query<import('../dtos/PagedResult.js').PagedResult<import('../dtos/RecipeDto.js').RecipeSummaryDto>> {
+export class GetRecipesQuery extends Query<import('../../dtos/PagedResult.js').PagedResult<import('../../dtos/RecipeDto.js').RecipeSummaryDto>> {
   readonly type = 'GetRecipesQuery';
 
   constructor(
@@ -14,7 +14,7 @@ export class GetRecipesQuery extends Query<import('../dtos/PagedResult.js').Page
   }
 }
 
-export class GetRecipeBySlugQuery extends Query<import('../dtos/RecipeDto.js').RecipeDetailDto | null> {
+export class GetRecipeBySlugQuery extends Query<import('../../dtos/RecipeDto.js').RecipeDetailDto | null> {
   readonly type = 'GetRecipeBySlugQuery';
 
   constructor(
@@ -26,7 +26,7 @@ export class GetRecipeBySlugQuery extends Query<import('../dtos/RecipeDto.js').R
   }
 }
 
-export class SearchRecipesQuery extends Query<import('../dtos/PagedResult.js').PagedResult<import('../dtos/RecipeDto.js').RecipeSummaryDto>> {
+export class SearchRecipesQuery extends Query<import('../../dtos/PagedResult.js').PagedResult<import('../../dtos/RecipeDto.js').RecipeSummaryDto>> {
   readonly type = 'SearchRecipesQuery';
 
   constructor(

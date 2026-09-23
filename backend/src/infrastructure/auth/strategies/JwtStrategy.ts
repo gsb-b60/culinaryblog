@@ -1,23 +1,21 @@
-import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
-import { PassportStatic } from 'passport';
-import { JwtService } from './JwtService.js';
-import { UserRepository } from '../../persistence/repositories/UserRepository.js';
 import { PrismaClient } from '@prisma/client';
-import { UserRole } from '../../../domain/enums/UserRole.js';
+import { PassportStatic } from 'passport';
+import { Strategy as JwtStrategy, ExtractJwt, StrategyOptions } from 'passport-jwt';
+
+import { UserRepository } from '../../persistence/repositories/UserRepository.js';
+import { JwtService } from '../JwtService.js';
 
 const prisma = new PrismaClient();
 const userRepository = new UserRepository(prisma);
-const jwtService = new JwtService();
 
 export function configureJwtStrategy(passport: PassportStatic): void {
-  const options = {
+  const options: StrategyOptions = {
     jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
     secretOrKey: process.env.JWT_ACCESS_SECRET!,
-    passReqToCallback: true,
   };
 
   passport.use(
-    new JwtStrategy(options, async (req, payload, done) => {
+    new JwtStrategy(options, async (payload, done) => {
       try {
         const user = await userRepository.findById(payload.userId);
         if (!user || !user.isActive) {
@@ -32,7 +30,6 @@ export function configureJwtStrategy(passport: PassportStatic): void {
           isActive: user.isActive,
         };
 
-        (req as any).user = currentUser;
         return done(null, currentUser);
       } catch (error) {
         return done(error, false);

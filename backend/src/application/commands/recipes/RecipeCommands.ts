@@ -1,6 +1,5 @@
-import { Command } from '../command-bus.js';
-import { CreateRecipeInput, UpdateRecipeInput } from '../dtos/RecipeDto.js';
-import { RecipeDifficulty } from '../../domain/enums/RecipeDifficulty.js';
+import { Command } from '../../command-bus.js';
+import { CreateRecipeInput, UpdateRecipeInput } from '../../dtos/RecipeDto.js';
 
 export class CreateRecipeCommand extends Command<string> {
   readonly type = 'CreateRecipeCommand';

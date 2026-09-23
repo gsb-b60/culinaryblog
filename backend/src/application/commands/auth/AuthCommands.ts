@@ -1,5 +1,5 @@
-import { Command } from '../command-bus.js';
-import { RegisterInput, LoginInput, RefreshTokenInput, GoogleAuthInput } from '../dtos/UserDto.js';
+import { Command } from '../../command-bus.js';
+import { RegisterInput, LoginInput, RefreshTokenInput, GoogleAuthInput } from '../../dtos/UserDto.js';
 
 export class RegisterCommand extends Command<string> {
   readonly type = 'RegisterCommand';
@@ -9,7 +9,7 @@ export class RegisterCommand extends Command<string> {
   }
 }
 
-export class LoginCommand extends Command<import('../dtos/UserDto.js').AuthTokensDto> {
+export class LoginCommand extends Command<import('../../dtos/UserDto.js').AuthTokensDto> {
   readonly type = 'LoginCommand';
 
   constructor(public readonly input: LoginInput) {
@@ -17,7 +17,7 @@ export class LoginCommand extends Command<import('../dtos/UserDto.js').AuthToken
   }
 }
 
-export class RefreshTokenCommand extends Command<import('../dtos/UserDto.js').AuthTokensDto> {
+export class RefreshTokenCommand extends Command<import('../../dtos/UserDto.js').AuthTokensDto> {
   readonly type = 'RefreshTokenCommand';
 
   constructor(public readonly input: RefreshTokenInput) {
@@ -25,7 +25,7 @@ export class RefreshTokenCommand extends Command<import('../dtos/UserDto.js').Au
   }
 }
 
-export class GoogleAuthCommand extends Command<import('../dtos/UserDto.js').AuthTokensDto> {
+export class GoogleAuthCommand extends Command<import('../../dtos/UserDto.js').AuthTokensDto> {
   readonly type = 'GoogleAuthCommand';
 
   constructor(public readonly input: GoogleAuthInput) {

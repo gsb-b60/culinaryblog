@@ -1,20 +1,21 @@
-import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { RecipeRepository } from '../../infrastructure/persistence/repositories/RecipeRepository.js';
-import { CategoryRepository } from '../../infrastructure/persistence/repositories/CategoryRepository.js';
-import { UserRepository } from '../../infrastructure/persistence/repositories/UserRepository.js';
+import { Request, Response, NextFunction } from 'express';
+
+import { commandBus } from '../../application/command-bus.js';
+import { IEmailService } from '../../application/interfaces/IEmailService.js';
+import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
+import { IJwtService } from '../../application/interfaces/IJwtService.js';
+import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository.js';
+import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.js';
+import { IUserRepository } from '../../domain/repositories/IUserRepository.js';
 import { JwtService } from '../../infrastructure/auth/JwtService.js';
+import { CategoryRepository } from '../../infrastructure/persistence/repositories/CategoryRepository.js';
+import { RecipeRepository } from '../../infrastructure/persistence/repositories/RecipeRepository.js';
+import { UserRepository } from '../../infrastructure/persistence/repositories/UserRepository.js';
 import { MinioFileStorageService } from '../../infrastructure/file-storage/MinioFileStorageService.js';
 import { NodemailerEmailService } from '../../infrastructure/email/NodemailerEmailService.js';
 import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
 import { healthCheckService } from '../../infrastructure/health/HealthCheckService.js';
-import { commandBus } from '../../application/command-bus.js';
-import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.js';
-import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository.js';
-import { IUserRepository } from '../../domain/repositories/IUserRepository.js';
-import { IJwtService } from '../../application/interfaces/IJwtService.js';
-import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
-import { IEmailService } from '../../application/interfaces/IEmailService.js';
 
 export interface Container {
   prisma: PrismaClient;

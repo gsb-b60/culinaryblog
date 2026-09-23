@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
-
-import { RecipeDifficulty } from '@prisma/client';
+import { RecipeDifficulty } from '../../../../domain/enums/RecipeDifficulty.js';
+import { RecipeStatus } from '../../../../domain/enums/RecipeStatus.js';
 
 // Vietnamese recipe data
 export const vietnameseCategories = [
@@ -58,7 +58,7 @@ export const vietnameseRecipeNames = [
 ];
 
 export function getRandomElement<T>(array: T[]): T {
-  return array[Math.floor(Math.random() * array.length)]!;
+  return array[Math.floor(Math.random() * array.length)];
 }
 
 export function getRandomElements<T>(array: T[], count: number): T[] {
@@ -85,8 +85,8 @@ export function generateRecipeData(categoryId: string, authorId: string) {
   const ingredientCount = faker.number.int({ min: 10, max: 15 });
   const stepCount = faker.number.int({ min: 5, max: 8 });
   
-  const ingredients = getRandomElements(vietnameseIngredients, ingredientCount).map((ingredientName, index) => ({
-    name: ingredientName,
+  const ingredients = getRandomElements(vietnameseIngredients, ingredientCount).map((name, index) => ({
+    name,
     quantity: faker.number.float({ min: 10, max: 1000, fractionDigits: 1 }),
     unit: getRandomElement(vietnameseUnits),
     notes: faker.helpers.maybe(() => faker.lorem.words(3), { probability: 0.3 }),
@@ -103,7 +103,6 @@ export function generateRecipeData(categoryId: string, authorId: string) {
 
   return {
     title: name,
-    authorId,
     description: faker.lorem.sentences(3),
     categoryId,
     prepTime,

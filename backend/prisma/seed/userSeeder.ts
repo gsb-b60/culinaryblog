@@ -1,6 +1,6 @@
 import { PrismaClient, Role } from '@prisma/client';
-
-import { PasswordService } from '../../auth/PasswordService.js';
+import { PasswordService } from '../../../auth/PasswordService.js';
+import { User } from '../../../../domain/entities/User.js';
 
 export async function seedUsers(prisma: PrismaClient): Promise<string[]> {
   const userIds: string[] = [];

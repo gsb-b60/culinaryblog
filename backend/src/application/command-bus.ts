@@ -1,11 +1,15 @@
-import { logger } from '../../config-middleware/config/logger.js';
+import { logger } from '../config-middleware/config/logger.js';
 
 export abstract class Command<TResponse = void> {
   abstract readonly type: string;
+
+  declare readonly _phantomType: TResponse;
 }
 
 export abstract class Query<TResponse = void> {
   abstract readonly type: string;
+
+  declare readonly _phantomType: TResponse;
 }
 
 export interface ICommandHandler<TCommand extends Command<TResponse>, TResponse> {
@@ -36,8 +40,11 @@ export type MiddlewareHandler<T extends Command<any> | Query<any>, TResponse> = 
 
 export class CommandBus {
   private commandHandlers = new Map<string, ICommandHandler<any, any>>();
+
   private queryHandlers = new Map<string, IQueryHandler<any, any>>();
+
   private validators = new Map<string, IValidator<any>>();
+
   private middlewares: MiddlewareHandler<any, any>[] = [];
 
   registerCommandHandler<TCommand extends Command<TResponse>, TResponse>(
@@ -94,17 +101,9 @@ export class CommandBus {
       await validator.validate(query);
     }
 
-    // Check cache for cacheable queries
-    if (this.isCacheable(query)) {
-      const cacheKey = query.getCacheKey();
-      // Cache check would be implemented in middleware
-    }
+    // Cache check is handled by the caching middleware
 
     return this.runPipeline(query, () => handler.execute(query));
-  }
-
-  private isCacheable(request: Command<any> | Query<any>): request is Query<any> & ICacheable {
-    return 'getCacheKey' in request && typeof request.getCacheKey === 'function';
   }
 
   private async runPipeline<T extends Command<any> | Query<any>, TResponse>(
@@ -118,7 +117,7 @@ export class CommandBus {
         return handler();
       }
 
-      const middleware = this.middlewares[index++];
+      const middleware = this.middlewares[index++]!;
       return middleware(request, next);
     };
 

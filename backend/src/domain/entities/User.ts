@@ -28,7 +28,7 @@ export class User {
     this.props = props;
   }
 
-  static create(props: Omit<UserProps, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted' | 'version' | 'emailVerified' | 'role' | 'isActive' | 'twoFactorEnabled' | 'lockoutEnabled' | 'accessFailedCount'> & { email: string }): User {
+  static create(props: Omit<UserProps, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted' | 'version' | 'email' | 'emailVerified' | 'role' | 'isActive' | 'twoFactorEnabled' | 'lockoutEnabled' | 'accessFailedCount'> & { email: string }): User {
     const now = new Date();
     return new User({
       ...props,
@@ -52,21 +52,37 @@ export class User {
   }
 
   get id(): string { return this.props.id; }
+
   get email(): EmailAddress { return this.props.email; }
+
   get passwordHash(): string | undefined { return this.props.passwordHash; }
+
   get displayName(): string { return this.props.displayName; }
+
   get avatarUrl(): string | undefined { return this.props.avatarUrl; }
+
   get bio(): string | undefined { return this.props.bio; }
+
   get googleId(): string | undefined { return this.props.googleId; }
+
   get role(): UserRole { return this.props.role; }
+
   get emailVerified(): boolean { return this.props.emailVerified; }
+
   get isActive(): boolean { return this.props.isActive; }
+
   get twoFactorEnabled(): boolean { return this.props.twoFactorEnabled; }
+
   get lockoutEnabled(): boolean { return this.props.lockoutEnabled; }
+
   get accessFailedCount(): number { return this.props.accessFailedCount; }
+
   get createdAt(): Date { return this.props.createdAt; }
+
   get updatedAt(): Date { return this.props.updatedAt; }
+
   get isDeleted(): boolean { return this.props.isDeleted; }
+
   get version(): number { return this.props.version; }
 
   setPasswordHash(hash: string): void {
