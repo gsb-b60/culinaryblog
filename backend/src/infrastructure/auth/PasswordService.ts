@@ -1,5 +1,5 @@
-import bcrypt from 'bcryptjs';
 import argon2 from 'argon2';
+import bcrypt from 'bcryptjs';
 
 export class PasswordService {
   private static readonly BCRYPT_ROUNDS = 12;
@@ -39,7 +39,7 @@ export class PasswordService {
   static async needsRehash(hash: string): Promise<boolean> {
     if (hash.startsWith('$argon2')) {
       try {
-        return await argon2.needsRehash(hash, {
+        return argon2.needsRehash(hash, {
           memoryCost: 2 ** 16,
           timeCost: 3,
           parallelism: 1,

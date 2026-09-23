@@ -1,4 +1,5 @@
 import { Queue } from 'bullmq';
+
 import { env } from '../../../config-middleware/config/env.js';
 
 export const imageResizeQueue = new Queue('image-resize', {

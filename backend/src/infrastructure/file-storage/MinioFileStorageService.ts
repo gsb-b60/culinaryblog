@@ -1,10 +1,12 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { env } from '../../config-middleware/config/env.js';
-import { IFileStorageService } from '../../../application/interfaces/IFileStorageService.js';
 
 export class MinioFileStorageService implements IFileStorageService {
   private client: S3Client;
+
   private bucket: string;
 
   constructor() {

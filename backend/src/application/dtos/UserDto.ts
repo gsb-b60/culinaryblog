@@ -1,4 +1,4 @@
-import { UserRole } from '../../../domain/enums/UserRole.js';
+import { UserRole } from '../../domain/enums/UserRole.js';
 
 export interface UserDto {
   id: string;

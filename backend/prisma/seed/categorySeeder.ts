@@ -1,12 +1,11 @@
 import { PrismaClient } from '@prisma/client';
-
 import { vietnameseCategories, generateSlug } from './faker-data.js';
 
 export async function seedCategories(prisma: PrismaClient): Promise<string[]> {
   const categoryIds: string[] = [];
 
   for (let i = 0; i < vietnameseCategories.length; i++) {
-    const catData = vietnameseCategories[i]!;
+    const catData = vietnameseCategories[i];
     const slug = generateSlug(catData.name);
     
     const category = await prisma.category.upsert({

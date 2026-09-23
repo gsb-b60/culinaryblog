@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import dotenv from 'dotenv';
+import { z } from 'zod';
 
 dotenv.config();
 
@@ -32,6 +32,11 @@ const envSchema = z.object({
   S3_ACCESS_KEY: z.string().optional(),
   S3_SECRET_KEY: z.string().optional(),
   S3_REGION: z.string().default('us-east-1'),
+
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
+  RATE_LIMIT_GENERAL: z.coerce.number().default(100),
+  RATE_LIMIT_AUTH: z.coerce.number().default(10),
+  RATE_LIMIT_PASSWORD_RESET: z.coerce.number().default(5),
 });
 
 export const env = envSchema.parse(process.env);

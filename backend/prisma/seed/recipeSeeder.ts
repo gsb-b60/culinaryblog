@@ -1,8 +1,6 @@
-import { PrismaClient, RecipeStatus } from '@prisma/client';
-
-import { Slug } from '../../../domain/value-objects/Slug.js';
-
-import { generateRecipeData } from './faker-data.js';
+import { PrismaClient, RecipeDifficulty, RecipeStatus } from '@prisma/client';
+import { generateRecipeData, vietnameseRecipeNames } from './faker-data.js';
+import { Slug } from '../../../../domain/value-objects/Slug.js';
 
 export async function seedRecipes(
   prisma: PrismaClient,
@@ -19,7 +17,7 @@ export async function seedRecipes(
     const recipesForThisAuthor = Math.min(recipesPerAuthor, targetRecipes - totalRecipes);
     
     for (let i = 0; i < recipesForThisAuthor; i++) {
-      const categoryId = categoryIds[Math.floor(Math.random() * categoryIds.length)]!;
+      const categoryId = categoryIds[Math.floor(Math.random() * categoryIds.length)];
       const recipeData = generateRecipeData(categoryId, authorId);
       
       const slug = Slug.create(recipeData.title).getValue();
@@ -32,7 +30,7 @@ export async function seedRecipes(
         counter++;
       }
 
-      await prisma.recipe.create({
+      const recipe = await prisma.recipe.create({
         data: {
           title: recipeData.title,
           slug: finalSlug,

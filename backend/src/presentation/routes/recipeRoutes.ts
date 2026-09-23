@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { z } from 'zod';
+
 import { commandBus } from '../../application/command-bus.js';
 import { 
   CreateRecipeCommand, 
@@ -19,8 +21,6 @@ import {
   GetRecipeBySlugQuery, 
   SearchRecipesQuery 
 } from '../../application/queries/recipes/RecipeQueries.js';
-import { authenticateJwt, AuthenticatedRequest, authorizeOwnerOrAdmin } from '../middleware/AuthMiddleware.js';
-import { generalRateLimiter, uploadRateLimiter } from '../middleware/RateLimitMiddleware.js';
 import { 
   createRecipeSchema, 
   updateRecipeSchema,
@@ -28,9 +28,8 @@ import {
   recipeSortSchema,
   paginationSchema 
 } from '../../application/validators/recipeValidators.js';
-import { RecipeDifficulty } from '../../domain/enums/RecipeDifficulty.js';
-import { RecipeStatus } from '../../domain/enums/RecipeStatus.js';
-import { z } from 'zod';
+import { authenticateJwt, AuthenticatedRequest, authorizeOwnerOrAdmin } from '../middleware/AuthMiddleware.js';
+import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 const router = Router();
 
@@ -62,21 +61,16 @@ router.get('/search', generalRateLimiter, async (req, res, next) => {
 
     const input = searchSchema.parse(req.query);
     
-    const filters = { ...input };
-    delete filters.q;
-    delete filters.sort;
-    delete filters.order;
-    delete filters.page;
-    delete filters.pageSize;
+    const { q, field, order, page, pageSize, ...filters } = input;
 
-    const sort = { field: input.field || 'createdAt', order: input.order || 'desc' };
+    const sortObj = { field: field || 'createdAt', order: order || 'desc' };
 
     const query = new SearchRecipesQuery(
-      input.q,
+      q,
       filters,
-      sort,
-      input.page,
-      input.pageSize
+      sortObj,
+      page,
+      pageSize
     );
     const result = await commandBus.executeQuery(query);
     res.json(result);
@@ -88,7 +82,7 @@ router.get('/search', generalRateLimiter, async (req, res, next) => {
 router.get('/:slug', generalRateLimiter, async (req, res, next) => {
   try {
     const query = new GetRecipeBySlugQuery(
-      req.params.slug,
+      req.params.slug!,
       (req as AuthenticatedRequest).user?.id,
       (req as AuthenticatedRequest).user?.roles[0]
     );
@@ -122,11 +116,11 @@ router.post('/', authenticateJwt, async (req: AuthenticatedRequest, res, next) =
   }
 });
 
-router.put('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id), async (req: AuthenticatedRequest, res, next) => {
+router.put('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
   try {
     const input = updateRecipeSchema.parse(req.body);
     const expectedVersion = parseInt(req.headers['if-match'] as string || '0');
-    const command = new UpdateRecipeCommand(req.params.id, req.user!.id, input, expectedVersion);
+    const command = new UpdateRecipeCommand(req.params.id!, req.user!.id, input, expectedVersion);
     await commandBus.executeCommand(command);
     res.json({ message: 'Recipe updated successfully' });
   } catch (error) {
@@ -134,9 +128,9 @@ router.put('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.par
   }
 });
 
-router.patch('/:id/publish', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id), async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/publish', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
   try {
-    const command = new PublishRecipeCommand(req.params.id, req.user!.id);
+    const command = new PublishRecipeCommand(req.params.id!, req.user!.id);
     await commandBus.executeCommand(command);
     res.json({ message: 'Recipe published successfully' });
   } catch (error) {
@@ -144,9 +138,9 @@ router.patch('/:id/publish', authenticateJwt, authorizeOwnerOrAdmin(async (req) 
   }
 });
 
-router.patch('/:id/unpublish', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id), async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/unpublish', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
   try {
-    const command = new UnpublishRecipeCommand(req.params.id, req.user!.id);
+    const command = new UnpublishRecipeCommand(req.params.id!, req.user!.id);
     await commandBus.executeCommand(command);
     res.json({ message: 'Recipe unpublished successfully' });
   } catch (error) {
@@ -154,9 +148,9 @@ router.patch('/:id/unpublish', authenticateJwt, authorizeOwnerOrAdmin(async (req
   }
 });
 
-router.patch('/:id/archive', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id), async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/archive', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
   try {
-    const command = new ArchiveRecipeCommand(req.params.id, req.user!.id);
+    const command = new ArchiveRecipeCommand(req.params.id!, req.user!.id);
     await commandBus.executeCommand(command);
     res.json({ message: 'Recipe archived successfully' });
   } catch (error) {
@@ -164,9 +158,9 @@ router.patch('/:id/archive', authenticateJwt, authorizeOwnerOrAdmin(async (req) 
   }
 });
 
-router.delete('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id), async (req: AuthenticatedRequest, res, next) => {
+router.delete('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
   try {
-    const command = new DeleteRecipeCommand(req.params.id, req.user!.id);
+    const command = new DeleteRecipeCommand(req.params.id!, req.user!.id);
     await commandBus.executeCommand(command);
     res.status(204).send();
   } catch (error) {
@@ -175,7 +169,7 @@ router.delete('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.
 });
 
 // Recipe Steps
-router.post('/:id/steps', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id), async (req: AuthenticatedRequest, res, next) => {
+router.post('/:id/steps', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
   try {
     const stepSchema = z.object({
       title: z.string().min(1).max(200),
@@ -186,7 +180,7 @@ router.post('/:id/steps', authenticateJwt, authorizeOwnerOrAdmin(async (req) => 
     
     const input = stepSchema.parse(req.body);
     const command = new AddRecipeStepCommand(
-      req.params.id,
+      req.params.id!,
       req.user!.id,
       input.title,
       input.description,
@@ -200,7 +194,7 @@ router.post('/:id/steps', authenticateJwt, authorizeOwnerOrAdmin(async (req) => 
   }
 });
 
-router.put('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id), async (req: AuthenticatedRequest, res, next) => {
+router.put('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
   try {
     const stepSchema = z.object({
       stepNumber: z.number().int().positive().optional(),
@@ -212,9 +206,9 @@ router.put('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async (r
     
     const input = stepSchema.parse(req.body);
     const command = new UpdateRecipeStepCommand(
-      req.params.id,
+      req.params.id!,
       req.user!.id,
-      req.params.stepId,
+      req.params.stepId!,
       input.stepNumber,
       input.title,
       input.description,
@@ -228,9 +222,9 @@ router.put('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async (r
   }
 });
 
-router.delete('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id), async (req: AuthenticatedRequest, res, next) => {
+router.delete('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
   try {
-    const command = new DeleteRecipeStepCommand(req.params.id, req.user!.id, req.params.stepId);
+    const command = new DeleteRecipeStepCommand(req.params.id!, req.user!.id, req.params.stepId!);
     await commandBus.executeCommand(command);
     res.status(204).send();
   } catch (error) {
@@ -239,7 +233,7 @@ router.delete('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async
 });
 
 // Recipe Ingredients
-router.post('/:id/ingredients', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id), async (req: AuthenticatedRequest, res, next) => {
+router.post('/:id/ingredients', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
   try {
     const ingredientSchema = z.object({
       name: z.string().min(1).max(200),
@@ -251,7 +245,7 @@ router.post('/:id/ingredients', authenticateJwt, authorizeOwnerOrAdmin(async (re
     
     const input = ingredientSchema.parse(req.body);
     const command = new AddRecipeIngredientCommand(
-      req.params.id,
+      req.params.id!,
       req.user!.id,
       input.name,
       input.quantity,
@@ -266,7 +260,7 @@ router.post('/:id/ingredients', authenticateJwt, authorizeOwnerOrAdmin(async (re
   }
 });
 
-router.put('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id), async (req: AuthenticatedRequest, res, next) => {
+router.put('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
   try {
     const ingredientSchema = z.object({
       name: z.string().min(1).max(200).optional(),
@@ -278,9 +272,9 @@ router.put('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAd
     
     const input = ingredientSchema.parse(req.body);
     const command = new UpdateRecipeIngredientCommand(
-      req.params.id,
+      req.params.id!,
       req.user!.id,
-      req.params.ingredientId,
+      req.params.ingredientId!,
       input.name,
       input.quantity,
       input.unit,
@@ -294,9 +288,9 @@ router.put('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAd
   }
 });
 
-router.delete('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id), async (req: AuthenticatedRequest, res, next) => {
+router.delete('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
   try {
-    const command = new DeleteRecipeIngredientCommand(req.params.id, req.user!.id, req.params.ingredientId);
+    const command = new DeleteRecipeIngredientCommand(req.params.id!, req.user!.id, req.params.ingredientId!);
     await commandBus.executeCommand(command);
     res.status(204).send();
   } catch (error) {

@@ -36,15 +36,25 @@ export class RecipeStep {
   }
 
   get id(): string { return this.props.id; }
+
   get recipeId(): string { return this.props.recipeId; }
+
   get stepNumber(): number { return this.props.stepNumber; }
+
   get title(): string { return this.props.title; }
+
   get description(): string { return this.props.description; }
+
   get timerMinutes(): number | undefined { return this.props.timerMinutes; }
+
   get imageUrl(): string | undefined { return this.props.imageUrl; }
+
   get createdAt(): Date { return this.props.createdAt; }
+
   get updatedAt(): Date { return this.props.updatedAt; }
+
   get isDeleted(): boolean { return this.props.isDeleted; }
+
   get version(): number { return this.props.version; }
 
   update(data: Partial<Omit<RecipeStepProps, 'id' | 'recipeId' | 'createdAt' | 'isDeleted' | 'version'>>): void {

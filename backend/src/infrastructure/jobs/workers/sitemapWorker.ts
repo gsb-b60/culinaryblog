@@ -1,6 +1,7 @@
 import { Worker, Job } from 'bullmq';
+
 import { env } from '../../../config-middleware/config/env.js';
-import { sitemapQueue, SitemapJobData } from '../queues/sitemapQueue.js';
+import { SitemapJobData } from '../queues/sitemapQueue.js';
 
 const worker = new Worker<SitemapJobData>(
   'sitemap',

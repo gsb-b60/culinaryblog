@@ -1,5 +1,5 @@
-import { Recipe, RecipeProps } from '../entities/Recipe.js';
 import { PagedResult } from '../../application/dtos/PagedResult.js';
+import { Recipe, RecipeProps } from '../entities/Recipe.js';
 
 export interface RecipeFilters {
   categoryId?: string;

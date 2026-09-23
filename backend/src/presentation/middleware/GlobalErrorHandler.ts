@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError } from '../../config-middleware/shared/errors/AppError.js';
-import { logger } from '../../config-middleware/config/logger.js';
 import { ZodError } from 'zod';
+
+import { logger } from '../../config-middleware/config/logger.js';
+import { AppError } from '../../config-middleware/shared/errors/AppError.js';
 
 export function globalErrorHandler(
   err: Error,

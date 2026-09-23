@@ -39,14 +39,23 @@ export class Category {
   }
 
   get id(): string { return this.props.id; }
+
   get name(): string { return this.props.name; }
+
   get slug(): Slug { return this.props.slug; }
+
   get description(): string | undefined { return this.props.description; }
+
   get imageUrl(): string | undefined { return this.props.imageUrl; }
+
   get orderIndex(): number { return this.props.orderIndex; }
+
   get createdAt(): Date { return this.props.createdAt; }
+
   get updatedAt(): Date { return this.props.updatedAt; }
+
   get isDeleted(): boolean { return this.props.isDeleted; }
+
   get version(): number { return this.props.version; }
 
   update(data: Partial<Omit<CategoryProps, 'id' | 'slug' | 'createdAt' | 'isDeleted' | 'version'>>): void {

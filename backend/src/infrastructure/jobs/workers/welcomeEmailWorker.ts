@@ -1,7 +1,8 @@
 import { Worker, Job } from 'bullmq';
+
 import { env } from '../../../config-middleware/config/env.js';
 import { emailService } from '../../email/NodemailerEmailService.js';
-import { welcomeEmailQueue, WelcomeEmailJobData } from '../queues/welcomeEmailQueue.js';
+import { WelcomeEmailJobData } from '../queues/welcomeEmailQueue.js';
 
 const worker = new Worker<WelcomeEmailJobData>(
   'welcome-email',

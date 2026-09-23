@@ -1,12 +1,14 @@
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+
+import jwt from 'jsonwebtoken';
+
+import { IJwtService, JwtPayload } from '../../application/interfaces/IJwtService.js';
 import { env } from '../../config-middleware/config/env.js';
-import { IJwtService, JwtPayload } from '../../../application/interfaces/IJwtService.js';
 
 export class JwtService implements IJwtService {
   generateAccessToken(payload: JwtPayload): string {
     return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
-      expiresIn: env.JWT_ACCESS_EXPIRES_IN,
+      expiresIn: env.JWT_ACCESS_EXPIRES_IN as jwt.SignOptions['expiresIn'],
       algorithm: 'HS256',
     });
   }

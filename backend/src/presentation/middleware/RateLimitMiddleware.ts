@@ -1,4 +1,5 @@
 import rateLimit from 'express-rate-limit';
+
 import { env } from '../../config-middleware/config/env.js';
 
 export const generalRateLimiter = rateLimit({

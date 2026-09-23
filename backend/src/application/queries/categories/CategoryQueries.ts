@@ -1,7 +1,7 @@
-import { Query } from '../command-bus.js';
-import { CategoryFilters } from '../../domain/repositories/ICategoryRepository.js';
+import { CategoryFilters } from '../../../domain/repositories/ICategoryRepository.js';
+import { Query } from '../../command-bus.js';
 
-export class GetCategoriesQuery extends Query<import('../dtos/PagedResult.js').PagedResult<import('../dtos/CategoryDto.js').CategoryDto>> {
+export class GetCategoriesQuery extends Query<import('../../dtos/PagedResult.js').PagedResult<import('../../dtos/CategoryDto.js').CategoryDto>> {
   readonly type = 'GetCategoriesQuery';
 
   constructor(
@@ -13,7 +13,7 @@ export class GetCategoriesQuery extends Query<import('../dtos/PagedResult.js').P
   }
 }
 
-export class GetCategoryBySlugQuery extends Query<import('../dtos/CategoryDto.js').CategoryDetailDto | null> {
+export class GetCategoryBySlugQuery extends Query<import('../../dtos/CategoryDto.js').CategoryDetailDto | null> {
   readonly type = 'GetCategoryBySlugQuery';
 
   constructor(

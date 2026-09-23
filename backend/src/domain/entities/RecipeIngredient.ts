@@ -36,15 +36,25 @@ export class RecipeIngredient {
   }
 
   get id(): string { return this.props.id; }
+
   get recipeId(): string { return this.props.recipeId; }
+
   get name(): string { return this.props.name; }
+
   get quantity(): number | undefined { return this.props.quantity; }
+
   get unit(): string | undefined { return this.props.unit; }
+
   get notes(): string | undefined { return this.props.notes; }
+
   get orderIndex(): number { return this.props.orderIndex; }
+
   get createdAt(): Date { return this.props.createdAt; }
+
   get updatedAt(): Date { return this.props.updatedAt; }
+
   get isDeleted(): boolean { return this.props.isDeleted; }
+
   get version(): number { return this.props.version; }
 
   update(data: Partial<Omit<RecipeIngredientProps, 'id' | 'recipeId' | 'createdAt' | 'isDeleted' | 'version'>>): void {

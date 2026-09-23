@@ -1,5 +1,5 @@
-import { RecipeStatus } from '../enums/RecipeStatus.js';
 import { RecipeDifficulty } from '../enums/RecipeDifficulty.js';
+import { RecipeStatus } from '../enums/RecipeStatus.js';
 import { Slug } from '../value-objects/Slug.js';
 
 export interface RecipeNutrition {
@@ -59,22 +59,39 @@ export class Recipe {
   }
 
   get id(): string { return this.props.id; }
+
   get title(): string { return this.props.title; }
+
   get slug(): Slug { return this.props.slug; }
+
   get description(): string { return this.props.description; }
+
   get instructions(): string | undefined { return this.props.instructions; }
+
   get prepTime(): number { return this.props.prepTime; }
+
   get cookTime(): number { return this.props.cookTime; }
+
   get servings(): number { return this.props.servings; }
+
   get difficulty(): RecipeDifficulty { return this.props.difficulty; }
+
   get status(): RecipeStatus { return this.props.status; }
+
   get categoryId(): string { return this.props.categoryId; }
+
   get authorId(): string { return this.props.authorId; }
+
   get nutrition(): RecipeNutrition | undefined { return this.props.nutrition; }
+
   get publishedAt(): Date | undefined { return this.props.publishedAt; }
+
   get createdAt(): Date { return this.props.createdAt; }
+
   get updatedAt(): Date { return this.props.updatedAt; }
+
   get isDeleted(): boolean { return this.props.isDeleted; }
+
   get version(): number { return this.props.version; }
 
   get totalTime(): number {

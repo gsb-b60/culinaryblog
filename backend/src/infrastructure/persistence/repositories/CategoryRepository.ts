@@ -1,7 +1,9 @@
 import { PrismaClient, Category as PrismaCategory } from '@prisma/client';
-import { ICategoryRepository, CategoryFilters } from '../../../domain/repositories/ICategoryRepository.js';
-import { Category, CategoryProps } from '../../../domain/entities/Category.js';
+
 import { PagedResult, createPagedResult } from '../../../application/dtos/PagedResult.js';
+import { Category, CategoryProps } from '../../../domain/entities/Category.js';
+import { ICategoryRepository, CategoryFilters } from '../../../domain/repositories/ICategoryRepository.js';
+import { Slug } from '../../../domain/value-objects/Slug.js';
 
 export class CategoryRepository implements ICategoryRepository {
   constructor(private prisma: PrismaClient) {}
@@ -10,7 +12,7 @@ export class CategoryRepository implements ICategoryRepository {
     const props: CategoryProps = {
       id: prismaCategory.id,
       name: prismaCategory.name,
-      slug: prismaCategory.slug,
+      slug: Slug.fromExisting(prismaCategory.slug),
       description: prismaCategory.description ?? undefined,
       imageUrl: prismaCategory.imageUrl ?? undefined,
       orderIndex: prismaCategory.orderIndex,
@@ -79,7 +81,7 @@ export class CategoryRepository implements ICategoryRepository {
     ]);
 
     const categories = items.map(c => this.toDomain(c));
-    const dtos = categories.map((c, i) => this.toDto(c, items[i]._count?.recipes));
+    const dtos = categories.map((c, i) => this.toDto(c, items[i]!._count?.recipes ?? 0));
     
     return createPagedResult(dtos as any, page, pageSize, totalCount);
   }
@@ -94,9 +96,8 @@ export class CategoryRepository implements ICategoryRepository {
         },
       },
     });
-    return categories.map((c, i) => {
-      const domain = this.toDomain(c);
-      return domain; // Could add recipeCount if needed
+    return categories.map((c) => {
+      return this.toDomain(c); // Could add recipeCount if needed
     });
   }
 

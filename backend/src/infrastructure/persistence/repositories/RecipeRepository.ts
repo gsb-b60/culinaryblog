@@ -1,7 +1,11 @@
 import { PrismaClient, Recipe as PrismaRecipe, Prisma } from '@prisma/client';
-import { IRecipeRepository, RecipeFilters, RecipeSortOptions } from '../../../domain/repositories/IRecipeRepository.js';
-import { Recipe, RecipeProps } from '../../../domain/entities/Recipe.js';
+
 import { PagedResult, createPagedResult } from '../../../application/dtos/PagedResult.js';
+import { Recipe, RecipeProps } from '../../../domain/entities/Recipe.js';
+import { IRecipeRepository, RecipeFilters, RecipeSortOptions } from '../../../domain/repositories/IRecipeRepository.js';
+import { RecipeDifficulty } from '../../../domain/enums/RecipeDifficulty.js';
+import { RecipeStatus } from '../../../domain/enums/RecipeStatus.js';
+import { Slug } from '../../../domain/value-objects/Slug.js';
 
 export class RecipeRepository implements IRecipeRepository {
   constructor(private prisma: PrismaClient) {}
@@ -13,14 +17,14 @@ export class RecipeRepository implements IRecipeRepository {
     const props: RecipeProps = {
       id: prismaRecipe.id,
       title: prismaRecipe.title,
-      slug: prismaRecipe.slug,
+      slug: Slug.fromExisting(prismaRecipe.slug),
       description: prismaRecipe.description,
       instructions: prismaRecipe.instructions ?? undefined,
       prepTime: prismaRecipe.prepTime,
       cookTime: prismaRecipe.cookTime,
       servings: prismaRecipe.servings,
-      difficulty: prismaRecipe.difficulty,
-      status: prismaRecipe.status,
+      difficulty: prismaRecipe.difficulty as RecipeDifficulty,
+      status: prismaRecipe.status as RecipeStatus,
       categoryId: prismaRecipe.categoryId,
       authorId: prismaRecipe.authorId,
       nutrition: {
@@ -37,10 +41,14 @@ export class RecipeRepository implements IRecipeRepository {
       isDeleted: prismaRecipe.isDeleted,
       version: prismaRecipe.version,
     };
-    return Recipe.reconstruct(props);
+    const recipe = Recipe.reconstruct(props);
+    // Attach author and category names for summary DTO
+    (recipe as any)._authorName = prismaRecipe.author?.displayName;
+    (recipe as any)._categoryName = prismaRecipe.category?.name;
+    return recipe;
   }
 
-  private toSummaryDto(recipe: Recipe, categoryName?: string, authorName?: string) {
+  private toSummaryDto(recipe: Recipe, categoryName: string, authorName: string) {
     return {
       id: recipe.id,
       title: recipe.title,
@@ -110,7 +118,7 @@ export class RecipeRepository implements IRecipeRepository {
     ]);
 
     const recipes = items.map(r => this.toDomain(r));
-    const summaries = recipes.map(r => this.toSummaryDto(r, r.categoryId, r.authorId));
+    const summaries = recipes.map(r => this.toSummaryDto(r, (r as any)._categoryName || r.categoryId, (r as any)._authorName || r.authorId));
     
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
@@ -144,7 +152,7 @@ export class RecipeRepository implements IRecipeRepository {
     ]);
 
     const recipes = items.map(r => this.toDomain(r));
-    const summaries = recipes.map(r => this.toSummaryDto(r, r.categoryId, r.authorId));
+    const summaries = recipes.map(r => this.toSummaryDto(r, (r as any)._categoryName || r.categoryId, (r as any)._authorName || r.authorId));
     
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
@@ -174,7 +182,7 @@ export class RecipeRepository implements IRecipeRepository {
     ]);
 
     const recipes = items.map(r => this.toDomain(r));
-    const summaries = recipes.map(r => this.toSummaryDto(r, r.categoryId, r.authorId));
+    const summaries = recipes.map(r => this.toSummaryDto(r, (r as any)._categoryName || r.categoryId, (r as any)._authorName || r.authorId));
     
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
@@ -182,7 +190,7 @@ export class RecipeRepository implements IRecipeRepository {
   async save(recipe: Recipe): Promise<Recipe> {
     const props = recipe.toPersistence();
     
-    const data: Prisma.RecipeCreateInput = {
+    const data: any = {
       id: props.id,
       title: props.title,
       slug: props.slug.getValue(),
@@ -193,7 +201,7 @@ export class RecipeRepository implements IRecipeRepository {
       servings: props.servings,
       difficulty: props.difficulty,
       status: props.status,
-      categoryId: props.categoryId,
+      category: { connect: { id: props.categoryId } },
       authorId: props.authorId,
       nutritionCalories: props.nutrition?.calories,
       nutritionProtein: props.nutrition?.protein,

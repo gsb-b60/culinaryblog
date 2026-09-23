@@ -1,9 +1,10 @@
-import { Strategy as LocalStrategy } from 'passport-local';
-import { PassportStatic } from 'passport';
-import { UserRepository } from '../../persistence/repositories/UserRepository.js';
 import { PrismaClient } from '@prisma/client';
-import { PasswordService } from '../PasswordService.js';
+import { PassportStatic } from 'passport';
+import { Strategy as LocalStrategy } from 'passport-local';
+
 import { EmailAddress } from '../../../domain/value-objects/EmailAddress.js';
+import { UserRepository } from '../../persistence/repositories/UserRepository.js';
+import { PasswordService } from '../PasswordService.js';
 
 const prisma = new PrismaClient();
 const userRepository = new UserRepository(prisma);
@@ -16,7 +17,7 @@ export function configureLocalStrategy(passport: PassportStatic): void {
         passwordField: 'password',
         passReqToCallback: true,
       },
-      async (req, email, password, done) => {
+      async (_req, email, password, done) => {
         try {
           const emailVO = EmailAddress.create(email);
           const user = await userRepository.findByEmail(emailVO);

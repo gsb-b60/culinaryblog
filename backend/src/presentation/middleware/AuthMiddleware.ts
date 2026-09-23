@@ -1,9 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import passport from 'passport';
-import { JwtService } from '../../../infrastructure/auth/JwtService.js';
-import { UserRole } from '../../../domain/enums/UserRole.js';
 
-const jwtService = new JwtService();
+import { UserRole } from '../../domain/index.js';
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface User {
+      id: string;
+      email: string;
+      displayName: string;
+      roles: UserRole[];
+      isActive: boolean;
+    }
+  }
+}
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -18,7 +29,7 @@ export interface AuthenticatedRequest extends Request {
 export function authenticateJwt(
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void {
   passport.authenticate('jwt', { session: false }, (err: Error | null, user: any) => {
     if (err || !user) {
@@ -35,11 +46,7 @@ export function authenticateJwt(
   })(req, res, next);
 }
 
-export function optionalAuth(
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-): void {
+export function optionalAuth(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
   passport.authenticate('jwt', { session: false }, (err: Error | null, user: any) => {
     if (!err && user) {
       req.user = user;
@@ -60,7 +67,7 @@ export function authorize(...allowedRoles: UserRole[]) {
       return;
     }
 
-    const hasRole = req.user.roles.some(role => allowedRoles.includes(role));
+    const hasRole = req.user.roles.some((role) => allowedRoles.includes(role));
     if (!hasRole) {
       res.status(403).json({
         type: 'https://tools.ietf.org/html/rfc7807#section-3.1',
@@ -75,7 +82,9 @@ export function authorize(...allowedRoles: UserRole[]) {
   };
 }
 
-export function authorizeOwnerOrAdmin(getResourceOwnerId: (req: AuthenticatedRequest) => Promise<string | null>) {
+export function authorizeOwnerOrAdmin(
+  getResourceOwnerId: (req: AuthenticatedRequest) => Promise<string | null>,
+) {
   return async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     if (!req.user) {
       res.status(401).json({

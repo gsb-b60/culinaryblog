@@ -30,7 +30,8 @@ export class EmailAddress {
   }
 
   getDomain(): string {
-    return this.value.split('@')[1];
+    const parts = this.value.split('@');
+    return parts[1] ?? '';
   }
 
   equals(other: EmailAddress): boolean {
