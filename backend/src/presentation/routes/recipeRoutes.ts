@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { commandBus } from '../../application/command-bus.js';
+import { UserRole } from '../../domain/index.js';
 import { 
   CreateRecipeCommand, 
   UpdateRecipeCommand, 
@@ -251,7 +252,8 @@ router.post('/:id/ingredients', authenticateJwt, authorizeOwnerOrAdmin(async (re
       input.quantity,
       input.unit,
       input.notes,
-      input.orderIndex
+      input.orderIndex,
+      req.user!.roles.includes(UserRole.ADMIN)
     );
     const ingredient = await commandBus.executeCommand(command);
     res.status(201).json(ingredient);
@@ -279,7 +281,8 @@ router.put('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAd
       input.quantity,
       input.unit,
       input.notes,
-      input.orderIndex
+      input.orderIndex,
+      req.user!.roles.includes(UserRole.ADMIN)
     );
     const ingredient = await commandBus.executeCommand(command);
     res.json(ingredient);
@@ -290,7 +293,12 @@ router.put('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAd
 
 router.delete('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
   try {
-    const command = new DeleteRecipeIngredientCommand(req.params.id!, req.user!.id, req.params.ingredientId!);
+    const command = new DeleteRecipeIngredientCommand(
+      req.params.id!,
+      req.user!.id,
+      req.params.ingredientId!,
+      req.user!.roles.includes(UserRole.ADMIN),
+    );
     await commandBus.executeCommand(command);
     res.status(204).send();
   } catch (error) {

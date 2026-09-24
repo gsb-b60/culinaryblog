@@ -18,7 +18,7 @@ export class AddRecipeIngredientCommandHandler implements ICommandHandler<AddRec
       throw new NotFoundError('Recipe');
     }
 
-    if (recipe.authorId !== command.authorId) {
+    if (!command.isAdmin && recipe.authorId !== command.authorId) {
       throw new ForbiddenError('You are not allowed to modify this recipe');
     }
 
@@ -61,7 +61,7 @@ export class UpdateRecipeIngredientCommandHandler implements ICommandHandler<Upd
       throw new NotFoundError('Recipe');
     }
 
-    if (recipe.authorId !== command.authorId) {
+    if (!command.isAdmin && recipe.authorId !== command.authorId) {
       throw new ForbiddenError('You are not allowed to modify this recipe');
     }
 
@@ -118,7 +118,7 @@ export class DeleteRecipeIngredientCommandHandler implements ICommandHandler<Del
       throw new NotFoundError('Recipe');
     }
 
-    if (recipe.authorId !== command.authorId) {
+    if (!command.isAdmin && recipe.authorId !== command.authorId) {
       throw new ForbiddenError('You are not allowed to modify this recipe');
     }
 
