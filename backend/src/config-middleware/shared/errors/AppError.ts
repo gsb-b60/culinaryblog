@@ -49,7 +49,7 @@ export class ValidationError extends AppError {
   public readonly errors: Record<string, string[]>;
 
   constructor(errors: Record<string, string[]>) {
-    super(400, 'Validation failed', 'VALIDATION_ERROR', { 
+    super(422, 'Validation failed', 'VALIDATION_ERROR', { 
       title: 'Validation Error',
       type: 'https://tools.ietf.org/html/rfc7807#section-3.1',
       errors 

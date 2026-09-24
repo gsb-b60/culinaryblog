@@ -1,5 +1,5 @@
 import { Command } from '../../command-bus.js';
-import { CreateRecipeInput, UpdateRecipeInput } from '../../dtos/RecipeDto.js';
+import { CreateRecipeInput, RecipeIngredientDto, UpdateRecipeInput } from '../../dtos/RecipeDto.js';
 
 export class CreateRecipeCommand extends Command<string> {
   readonly type = 'CreateRecipeCommand';
@@ -113,7 +113,7 @@ export class DeleteRecipeStepCommand extends Command<void> {
   }
 }
 
-export class AddRecipeIngredientCommand extends Command<string> {
+export class AddRecipeIngredientCommand extends Command<RecipeIngredientDto> {
   readonly type = 'AddRecipeIngredientCommand';
 
   constructor(
@@ -123,13 +123,14 @@ export class AddRecipeIngredientCommand extends Command<string> {
     public readonly quantity?: number,
     public readonly unit?: string,
     public readonly notes?: string,
-    public readonly orderIndex: number = 0
+    public readonly orderIndex: number = 0,
+    public readonly isAdmin = false
   ) {
     super();
   }
 }
 
-export class UpdateRecipeIngredientCommand extends Command<void> {
+export class UpdateRecipeIngredientCommand extends Command<RecipeIngredientDto> {
   readonly type = 'UpdateRecipeIngredientCommand';
 
   constructor(
@@ -140,7 +141,8 @@ export class UpdateRecipeIngredientCommand extends Command<void> {
     public readonly quantity?: number,
     public readonly unit?: string,
     public readonly notes?: string,
-    public readonly orderIndex?: number
+    public readonly orderIndex?: number,
+    public readonly isAdmin = false
   ) {
     super();
   }
@@ -152,7 +154,8 @@ export class DeleteRecipeIngredientCommand extends Command<void> {
   constructor(
     public readonly recipeId: string,
     public readonly authorId: string,
-    public readonly ingredientId: string
+    public readonly ingredientId: string,
+    public readonly isAdmin = false
   ) {
     super();
   }
