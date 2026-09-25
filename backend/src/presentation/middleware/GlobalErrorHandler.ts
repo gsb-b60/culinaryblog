@@ -8,7 +8,7 @@ export function globalErrorHandler(
   err: Error,
   _req: Request,
   res: Response,
-  _next: NextFunction
+  _next: NextFunction,
 ): void {
   // Zod validation errors
   if (err instanceof ZodError) {
@@ -18,7 +18,7 @@ export function globalErrorHandler(
       if (!errors[path]) errors[path] = [];
       errors[path].push(issue.message);
     }
-    
+
     res.status(422).json({
       type: 'https://tools.ietf.org/html/rfc7807#section-3.1',
       title: 'Validation Error',
@@ -35,6 +35,7 @@ export function globalErrorHandler(
       type: err.type || 'about:blank',
       title: err.title || 'Error',
       status: err.statusCode,
+      code: err.code,
       detail: err.message,
       errors: err.errors,
     });

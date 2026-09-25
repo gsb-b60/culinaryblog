@@ -29,9 +29,18 @@ import {
   paginationSchema 
 } from '../../application/validators/recipeValidators.js';
 import { authenticateJwt, AuthenticatedRequest, authorizeOwnerOrAdmin } from '../middleware/AuthMiddleware.js';
+import { getContainer } from '../di/container.js';
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 const router = Router();
+
+/**
+ * Resolve the recipe author for resource authorization. This must return
+ * authorId, not the recipe id, when checking whether the caller is the owner.
+ */
+async function getRecipeAuthorId(req: AuthenticatedRequest): Promise<string | null> {
+  return getContainer().recipeRepository.findAuthorId(req.params.id!);
+}
 
 // Public routes
 router.get('/', generalRateLimiter, async (req, res, next) => {
@@ -128,21 +137,21 @@ router.put('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.par
   }
 });
 
-router.patch('/:id/publish', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/publish', authenticateJwt, authorizeOwnerOrAdmin(getRecipeAuthorId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const command = new PublishRecipeCommand(req.params.id!, req.user!.id);
-    await commandBus.executeCommand(command);
-    res.json({ message: 'Recipe published successfully' });
+    const recipe = await commandBus.executeCommand(command);
+    res.status(200).json(recipe);
   } catch (error) {
     next(error);
   }
 });
 
-router.patch('/:id/unpublish', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/unpublish', authenticateJwt, authorizeOwnerOrAdmin(getRecipeAuthorId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const command = new UnpublishRecipeCommand(req.params.id!, req.user!.id);
-    await commandBus.executeCommand(command);
-    res.json({ message: 'Recipe unpublished successfully' });
+    const recipe = await commandBus.executeCommand(command);
+    res.status(200).json(recipe);
   } catch (error) {
     next(error);
   }

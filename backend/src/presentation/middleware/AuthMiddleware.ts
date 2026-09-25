@@ -103,7 +103,14 @@ export function authorizeOwnerOrAdmin(
     }
 
     const ownerId = await getResourceOwnerId(req);
-    if (ownerId && ownerId === req.user.id) {
+    // A missing resource is passed to the handler so it can return a proper
+    // 404 response instead of incorrectly reporting a forbidden request.
+    if (ownerId === null) {
+      next();
+      return;
+    }
+
+    if (ownerId === req.user.id) {
       next();
       return;
     }

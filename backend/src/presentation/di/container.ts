@@ -2,6 +2,11 @@ import { PrismaClient } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
 
 import { commandBus } from '../../application/command-bus.js';
+import {
+  PublishRecipeCommandHandler,
+  UnpublishRecipeCommandHandler,
+} from '../../application/handlers/recipes/RecipeCommandHandlers.js';
+import { cacheInvalidationMiddleware } from '../../application/pipelines/pipelineMiddleware.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
@@ -46,6 +51,18 @@ export function createContainer(): Container {
   const fileStorageService = new MinioFileStorageService();
   const emailService = new NodemailerEmailService();
 
+  // Register the lifecycle middleware and handlers once for the singleton bus.
+  // The invalidation middleware runs only after a command succeeds.
+  commandBus.use(cacheInvalidationMiddleware);
+  commandBus.registerCommandHandler(
+    'PublishRecipeCommand',
+    new PublishRecipeCommandHandler(recipeRepository),
+  );
+  commandBus.registerCommandHandler(
+    'UnpublishRecipeCommand',
+    new UnpublishRecipeCommandHandler(recipeRepository),
+  );
+
   container = {
     prisma,
     recipeRepository,
@@ -77,11 +94,7 @@ export async function destroyContainer(): Promise<void> {
   }
 }
 
-export function containerMiddleware(
-  req: Request,
-  _res: Response,
-  next: NextFunction
-): void {
+export function containerMiddleware(req: Request, _res: Response, next: NextFunction): void {
   (req as any).container = getContainer();
   next();
 }

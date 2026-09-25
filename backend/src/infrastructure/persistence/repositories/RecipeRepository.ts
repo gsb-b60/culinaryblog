@@ -94,6 +94,26 @@ export class RecipeRepository implements IRecipeRepository {
     return recipe ? this.toDomain(recipe) : null;
   }
 
+  /**
+   * Reads only the author identifier for resource authorization. Keeping this
+   * query separate avoids loading the full recipe just to check ownership.
+   */
+  async findAuthorId(id: string): Promise<string | null> {
+    const recipe = await this.prisma.recipe.findUnique({
+      where: { id, isDeleted: false },
+      select: { authorId: true },
+    });
+    return recipe?.authorId ?? null;
+  }
+
+  /** Counts only active execution steps because soft-deleted rows are not valid steps. */
+  async hasActiveSteps(recipeId: string): Promise<boolean> {
+    const count = await this.prisma.recipeStep.count({
+      where: { recipeId, isDeleted: false },
+    });
+    return count > 0;
+  }
+
   async findMany(
     filters: RecipeFilters,
     sort: RecipeSortOptions,

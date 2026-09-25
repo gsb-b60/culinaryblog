@@ -1,5 +1,11 @@
 import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
-import { MiddlewareHandler, Query, Command, ICacheable, ICacheInvalidator } from '../command-bus.js';
+import {
+  MiddlewareHandler,
+  Query,
+  Command,
+  ICacheable,
+  ICacheInvalidator,
+} from '../command-bus.js';
 
 export const loggingMiddleware: MiddlewareHandler<any, any> = async (_request, next) => next();
 
@@ -32,14 +38,22 @@ export const cachingMiddleware: MiddlewareHandler<Query<any>, any> = async (quer
   return result;
 };
 
-export const cacheInvalidationMiddleware: MiddlewareHandler<Command<any>, any> = async (command, next) => {
+export const cacheInvalidationMiddleware: MiddlewareHandler<Command<any>, any> = async (
+  command,
+  next,
+) => {
   const result = await next();
 
   if (isCacheInvalidator(command)) {
     const keysToInvalidate = command.getCacheKeysToInvalidate();
     for (const key of keysToInvalidate) {
-      await cacheService.delete(key);
-      // logger.debug({ cacheKey: key, message: 'Cache invalidated' });
+      // Wildcard keys invalidate every public listing/detail entry that can
+      // contain the recipe; exact keys are also supported for future commands.
+      if (key.includes('*')) {
+        await cacheService.deletePattern(key);
+      } else {
+        await cacheService.delete(key);
+      }
     }
   }
 
@@ -47,7 +61,9 @@ export const cacheInvalidationMiddleware: MiddlewareHandler<Command<any>, any> =
 };
 
 function isCacheable(query: any): query is Query<any> & ICacheable {
-  return query && typeof query.getCacheKey === 'function' && typeof query.getCacheTtl === 'function';
+  return (
+    query && typeof query.getCacheKey === 'function' && typeof query.getCacheTtl === 'function'
+  );
 }
 
 function isCacheInvalidator(command: any): command is Command<any> & ICacheInvalidator {

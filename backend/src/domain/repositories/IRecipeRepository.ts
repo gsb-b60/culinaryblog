@@ -21,24 +21,26 @@ export interface RecipeSortOptions {
 export interface IRecipeRepository {
   findById(id: string): Promise<Recipe | null>;
   findBySlug(slug: string): Promise<Recipe | null>;
+  findAuthorId(id: string): Promise<string | null>;
+  hasActiveSteps(recipeId: string): Promise<boolean>;
   findMany(
     filters: RecipeFilters,
     sort: RecipeSortOptions,
     page: number,
-    pageSize: number
+    pageSize: number,
   ): Promise<PagedResult<Recipe>>;
   findPublishedByCategory(
     categoryId: string,
     page: number,
     pageSize: number,
-    sort?: RecipeSortOptions
+    sort?: RecipeSortOptions,
   ): Promise<PagedResult<Recipe>>;
   search(
     query: string,
     filters: RecipeFilters,
     sort: RecipeSortOptions,
     page: number,
-    pageSize: number
+    pageSize: number,
   ): Promise<PagedResult<Recipe>>;
   save(recipe: Recipe): Promise<Recipe>;
   delete(id: string): Promise<void>;
