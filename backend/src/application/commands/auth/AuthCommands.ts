@@ -1,7 +1,13 @@
 import { Command } from '../../command-bus.js';
-import { RegisterInput, LoginInput, RefreshTokenInput, GoogleAuthInput } from '../../dtos/UserDto.js';
+import {
+  AuthResponseDto,
+  RegisterInput,
+  LoginInput,
+  RefreshTokenInput,
+  GoogleAuthInput,
+} from '../../dtos/UserDto.js';
 
-export class RegisterCommand extends Command<string> {
+export class RegisterCommand extends Command<AuthResponseDto> {
   readonly type = 'RegisterCommand';
 
   constructor(public readonly input: RegisterInput) {

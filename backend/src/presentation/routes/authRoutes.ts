@@ -2,19 +2,19 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { commandBus } from '../../application/command-bus.js';
-import { 
-  RegisterCommand, 
-  LoginCommand, 
-  RefreshTokenCommand, 
+import {
+  RegisterCommand,
+  LoginCommand,
+  RefreshTokenCommand,
   GoogleAuthCommand,
-  LogoutCommand 
+  LogoutCommand,
 } from '../../application/commands/auth/AuthCommands.js';
 import { GetCurrentUserQuery } from '../../application/queries/auth/AuthQueries.js';
-import { 
-  registerSchema, 
-  loginSchema, 
-  refreshTokenSchema, 
-  googleAuthSchema 
+import {
+  registerSchema,
+  loginSchema,
+  refreshTokenSchema,
+  googleAuthSchema,
 } from '../../application/validators/authValidators.js';
 import { authenticateJwt, AuthenticatedRequest } from '../middleware/AuthMiddleware.js';
 import { authRateLimiter } from '../middleware/RateLimitMiddleware.js';
@@ -25,8 +25,8 @@ router.post('/register', authRateLimiter, async (req, res, next) => {
   try {
     const input = registerSchema.parse(req.body);
     const command = new RegisterCommand(input);
-    const userId = await commandBus.executeCommand(command);
-    res.status(201).json({ userId });
+    const result = await commandBus.executeCommand(command);
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }
@@ -93,7 +93,7 @@ router.patch('/me', authenticateJwt, async (req: AuthenticatedRequest, res, next
       avatarUrl: z.string().url().max(500).optional(),
       bio: z.string().max(2000).optional(),
     });
-    
+
     updateProfileSchema.parse(req.body);
     // TODO: Implement UpdateProfileCommand
     res.json({ message: 'Profile updated successfully' });

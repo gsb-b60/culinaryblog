@@ -1,31 +1,37 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import { Request, Response, NextFunction } from 'express';
 
 import { commandBus } from '../../application/command-bus.js';
-import { IEmailService } from '../../application/interfaces/IEmailService.js';
-import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
-import { IJwtService } from '../../application/interfaces/IJwtService.js';
-import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository.js';
-import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.js';
-import { IUserRepository } from '../../domain/repositories/IUserRepository.js';
-import { JwtService } from '../../infrastructure/auth/JwtService.js';
-import { CategoryRepository } from '../../infrastructure/persistence/repositories/CategoryRepository.js';
-import { RecipeRepository } from '../../infrastructure/persistence/repositories/RecipeRepository.js';
-import { UserRepository } from '../../infrastructure/persistence/repositories/UserRepository.js';
-import { MinioFileStorageService } from '../../infrastructure/file-storage/MinioFileStorageService.js';
-import { NodemailerEmailService } from '../../infrastructure/email/NodemailerEmailService.js';
-import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
-import { healthCheckService } from '../../infrastructure/health/HealthCheckService.js';
-import {
-  AddRecipeIngredientCommandHandler,
-  DeleteRecipeIngredientCommandHandler,
-  UpdateRecipeIngredientCommandHandler,
-} from '../../application/handlers/RecipeIngredientCommandHandlers.js';
+import { RegisterCommand } from '../../application/commands/auth/AuthCommands.js';
 import {
   AddRecipeIngredientCommand,
   DeleteRecipeIngredientCommand,
   UpdateRecipeIngredientCommand,
 } from '../../application/commands/recipes/RecipeCommands.js';
+import { RegisterCommandHandler } from '../../application/handlers/AuthCommandHandlers.js';
+import {
+  AddRecipeIngredientCommandHandler,
+  DeleteRecipeIngredientCommandHandler,
+  UpdateRecipeIngredientCommandHandler,
+} from '../../application/handlers/RecipeIngredientCommandHandlers.js';
+import { IEmailService } from '../../application/interfaces/IEmailService.js';
+import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
+import { IJwtService } from '../../application/interfaces/IJwtService.js';
+import { env } from '../../config-middleware/config/env.js';
+import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository.js';
+import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.js';
+import { IUserRepository } from '../../domain/repositories/IUserRepository.js';
+import { JwtService } from '../../infrastructure/auth/JwtService.js';
+import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
+import { NodemailerEmailService } from '../../infrastructure/email/NodemailerEmailService.js';
+import { MinioFileStorageService } from '../../infrastructure/file-storage/MinioFileStorageService.js';
+import { healthCheckService } from '../../infrastructure/health/HealthCheckService.js';
+import { addWelcomeEmailJob } from '../../infrastructure/jobs/queues/welcomeEmailQueue.js';
+import { CategoryRepository } from '../../infrastructure/persistence/repositories/CategoryRepository.js';
+import { RecipeRepository } from '../../infrastructure/persistence/repositories/RecipeRepository.js';
+import { UserRepository } from '../../infrastructure/persistence/repositories/UserRepository.js';
+import { parseDuration } from '../../infrastructure/utils/duration.js';
 
 export interface Container {
   prisma: PrismaClient;
@@ -56,9 +62,30 @@ export function createContainer(): Container {
   const fileStorageService = new MinioFileStorageService();
   const emailService = new NodemailerEmailService();
 
-  commandBus.registerCommandHandler(AddRecipeIngredientCommand.name, new AddRecipeIngredientCommandHandler(prisma));
-  commandBus.registerCommandHandler(UpdateRecipeIngredientCommand.name, new UpdateRecipeIngredientCommandHandler(prisma));
-  commandBus.registerCommandHandler(DeleteRecipeIngredientCommand.name, new DeleteRecipeIngredientCommandHandler(prisma));
+  commandBus.registerCommandHandler(
+    AddRecipeIngredientCommand.name,
+    new AddRecipeIngredientCommandHandler(prisma),
+  );
+  commandBus.registerCommandHandler(
+    UpdateRecipeIngredientCommand.name,
+    new UpdateRecipeIngredientCommandHandler(prisma),
+  );
+  commandBus.registerCommandHandler(
+    DeleteRecipeIngredientCommand.name,
+    new DeleteRecipeIngredientCommandHandler(prisma),
+  );
+
+  commandBus.registerCommandHandler(
+    RegisterCommand.name,
+    new RegisterCommandHandler({
+      prisma,
+      jwtService,
+      hashPassword: (password: string) => bcrypt.hash(password, 12),
+      enqueueWelcomeEmail: addWelcomeEmailJob,
+      accessTokenTtlMs: parseDuration(env.JWT_ACCESS_EXPIRES_IN),
+      refreshTokenTtlMs: parseDuration(env.JWT_REFRESH_EXPIRES_IN),
+    }),
+  );
 
   container = {
     prisma,
@@ -91,11 +118,7 @@ export async function destroyContainer(): Promise<void> {
   }
 }
 
-export function containerMiddleware(
-  req: Request,
-  _res: Response,
-  next: NextFunction
-): void {
+export function containerMiddleware(req: Request, _res: Response, next: NextFunction): void {
   (req as any).container = getContainer();
   next();
 }
