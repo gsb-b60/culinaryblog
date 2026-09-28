@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { ApiError, register } from '../lib/api'
+import { ApiError, googleLogin, register } from '../lib/api'
+import { getGoogleClientId, loadGoogleScript } from '../lib/googleAuth'
 import { clearSession, saveSession } from '../lib/tokenStorage'
 import type { AuthResponse } from '../types/auth'
 import { firstErrors, registerFormSchema } from '../validation/register'
@@ -20,6 +21,8 @@ interface Banner {
   title: string
   detail: string
 }
+
+type GoogleState = 'loading' | 'ready' | 'unconfigured' | 'failed'
 
 function BookIcon({ className }: { className?: string }) {
   return (
@@ -119,11 +122,110 @@ export default function RegisterPage() {
   const [banner, setBanner] = useState<Banner | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [session, setSession] = useState<AuthResponse | null>(null)
+  const [googleState, setGoogleState] = useState<GoogleState>(() =>
+    getGoogleClientId() ? 'loading' : 'unconfigured',
+  )
+  const googleButtonRef = useRef<HTMLDivElement>(null)
 
   function setField<K extends keyof RegisterFormValues>(key: K, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }))
     setErrors((prev) => ({ ...prev, [key]: undefined }))
   }
+
+  const handleGoogleCredential = useCallback(async (credential: string) => {
+    if (!credential) {
+      setBanner({
+        kind: 'error',
+        title: 'Đăng nhập Google thất bại',
+        detail: 'Không nhận được credential từ Google.',
+      })
+      return
+    }
+    setBanner(null)
+    setSubmitting(true)
+    try {
+      const auth = await googleLogin(credential)
+      saveSession(auth)
+      setSession(auth)
+    } catch (err) {
+      if (!(err instanceof ApiError)) {
+        setBanner({
+          kind: 'error',
+          title: 'Đăng nhập Google thất bại',
+          detail: 'Đã xảy ra lỗi không xác định.',
+        })
+        return
+      }
+      if (err.status === 401) {
+        setBanner({ kind: 'error', title: 'Token Google không hợp lệ', detail: err.message })
+      } else if (err.status === 400) {
+        setBanner({ kind: 'error', title: 'Thông tin Google không đầy đủ', detail: err.message })
+      } else if (err.status === 502 || err.status === 503) {
+        setBanner({
+          kind: 'warning',
+          title: 'Dịch vụ Google đang gặp sự cố',
+          detail: err.message,
+        })
+      } else if (err.status === 429) {
+        setBanner({ kind: 'warning', title: 'Quá nhiều yêu cầu', detail: err.message })
+      } else {
+        setBanner({ kind: 'error', title: 'Đăng nhập Google thất bại', detail: err.message })
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const clientId = getGoogleClientId()
+    if (!clientId) {
+      return
+    }
+    let cancelled = false
+    loadGoogleScript()
+      .then(() => {
+        if (cancelled || !window.google?.id) {
+          return
+        }
+        window.google.id.initialize({
+          client_id: clientId,
+          callback: (response) => {
+            void handleGoogleCredential(response.credential ?? '')
+          },
+          error_callback: () => {
+            setBanner({
+              kind: 'error',
+              title: 'Đăng nhập Google thất bại',
+              detail: 'Không nhận được phản hồi từ Google. Vui lòng thử lại.',
+            })
+          },
+        })
+        setGoogleState('ready')
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setGoogleState('failed')
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [handleGoogleCredential])
+
+  useEffect(() => {
+    if (googleState !== 'ready') {
+      return
+    }
+    const container = googleButtonRef.current
+    if (container && window.google?.id) {
+      window.google.id.renderButton(container, {
+        theme: 'outline',
+        size: 'large',
+        text: 'signup_with',
+        width: container.offsetWidth || 360,
+      })
+    }
+  }, [googleState])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -208,8 +310,8 @@ export default function RegisterPage() {
           </div>
           <h1 className="text-2xl font-bold text-surface-900">Đăng ký thành công!</h1>
           <p className="text-sm text-surface-500 mt-2">
-            Xin chào <strong className="text-surface-800">{session.user.fullName}</strong> (
-            {session.user.userName})
+            Xin chào <strong className="text-surface-800">{session.user.fullName}</strong>
+            {session.user.userName ? ` (${session.user.userName})` : null}
           </p>
           <div className="flex justify-center gap-2 mt-3">
             {session.user.roles.map((role) => (
@@ -289,15 +391,25 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <button
-            type="button"
-            disabled
-            title="Đăng nhập Google sẽ có ở tính năng sau"
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-surface-300 rounded-lg text-sm font-medium text-surface-400 cursor-not-allowed mb-4"
-          >
-            <GoogleIcon />
-            Đăng ký với Google
-          </button>
+          {googleState === 'ready' ? (
+            <div ref={googleButtonRef} className="mb-4 [&>div]:w-full" />
+          ) : (
+            <button
+              type="button"
+              disabled
+              title={
+                googleState === 'unconfigured'
+                  ? 'Thiếu VITE_GOOGLE_CLIENT_ID — hãy cấu hình Google OAuth'
+                  : googleState === 'failed'
+                    ? 'Không tải được Google Sign-In'
+                    : 'Đang tải Google Sign-In...'
+              }
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-surface-300 rounded-lg text-sm font-medium text-surface-400 cursor-not-allowed mb-4"
+            >
+              <GoogleIcon />
+              Đăng ký với Google
+            </button>
+          )}
 
           <div className="flex items-center gap-4 my-4">
             <div className="flex-1 border-t border-surface-200" />

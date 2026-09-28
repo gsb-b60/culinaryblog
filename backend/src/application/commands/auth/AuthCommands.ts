@@ -31,7 +31,7 @@ export class RefreshTokenCommand extends Command<import('../../dtos/UserDto.js')
   }
 }
 
-export class GoogleAuthCommand extends Command<import('../../dtos/UserDto.js').AuthTokensDto> {
+export class GoogleAuthCommand extends Command<AuthResponseDto> {
   readonly type = 'GoogleAuthCommand';
 
   constructor(public readonly input: GoogleAuthInput) {
