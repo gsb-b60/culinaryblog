@@ -1,5 +1,5 @@
 import cors from 'cors';
-import express from 'express';
+import express, { type Express } from 'express';
 import helmet from 'helmet';
 import passport from 'passport';
 import { pinoHttp } from 'pino-http';
@@ -26,7 +26,9 @@ import recipeRoutes from './presentation/routes/recipeRoutes.js';
 
 initTracing();
 
-const app = express();
+// Explicit annotation: without it, `declaration: true` cannot name the inferred
+// type portably (TS2742) under pnpm's node_modules layout on CI.
+const app: Express = express();
 
 // Configure Passport
 configureJwtStrategy(passport);

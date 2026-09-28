@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import { z } from 'zod';
 
 import { commandBus } from '../../application/command-bus.js';
@@ -21,7 +21,8 @@ import { UserRole } from '../../domain/enums/UserRole.js';
 import { authenticateJwt, AuthenticatedRequest, authorize } from '../middleware/AuthMiddleware.js';
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
-const router = Router();
+// Explicit annotation avoids TS2742 when emitting declarations on CI.
+const router: RouterType = Router();
 
 // Public routes
 router.get('/', generalRateLimiter, async (req, res, next) => {
