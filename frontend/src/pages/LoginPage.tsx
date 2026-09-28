@@ -3,9 +3,9 @@ import { Link, Navigate } from 'react-router-dom'
 
 import { Banner } from '../components/auth/Banner'
 import { BookIcon } from '../components/auth/BookIcon'
-import { GoogleIcon } from '../components/auth/GoogleIcon'
+import { GoogleAuthButton } from '../components/auth/GoogleAuthButton'
 import { TextField } from '../components/auth/TextField'
-import { GOOGLE_HINTS, useGoogleSignIn } from '../hooks/useGoogleSignIn'
+import { useGoogleSignIn } from '../hooks/useGoogleSignIn'
 import { ApiError, login } from '../lib/api'
 import { clearSession, loadSession, saveSession } from '../lib/tokenStorage'
 import type { AuthResponse } from '../types/auth'
@@ -95,22 +95,12 @@ export default function LoginPage() {
         <div className="bg-white rounded-xl border border-surface-200 p-6 shadow-sm">
           {notice && <Banner kind={notice.kind} title={notice.title} detail={notice.detail} />}
 
-          {googleState === 'ready' ? (
-            <div ref={googleButtonRef} className="mb-4 [&>div]:w-full" />
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={retryGoogle}
-                title={GOOGLE_HINTS[googleState]}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-surface-300 rounded-lg text-sm font-medium text-surface-600 hover:border-surface-400 hover:bg-surface-50 mb-2"
-              >
-                <GoogleIcon />
-                Tiếp tục với Google
-              </button>
-              <p className="text-xs text-surface-500 mb-4">{GOOGLE_HINTS[googleState]}</p>
-            </>
-          )}
+          <GoogleAuthButton
+            state={googleState}
+            buttonRef={googleButtonRef}
+            label="Tiếp tục với Google"
+            retry={retryGoogle}
+          />
 
           <div className="flex items-center gap-4 my-4">
             <div className="flex-1 border-t border-surface-200" />

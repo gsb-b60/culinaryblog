@@ -1,5 +1,6 @@
 import { Link, Route, Routes } from 'react-router-dom'
 
+import AuthCallbackPage from './pages/AuthCallbackPage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
 
@@ -46,6 +47,7 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/auth/register" element={<RegisterPage />} />
       <Route path="/auth/login" element={<LoginPage />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

@@ -97,7 +97,9 @@ describe('LoginPage — showcase #login-1-populated', () => {
   it('renders the Google button, the divider and the register link', () => {
     renderLogin()
 
-    expect(screen.getByRole('button', { name: /Google/ })).toBeInTheDocument()
+    // GIS cannot load in jsdom, so this is the OAuth redirect fallback.
+    const google = screen.getByRole('link', { name: /Google/ })
+    expect(google).toHaveAttribute('href', expect.stringContaining('/auth/google/redirect'))
     expect(screen.getByText('hoặc')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Đăng ký ngay' })).toHaveAttribute(
       'href',

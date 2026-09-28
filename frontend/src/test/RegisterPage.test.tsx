@@ -58,9 +58,11 @@ describe('RegisterPage', () => {
   it('renders the Google button and the "hoặc" divider', () => {
     renderRegister()
 
-    // Whether the real GIS button or the fallback shows depends on
-    // VITE_GOOGLE_CLIENT_ID, so assert only the stable parts.
-    expect(screen.getByRole('button', { name: /Google/ })).toBeInTheDocument()
+    // Whether the real GIS button or the OAuth redirect fallback shows depends
+    // on VITE_GOOGLE_CLIENT_ID and whether the script loads, so assert the
+    // stable parts: a Google entry point plus the divider.
+    const google = screen.getByRole('link', { name: /Google/ })
+    expect(google).toHaveAttribute('href', expect.stringContaining('/auth/google/redirect'))
     expect(screen.getByText('hoặc')).toBeInTheDocument()
   })
 })
