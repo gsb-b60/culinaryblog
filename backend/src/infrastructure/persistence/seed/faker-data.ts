@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-
 import { RecipeDifficulty } from '@prisma/client';
 
 // Vietnamese recipe data

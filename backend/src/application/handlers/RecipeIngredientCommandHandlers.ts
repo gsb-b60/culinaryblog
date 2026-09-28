@@ -1,13 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 
 import { ForbiddenError, NotFoundError, ValidationError } from '../../config-middleware/shared/errors/AppError.js';
-import { RecipeIngredientDto } from '../dtos/RecipeDto.js';
+import { ICommandHandler } from '../command-bus.js';
 import {
   AddRecipeIngredientCommand,
   DeleteRecipeIngredientCommand,
   UpdateRecipeIngredientCommand,
 } from '../commands/recipes/RecipeCommands.js';
-import { ICommandHandler } from '../command-bus.js';
+import { RecipeIngredientDto } from '../dtos/RecipeDto.js';
 
 export class AddRecipeIngredientCommandHandler implements ICommandHandler<AddRecipeIngredientCommand, RecipeIngredientDto> {
   constructor(private readonly prisma: PrismaClient) {}

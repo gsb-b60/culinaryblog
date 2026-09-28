@@ -2,9 +2,9 @@ import { PrismaClient, Recipe as PrismaRecipe, Prisma } from '@prisma/client';
 
 import { PagedResult, createPagedResult } from '../../../application/dtos/PagedResult.js';
 import { Recipe, RecipeProps } from '../../../domain/entities/Recipe.js';
-import { IRecipeRepository, RecipeFilters, RecipeSortOptions } from '../../../domain/repositories/IRecipeRepository.js';
 import { RecipeDifficulty } from '../../../domain/enums/RecipeDifficulty.js';
 import { RecipeStatus } from '../../../domain/enums/RecipeStatus.js';
+import { IRecipeRepository, RecipeFilters, RecipeSortOptions } from '../../../domain/repositories/IRecipeRepository.js';
 import { Slug } from '../../../domain/value-objects/Slug.js';
 
 export class RecipeRepository implements IRecipeRepository {

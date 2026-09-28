@@ -53,3 +53,10 @@ export function register(payload: RegisterPayload): Promise<AuthResponse> {
     body: JSON.stringify(payload),
   })
 }
+
+export function googleLogin(idToken: string): Promise<AuthResponse> {
+  return request<AuthResponse>('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ idToken }),
+  })
+}

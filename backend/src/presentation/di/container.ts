@@ -1,15 +1,20 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { Request, Response, NextFunction } from 'express';
+import { OAuth2Client } from 'google-auth-library';
 
 import { commandBus } from '../../application/command-bus.js';
-import { RegisterCommand } from '../../application/commands/auth/AuthCommands.js';
+import { GoogleAuthCommand, RegisterCommand } from '../../application/commands/auth/AuthCommands.js';
 import {
   AddRecipeIngredientCommand,
   DeleteRecipeIngredientCommand,
   UpdateRecipeIngredientCommand,
 } from '../../application/commands/recipes/RecipeCommands.js';
-import { RegisterCommandHandler } from '../../application/handlers/AuthCommandHandlers.js';
+import {
+  GoogleAuthCommandHandler,
+  RegisterCommandHandler,
+  type GoogleProfile,
+} from '../../application/handlers/AuthCommandHandlers.js';
 import {
   AddRecipeIngredientCommandHandler,
   DeleteRecipeIngredientCommandHandler,
@@ -81,6 +86,34 @@ export function createContainer(): Container {
       prisma,
       jwtService,
       hashPassword: (password: string) => bcrypt.hash(password, 12),
+      enqueueWelcomeEmail: addWelcomeEmailJob,
+      accessTokenTtlMs: parseDuration(env.JWT_ACCESS_EXPIRES_IN),
+      refreshTokenTtlMs: parseDuration(env.JWT_REFRESH_EXPIRES_IN),
+    }),
+  );
+
+  const googleAuthClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+
+  commandBus.registerCommandHandler(
+    GoogleAuthCommand.name,
+    new GoogleAuthCommandHandler({
+      prisma,
+      jwtService,
+      googleClientId: env.GOOGLE_CLIENT_ID,
+      verifyGoogleToken: async (idToken: string): Promise<GoogleProfile> => {
+        const ticket = await googleAuthClient.verifyIdToken({
+          idToken,
+          audience: env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        return {
+          sub: payload?.sub ?? '',
+          email: payload?.email ?? '',
+          emailVerified: payload?.email_verified === true,
+          name: payload?.name,
+          picture: payload?.picture,
+        };
+      },
       enqueueWelcomeEmail: addWelcomeEmailJob,
       accessTokenTtlMs: parseDuration(env.JWT_ACCESS_EXPIRES_IN),
       refreshTokenTtlMs: parseDuration(env.JWT_REFRESH_EXPIRES_IN),
