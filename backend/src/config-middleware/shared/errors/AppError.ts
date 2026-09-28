@@ -1,8 +1,12 @@
 export class AppError extends Error {
   public readonly statusCode: number;
+
   public readonly code: string;
+
   public readonly type: string;
+
   public readonly title: string;
+
   public readonly errors?: Record<string, string[]>;
 
   constructor(

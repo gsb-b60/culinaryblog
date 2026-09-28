@@ -9,6 +9,14 @@ export const validationMiddleware: MiddlewareHandler<any, any> = async (_request
   return next();
 };
 
+function isCacheable(query: any): query is Query<any> & ICacheable {
+  return query && typeof query.getCacheKey === 'function' && typeof query.getCacheTtl === 'function';
+}
+
+function isCacheInvalidator(command: any): command is Command<any> & ICacheInvalidator {
+  return command && typeof command.getCacheKeysToInvalidate === 'function';
+}
+
 export const cachingMiddleware: MiddlewareHandler<Query<any>, any> = async (query, next) => {
   if (!isCacheable(query)) {
     return next();
@@ -45,11 +53,3 @@ export const cacheInvalidationMiddleware: MiddlewareHandler<Command<any>, any> =
 
   return result;
 };
-
-function isCacheable(query: any): query is Query<any> & ICacheable {
-  return query && typeof query.getCacheKey === 'function' && typeof query.getCacheTtl === 'function';
-}
-
-function isCacheInvalidator(command: any): command is Command<any> & ICacheInvalidator {
-  return command && typeof command.getCacheKeysToInvalidate === 'function';
-}

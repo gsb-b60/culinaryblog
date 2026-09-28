@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { commandBus } from '../../application/command-bus.js';
-import { UserRole } from '../../domain/index.js';
 import { 
   CreateRecipeCommand, 
   UpdateRecipeCommand, 
@@ -29,6 +28,7 @@ import {
   recipeSortSchema,
   paginationSchema 
 } from '../../application/validators/recipeValidators.js';
+import { UserRole } from '../../domain/index.js';
 import { authenticateJwt, AuthenticatedRequest, authorizeOwnerOrAdmin } from '../middleware/AuthMiddleware.js';
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
