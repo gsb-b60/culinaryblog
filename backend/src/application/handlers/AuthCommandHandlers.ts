@@ -5,7 +5,7 @@ import { PrismaClient, User } from '@prisma/client';
 import { logger } from '../../config-middleware/config/logger.js';
 import { AppError, ValidationError } from '../../config-middleware/shared/errors/AppError.js';
 import { ICommandHandler } from '../command-bus.js';
-import { GoogleAuthCommand, RegisterCommand } from '../commands/auth/AuthCommands.js';
+import { GoogleAuthCommand, LoginCommand, RegisterCommand } from '../commands/auth/AuthCommands.js';
 import { AuthResponseDto } from '../dtos/UserDto.js';
 import { IJwtService } from '../interfaces/IJwtService.js';
 
@@ -32,6 +32,10 @@ function uniqueViolationFields(error: unknown): string[] {
 
 function conflictError(message: string, code: string): AppError {
   return new AppError(409, message, code, { type: code, title: 'Conflict' });
+}
+
+function authError(status: number, message: string, code: string, title: string): AppError {
+  return new AppError(status, message, code, { type: code, title });
 }
 
 export class RegisterCommandHandler implements ICommandHandler<RegisterCommand, AuthResponseDto> {
@@ -117,6 +121,147 @@ export class RegisterCommandHandler implements ICommandHandler<RegisterCommand, 
   }
 }
 
+/** Consecutive failures allowed before the account is temporarily locked (FR-AUTH-002 A3). */
+export const LOGIN_MAX_FAILED_ATTEMPTS = 5;
+
+/** How long the temporary lock lasts. */
+export const LOGIN_LOCK_DURATION_MS = 15 * 60 * 1000;
+
+export interface LoginHandlerDependencies {
+  prisma: PrismaClient;
+  jwtService: IJwtService;
+  verifyPassword: (password: string, hash: string) => Promise<boolean>;
+  accessTokenTtlMs: number;
+  refreshTokenTtlMs: number;
+}
+
+// A valid bcrypt hash of a value nobody knows. Used to burn the same amount
+// of CPU on an unknown email as on a real one, so response timing does not
+// reveal whether an account exists (FR-AUTH-002 A1).
+const TIMING_EQUALIZER_HASH = '$2a$12$C6UzMDM.H6dfI/f/IKcEeO1s2bUwvN5QOKjZBtSjJmYb0mHlB2oKzG';
+
+const INVALID_CREDENTIALS_MESSAGE = 'Email or password is incorrect';
+
+export class LoginCommandHandler implements ICommandHandler<LoginCommand, AuthResponseDto> {
+  constructor(private readonly deps: LoginHandlerDependencies) {}
+
+  async execute(command: LoginCommand): Promise<AuthResponseDto> {
+    const { email, password } = command.input;
+
+    const user = await this.deps.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      await this.deps.verifyPassword(password, TIMING_EQUALIZER_HASH);
+      throw authError(
+        401,
+        INVALID_CREDENTIALS_MESSAGE,
+        'AUTH_INVALID_CREDENTIALS',
+        'Unauthorized',
+      );
+    }
+
+    if (!user.passwordHash) {
+      // Google-only account: there is no local password to compare against.
+      throw authError(
+        401,
+        INVALID_CREDENTIALS_MESSAGE,
+        'AUTH_INVALID_CREDENTIALS',
+        'Unauthorized',
+      );
+    }
+
+    const passwordMatches = await this.deps.verifyPassword(password, user.passwordHash);
+    if (!passwordMatches) {
+      await this.recordFailedAttempt(user);
+      throw authError(
+        401,
+        INVALID_CREDENTIALS_MESSAGE,
+        'AUTH_INVALID_CREDENTIALS',
+        'Unauthorized',
+      );
+    }
+
+    if (!user.isActive) {
+      throw authError(403, 'This account has been disabled', 'AUTH_ACCOUNT_DISABLED', 'Forbidden');
+    }
+
+    const now = new Date();
+    if (user.lockedUntil && user.lockedUntil > now) {
+      throw authError(
+        403,
+        'Too many failed login attempts. Try again later.',
+        'AUTH_ACCOUNT_LOCKED',
+        'Forbidden',
+      );
+    }
+
+    await this.deps.prisma.user.update({
+      where: { id: user.id },
+      data: { accessFailedCount: 0, lockedUntil: null },
+    });
+
+    // Every previous refresh token is marked as used rather than deleted, so
+    // reuse of an old token stays detectable (FR-AUTH-002, token rotation).
+    await this.deps.prisma.refreshToken.updateMany({
+      where: { userId: user.id, revokedAt: null },
+      data: { revokedAt: now },
+    });
+
+    const roles = [user.role];
+    const accessToken = this.deps.jwtService.generateAccessToken({
+      userId: user.id,
+      email: user.email,
+      roles,
+      jti: randomUUID(),
+    });
+    const refreshToken = this.deps.jwtService.generateRefreshToken();
+
+    await this.deps.prisma.refreshToken.create({
+      data: {
+        tokenHash: this.deps.jwtService.hashRefreshToken(refreshToken),
+        userId: user.id,
+        expiresAt: new Date(Date.now() + this.deps.refreshTokenTtlMs),
+      },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      expiresAt: new Date(Date.now() + this.deps.accessTokenTtlMs).toISOString(),
+      user: {
+        id: user.id,
+        fullName: user.fullName ?? user.displayName,
+        email: user.email,
+        userName: user.userName ?? '',
+        avatarUrl: user.avatarUrl ?? undefined,
+        roles,
+      },
+    };
+  }
+
+  private async recordFailedAttempt(user: User): Promise<void> {
+    const attempts = user.accessFailedCount + 1;
+
+    if (attempts >= LOGIN_MAX_FAILED_ATTEMPTS) {
+      const lockedUntil = new Date(Date.now() + LOGIN_LOCK_DURATION_MS);
+      await this.deps.prisma.user.update({
+        where: { id: user.id },
+        data: { accessFailedCount: 0, lockedUntil },
+      });
+      logger.warn(
+        { userId: user.id, lockedUntil },
+        'Account temporarily locked after too many failed logins',
+      );
+      return;
+    }
+
+    await this.deps.prisma.user.update({
+      where: { id: user.id },
+      data: { accessFailedCount: attempts },
+    });
+  }
+}
+
 export interface GoogleProfile {
   sub: string;
   email: string;
@@ -124,7 +269,6 @@ export interface GoogleProfile {
   name?: string;
   picture?: string;
 }
-
 export interface GoogleAuthHandlerDependencies {
   prisma: PrismaClient;
   jwtService: IJwtService;
@@ -137,10 +281,6 @@ export interface GoogleAuthHandlerDependencies {
 
 const GOOGLE_NETWORK_ERROR_PATTERN =
   /fetch failed|network|ENOTFOUND|ETIMEDOUT|ECONNREFUSED|ECONNRESET|EAI_AGAIN|getaddrinfo|socket hang up|unable to fetch|request to/i;
-
-function authError(status: number, message: string, code: string, title: string): AppError {
-  return new AppError(status, message, code, { type: code, title });
-}
 
 export class GoogleAuthCommandHandler implements ICommandHandler<GoogleAuthCommand, AuthResponseDto> {
   constructor(private readonly deps: GoogleAuthHandlerDependencies) {}
