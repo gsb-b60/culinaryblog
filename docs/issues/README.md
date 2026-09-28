@@ -18,7 +18,7 @@ Source of truth: [`docs/`](../) (English SRS translation of `srs.md`).
 | Issue | FR | Status | GitHub | Assignee |
 |---|---|---|---|---|
 | #1 | FR-AUTH-001: User Registration | ✅ Done | [#1](https://github.com/gsb-b60/culinaryblog/issues/1) | Nguyen Dinh Hieu |
-| #2 | FR-AUTH-002: Local Login (Email/Password) | ⬜ Open | [#7](https://github.com/gsb-b60/culinaryblog/issues/7) | Nguyen Dinh Hieu |
+| #2 | FR-AUTH-002: Local Login (Email/Password) | ✅ Done | [#7](https://github.com/gsb-b60/culinaryblog/issues/7) | Nguyen Dinh Hieu |
 | #3 | FR-AUTH-003: Google OAuth 2.0 Login | ✅ Done | [#8](https://github.com/gsb-b60/culinaryblog/issues/8) | Nguyen Dinh Hieu |
 | #4 | FR-AUTH-004: Refresh Access Token | ⬜ Open | [#9](https://github.com/gsb-b60/culinaryblog/issues/9) | Nguyen Dinh Hieu |
 | #5 | FR-AUTH-005: Logout / Token Revocation | ⬜ Open | [#10](https://github.com/gsb-b60/culinaryblog/issues/10) | Nguyen Dinh Hieu |

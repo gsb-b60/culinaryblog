@@ -71,7 +71,7 @@ New account created, "Author" role assigned, refresh token persisted, welcome em
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-auth.md` §FR-AUTH-002 |
 | Endpoint | `POST /api/v1/auth/login` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -102,11 +102,11 @@ New access token and refresh token created and returned. Refresh token persisted
 
 **Acceptance Criteria:**
 
-- [ ] Valid credentials return 200 with token pair
-- [ ] Wrong email OR wrong password both return 401 with identical generic message
-- [ ] Locked account returns 403
-- [ ] After 5 failed attempts, account is temporarily locked
-- [ ] Old refresh token marked as used (not deleted) on new login
+- [x] Valid credentials return 200 with token pair
+- [x] Wrong email OR wrong password both return 401 with identical generic message
+- [x] Locked account returns 403
+- [x] After 5 failed attempts, account is temporarily locked
+- [x] Old refresh token marked as used (not deleted) on new login
 
 ---
 
