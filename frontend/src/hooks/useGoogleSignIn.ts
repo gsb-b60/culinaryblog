@@ -1,19 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { ApiError, googleLogin } from '../lib/api'
-import { getGsiIdApi, getGoogleClientId, loadGoogleScript } from '../lib/googleAuth'
+import { getGsiIdApi, getGoogleClientId, loadGoogleScript, waitForGsiIdApi } from '../lib/googleAuth'
 import { saveSession } from '../lib/tokenStorage'
 import type { AuthResponse } from '../types/auth'
 
-export type GoogleState = 'loading' | 'ready' | 'unconfigured' | 'failed'
+/**
+ * 'unavailable' means the GIS script is present but its button cannot be
+ * rendered — typically Firefox Enhanced Tracking Protection or a blocking
+ * extension. It is deliberately distinct from 'failed' (the script never
+ * arrived) so the UI can offer a redirect fallback instead of a retry.
+ */
+export type GoogleState = 'loading' | 'ready' | 'unavailable' | 'failed' | 'unconfigured'
 
 export const GOOGLE_HINTS: Record<GoogleState, string> = {
   loading: 'Đang tải Google Sign-In...',
   ready: '',
+  unavailable:
+    'Trình duyệt này không cho hiển thị nút Google (thường do Enhanced Tracking Protection của Firefox hoặc tiện ích chặn). Bạn vẫn có thể đăng nhập bằng Google qua nút bên dưới.',
+  failed: 'Không tải được Google Sign-In (do mạng hoặc trình duyệt/chặn quảng cáo). Bấm nút để thử lại.',
   unconfigured:
     'Thiếu VITE_GOOGLE_CLIENT_ID trong frontend/.env.local — bấm để thử lại sau khi khởi động lại Vite',
-  failed:
-    'Không tải được Google Sign-In (do mạng hoặc trình duyệt/chặn quảng cáo). Bấm nút để thử lại.',
 }
 
 export interface GoogleAuthNotice {
@@ -74,17 +81,18 @@ export function useGoogleSignIn({ text, onSuccess, onError }: UseGoogleSignInOpt
       return
     }
     let cancelled = false
+
     loadGoogleScript()
-      .then(() => {
+      .then(() => waitForGsiIdApi())
+      .then((gsi) => {
         if (cancelled) {
           return
         }
-        const gsi = getGsiIdApi()
         if (!gsi) {
-          console.error('[Google] GIS script loaded but window.google.accounts.id is missing', {
-            hasGoogle: !!window.google,
-          })
-          setState('failed')
+          console.error(
+            '[Google] google.accounts.id never became available — Enhanced Tracking Protection or a blocking extension is likely',
+          )
+          setState('unavailable')
           return
         }
         gsi.initialize({
@@ -119,18 +127,39 @@ export function useGoogleSignIn({ text, onSuccess, onError }: UseGoogleSignInOpt
     if (state !== 'ready') {
       return
     }
-    const container = buttonRef.current
-    const gsi = getGsiIdApi()
-    if (!container || !gsi) {
-      console.error('[Google] renderButton aborted: container or google.accounts.id missing')
-      return
-    }
-    gsi.renderButton(container, {
-      theme: 'outline',
-      size: 'large',
-      text,
-      width: container.offsetWidth || 360,
-    })
+    // renderButton mutates the DOM, so run it outside the effect body instead
+    // of during the synchronous render pass.
+    const timer = setTimeout(() => {
+      const container = buttonRef.current
+      if (!container) {
+        console.error('[Google] renderButton aborted: container ref was not attached')
+        setState('unavailable')
+        return
+      }
+      const gsi = getGsiIdApi()
+      if (!gsi) {
+        console.error(
+          '[Google] google.accounts.id disappeared between initialize and renderButton',
+        )
+        setState('unavailable')
+        return
+      }
+      // StrictMode runs effects twice in dev; clear first so we do not stack
+      // two Google iframes in the same container.
+      container.innerHTML = ''
+      try {
+        gsi.renderButton(container, {
+          theme: 'outline',
+          size: 'large',
+          text,
+          width: container.offsetWidth || 360,
+        })
+      } catch (error) {
+        console.error('[Google] renderButton threw; falling back to the OAuth redirect', error)
+        setState('unavailable')
+      }
+    }, 0)
+    return () => clearTimeout(timer)
   }, [state, text])
 
   return { state, buttonRef, retry, handleCredential }

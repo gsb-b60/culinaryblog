@@ -305,6 +305,33 @@ describe('LoginPage — already authenticated', () => {
   })
 })
 
+describe('LoginPage — Google unavailable must not block the form', () => {
+  it('still lets the user log in with email and password when GIS is unavailable', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify(AUTH), { status: 200 }))
+    renderLogin()
+
+    // A broken Google button must not take the form down with it.
+    await userEvent.type(screen.getByLabelText('Email'), 'an@example.com')
+    await userEvent.type(screen.getByLabelText('Mật khẩu'), 'Secret1!')
+    await userEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }))
+
+    expect(await screen.findByText('Đăng nhập thành công!')).toBeInTheDocument()
+  })
+
+  it('leaves the form enabled and reachable while Google is not ready', async () => {
+    renderLogin()
+
+    // Whichever non-ready state we land in (the script cannot load in jsdom),
+    // the credential form must stay interactive and unobstructed.
+    await waitFor(() => {
+      expect(screen.getByRole('form', { name: 'Form đăng nhập' })).toBeInTheDocument()
+    })
+    expect(screen.getByLabelText('Email')).toBeEnabled()
+    expect(screen.getByLabelText('Mật khẩu')).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Đăng nhập' })).toBeEnabled()
+  })
+})
+
 describe('ApiError contract used by the page', () => {
   it('exposes the status and problem for every documented failure', () => {
     const err = new ApiError(401, 'Email or password is incorrect', INVALID_CREDENTIALS)
