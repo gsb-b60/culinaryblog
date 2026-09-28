@@ -115,7 +115,7 @@ jobs:
         continue-on-error: true
 
   frontend:
-    name: frontend (lint / typecheck / build)
+    name: frontend (lint / typecheck / build / test)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -150,3 +150,6 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Test
+        run: pnpm test
