@@ -5,6 +5,11 @@ export interface RegisterPayload {
   password: string
 }
 
+export interface LoginPayload {
+  email: string
+  password: string
+}
+
 export interface AuthUser {
   id: string
   fullName: string
