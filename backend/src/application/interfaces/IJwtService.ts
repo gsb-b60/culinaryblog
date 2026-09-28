@@ -8,6 +8,7 @@ export interface JwtPayload {
 export interface IJwtService {
   generateAccessToken(payload: JwtPayload): string;
   generateRefreshToken(): string;
+  hashRefreshToken(token: string): string;
   verifyAccessToken(token: string): JwtPayload | null;
   verifyRefreshToken(token: string): string | null; // Returns token hash
   decodeToken(token: string): JwtPayload | null;

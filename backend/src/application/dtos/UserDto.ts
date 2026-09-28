@@ -18,10 +18,27 @@ export interface AuthTokensDto {
   expiresIn: number;
 }
 
-export interface RegisterInput {
+export interface AuthUserDto {
+  id: string;
+  fullName: string;
   email: string;
+  userName: string;
+  avatarUrl?: string;
+  roles: string[];
+}
+
+export interface AuthResponseDto {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: string;
+  user: AuthUserDto;
+}
+
+export interface RegisterInput {
+  fullName: string;
+  email: string;
+  userName: string;
   password: string;
-  displayName: string;
 }
 
 export interface LoginInput {

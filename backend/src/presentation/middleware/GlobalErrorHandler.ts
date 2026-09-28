@@ -8,7 +8,7 @@ export function globalErrorHandler(
   err: Error,
   _req: Request,
   res: Response,
-  _next: NextFunction
+  _next: NextFunction,
 ): void {
   // Zod validation errors
   if (err instanceof ZodError) {
@@ -18,8 +18,8 @@ export function globalErrorHandler(
       if (!errors[path]) errors[path] = [];
       errors[path].push(issue.message);
     }
-    
-    res.status(422).json({
+
+    res.status(422).type('application/problem+json').json({
       type: 'https://tools.ietf.org/html/rfc7807#section-3.1',
       title: 'Validation Error',
       status: 422,
@@ -31,19 +31,22 @@ export function globalErrorHandler(
 
   // App errors (known business errors)
   if (err instanceof AppError) {
-    res.status(err.statusCode).json({
-      type: err.type || 'about:blank',
-      title: err.title || 'Error',
-      status: err.statusCode,
-      detail: err.message,
-      errors: err.errors,
-    });
+    res
+      .status(err.statusCode)
+      .type('application/problem+json')
+      .json({
+        type: err.type || 'about:blank',
+        title: err.title || 'Error',
+        status: err.statusCode,
+        detail: err.message,
+        errors: err.errors,
+      });
     return;
   }
 
   // Unknown errors
   logger.error({ err }, 'Unhandled error');
-  res.status(500).json({
+  res.status(500).type('application/problem+json').json({
     type: 'about:blank',
     title: 'Internal Server Error',
     status: 500,

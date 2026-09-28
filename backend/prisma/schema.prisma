@@ -40,6 +40,8 @@ model User {
   email              String    @unique @db.VarChar(256)
   passwordHash       String?   @db.VarChar(255) @map("password_hash")
   displayName        String    @db.VarChar(100) @map("display_name")
+  fullName           String?   @db.VarChar(100) @map("full_name")
+  userName           String?   @unique @db.VarChar(30) @map("user_name")
   avatarUrl          String?   @db.VarChar(500) @map("avatar_url")
   bio                String?   @db.Text
   googleId           String?   @unique @db.VarChar(256) @map("google_id")

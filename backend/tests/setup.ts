@@ -1,18 +1,8 @@
-import { defineConfig } from 'vitest/config';
-
-export default defineConfig({
-  test: {
-    globals: true,
-    environment: 'node',
-    include: ['tests/**/*.test.ts'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'lcov', 'html'],
-      include: ['src/**/*.ts'],
-      exclude: ['src/**/index.ts'],
-      thresholds: {
-        lines: 80,
-      },
-    },
-  },
-});
+process.env.NODE_ENV = 'test';
+process.env.LOG_LEVEL = 'silent';
+process.env.RATE_LIMIT_AUTH = '10000';
+process.env.RATE_LIMIT_GENERAL = '10000';
+process.env.JWT_ACCESS_SECRET ??= 'test-access-secret-min-32-chars-xxxxxxxx';
+process.env.JWT_REFRESH_SECRET ??= 'test-refresh-secret-min-32-chars-xxxxxxxx';
+process.env.DATABASE_URL ??= 'postgresql://postgres:postgres@localhost:5432/lethimcook';
+process.env.REDIS_URL ??= 'redis://localhost:6379';
