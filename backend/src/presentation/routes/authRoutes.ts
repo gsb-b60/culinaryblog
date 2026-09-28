@@ -19,8 +19,14 @@ import {
 import { authenticateJwt, AuthenticatedRequest } from '../middleware/AuthMiddleware.js';
 import { authRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
+import { googleOAuthRoutes } from './googleOAuth.js';
+
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
 const router: RouterType = Router();
+
+// OAuth 2.0 redirect flow, the fallback for browsers where the GIS button
+// cannot render. Mounted before the JSON routes below.
+router.use(googleOAuthRoutes());
 
 router.post('/register', authRateLimiter, async (req, res, next) => {
   try {
