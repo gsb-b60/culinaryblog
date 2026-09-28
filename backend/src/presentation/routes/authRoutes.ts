@@ -37,8 +37,8 @@ router.post('/login', authRateLimiter, async (req, res, next) => {
   try {
     const input = loginSchema.parse(req.body);
     const command = new LoginCommand(input);
-    const tokens = await commandBus.executeCommand(command);
-    res.json(tokens);
+    const result = await commandBus.executeCommand(command);
+    res.json(result);
   } catch (error) {
     next(error);
   }

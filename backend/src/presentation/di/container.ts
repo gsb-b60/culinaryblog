@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 
 import { commandBus } from '../../application/command-bus.js';
-import { GoogleAuthCommand, RegisterCommand } from '../../application/commands/auth/AuthCommands.js';
+import { GoogleAuthCommand, LoginCommand, RegisterCommand } from '../../application/commands/auth/AuthCommands.js';
 import {
   AddRecipeIngredientCommand,
   DeleteRecipeIngredientCommand,
@@ -12,6 +12,7 @@ import {
 } from '../../application/commands/recipes/RecipeCommands.js';
 import {
   GoogleAuthCommandHandler,
+  LoginCommandHandler,
   RegisterCommandHandler,
   type GoogleProfile,
 } from '../../application/handlers/AuthCommandHandlers.js';
@@ -28,6 +29,7 @@ import { ICategoryRepository } from '../../domain/repositories/ICategoryReposito
 import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.js';
 import { IUserRepository } from '../../domain/repositories/IUserRepository.js';
 import { JwtService } from '../../infrastructure/auth/JwtService.js';
+import { PasswordService } from '../../infrastructure/auth/PasswordService.js';
 import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
 import { NodemailerEmailService } from '../../infrastructure/email/NodemailerEmailService.js';
 import { MinioFileStorageService } from '../../infrastructure/file-storage/MinioFileStorageService.js';
@@ -87,6 +89,19 @@ export function createContainer(): Container {
       jwtService,
       hashPassword: (password: string) => bcrypt.hash(password, 12),
       enqueueWelcomeEmail: addWelcomeEmailJob,
+      accessTokenTtlMs: parseDuration(env.JWT_ACCESS_EXPIRES_IN),
+      refreshTokenTtlMs: parseDuration(env.JWT_REFRESH_EXPIRES_IN),
+    }),
+  );
+
+  commandBus.registerCommandHandler(
+    LoginCommand.name,
+    new LoginCommandHandler({
+      prisma,
+      jwtService,
+      // Handles both argon2id and bcrypt hashes, so it verifies accounts
+      // created by registration (bcrypt) and any future rehash.
+      verifyPassword: (password: string, hash: string) => PasswordService.verify(password, hash),
       accessTokenTtlMs: parseDuration(env.JWT_ACCESS_EXPIRES_IN),
       refreshTokenTtlMs: parseDuration(env.JWT_REFRESH_EXPIRES_IN),
     }),
