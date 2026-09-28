@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { ApiError, googleLogin, register } from '../lib/api'
-import { getGoogleClientId, loadGoogleScript } from '../lib/googleAuth'
+import { getGsiIdApi, getGoogleClientId, loadGoogleScript } from '../lib/googleAuth'
 import { clearSession, saveSession } from '../lib/tokenStorage'
 import type { AuthResponse } from '../types/auth'
 import { firstErrors, registerFormSchema } from '../validation/register'
@@ -23,6 +23,13 @@ interface Banner {
 }
 
 type GoogleState = 'loading' | 'ready' | 'unconfigured' | 'failed'
+
+const GOOGLE_HINTS: Record<GoogleState, string> = {
+  loading: 'Đang tải Google Sign-In...',
+  ready: '',
+  unconfigured: 'Thiếu VITE_GOOGLE_CLIENT_ID trong frontend/.env.local — bấm để thử lại sau khi khởi động lại Vite',
+  failed: 'Không tải được Google Sign-In (do mạng hoặc trình duyệt/chặn quảng cáo). Bấm nút để thử lại.',
+}
 
 function BookIcon({ className }: { className?: string }) {
   return (
@@ -125,6 +132,7 @@ export default function RegisterPage() {
   const [googleState, setGoogleState] = useState<GoogleState>(() =>
     getGoogleClientId() ? 'loading' : 'unconfigured',
   )
+  const [googleAttempt, setGoogleAttempt] = useState(0)
   const googleButtonRef = useRef<HTMLDivElement>(null)
 
   function setField<K extends keyof RegisterFormValues>(key: K, value: string) {
@@ -176,6 +184,11 @@ export default function RegisterPage() {
     }
   }, [])
 
+  function retryGoogle() {
+    setGoogleState(getGoogleClientId() ? 'loading' : 'unconfigured')
+    setGoogleAttempt((n) => n + 1)
+  }
+
   useEffect(() => {
     const clientId = getGoogleClientId()
     if (!clientId) {
@@ -184,47 +197,61 @@ export default function RegisterPage() {
     let cancelled = false
     loadGoogleScript()
       .then(() => {
-        if (cancelled || !window.google?.id) {
+        if (cancelled) {
           return
         }
-        window.google.id.initialize({
+        const gsi = getGsiIdApi()
+        if (!gsi) {
+          console.error('[Google] GIS script loaded but window.google.accounts.id is missing', {
+            hasGoogle: !!window.google,
+          })
+          setGoogleState('failed')
+          return
+        }
+        gsi.initialize({
           client_id: clientId,
           callback: (response) => {
             void handleGoogleCredential(response.credential ?? '')
           },
-          error_callback: () => {
+          error_callback: (error) => {
+            console.error('[Google] GIS error', error)
             setBanner({
               kind: 'error',
               title: 'Đăng nhập Google thất bại',
-              detail: 'Không nhận được phản hồi từ Google. Vui lòng thử lại.',
+              detail: error?.message || 'Không nhận được phản hồi từ Google. Vui lòng thử lại.',
             })
           },
         })
         setGoogleState('ready')
       })
-      .catch(() => {
-        if (!cancelled) {
-          setGoogleState('failed')
+      .catch((error: unknown) => {
+        if (cancelled) {
+          return
         }
+        console.error('[Google] Failed to load Google Identity Services', error)
+        setGoogleState('failed')
       })
     return () => {
       cancelled = true
     }
-  }, [handleGoogleCredential])
+  }, [handleGoogleCredential, googleAttempt])
 
   useEffect(() => {
     if (googleState !== 'ready') {
       return
     }
     const container = googleButtonRef.current
-    if (container && window.google?.id) {
-      window.google.id.renderButton(container, {
-        theme: 'outline',
-        size: 'large',
-        text: 'signup_with',
-        width: container.offsetWidth || 360,
-      })
+    const gsi = getGsiIdApi()
+    if (!container || !gsi) {
+      console.error('[Google] renderButton aborted: container or google.accounts.id missing')
+      return
     }
+    gsi.renderButton(container, {
+      theme: 'outline',
+      size: 'large',
+      text: 'signup_with',
+      width: container.offsetWidth || 360,
+    })
   }, [googleState])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -394,21 +421,18 @@ export default function RegisterPage() {
           {googleState === 'ready' ? (
             <div ref={googleButtonRef} className="mb-4 [&>div]:w-full" />
           ) : (
-            <button
-              type="button"
-              disabled
-              title={
-                googleState === 'unconfigured'
-                  ? 'Thiếu VITE_GOOGLE_CLIENT_ID — hãy cấu hình Google OAuth'
-                  : googleState === 'failed'
-                    ? 'Không tải được Google Sign-In'
-                    : 'Đang tải Google Sign-In...'
-              }
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-surface-300 rounded-lg text-sm font-medium text-surface-400 cursor-not-allowed mb-4"
-            >
-              <GoogleIcon />
-              Đăng ký với Google
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={retryGoogle}
+                title={GOOGLE_HINTS[googleState]}
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-surface-300 rounded-lg text-sm font-medium text-surface-600 hover:border-surface-400 hover:bg-surface-50 mb-2"
+              >
+                <GoogleIcon />
+                Đăng ký với Google
+              </button>
+              <p className="text-xs text-surface-500 mb-4">{GOOGLE_HINTS[googleState]}</p>
+            </>
           )}
 
           <div className="flex items-center gap-4 my-4">

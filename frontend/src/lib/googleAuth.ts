@@ -14,10 +14,14 @@ interface GsiRenderOptions {
   width?: number
 }
 
+export interface GsiIdApi {
+  initialize: (options: GsiInitializeOptions) => void
+  renderButton: (element: HTMLElement, options: GsiRenderOptions) => void
+}
+
 interface GsiApi {
-  id: {
-    initialize: (options: GsiInitializeOptions) => void
-    renderButton: (element: HTMLElement, options: GsiRenderOptions) => void
+  accounts: {
+    id: GsiIdApi
   }
 }
 
@@ -34,8 +38,12 @@ export function getGoogleClientId(): string | undefined {
   return value?.trim() || undefined
 }
 
+export function getGsiIdApi(): GsiIdApi | undefined {
+  return window.google?.accounts?.id
+}
+
 export function loadGoogleScript(): Promise<void> {
-  if (window.google?.id) {
+  if (getGsiIdApi()) {
     return Promise.resolve()
   }
   if (loadPromise) {
