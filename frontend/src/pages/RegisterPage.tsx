@@ -1,8 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { ApiError, googleLogin, register } from '../lib/api'
-import { getGsiIdApi, getGoogleClientId, loadGoogleScript } from '../lib/googleAuth'
+import { Banner } from '../components/auth/Banner'
+import { BookIcon } from '../components/auth/BookIcon'
+import { GoogleIcon } from '../components/auth/GoogleIcon'
+import { TextField } from '../components/auth/TextField'
+import { GOOGLE_HINTS, useGoogleSignIn } from '../hooks/useGoogleSignIn'
+import { ApiError, register } from '../lib/api'
 import { clearSession, saveSession } from '../lib/tokenStorage'
 import type { AuthResponse } from '../types/auth'
 import { firstErrors, registerFormSchema } from '../validation/register'
@@ -16,243 +20,33 @@ const EMPTY_FORM: RegisterFormValues = {
   confirmPassword: '',
 }
 
-interface Banner {
+interface BannerState {
   kind: 'error' | 'warning'
   title: string
   detail: string
-}
-
-type GoogleState = 'loading' | 'ready' | 'unconfigured' | 'failed'
-
-const GOOGLE_HINTS: Record<GoogleState, string> = {
-  loading: 'Đang tải Google Sign-In...',
-  ready: '',
-  unconfigured: 'Thiếu VITE_GOOGLE_CLIENT_ID trong frontend/.env.local — bấm để thử lại sau khi khởi động lại Vite',
-  failed: 'Không tải được Google Sign-In (do mạng hoặc trình duyệt/chặn quảng cáo). Bấm nút để thử lại.',
-}
-
-function BookIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <circle cx="32" cy="32" r="30" fill="white" />
-      <path d="M14 30C14 30 12 14 20 10C28 6 28 24 28 24" fill="#f97316" stroke="#ea580c" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M50 30C50 30 52 14 44 10C36 6 36 24 36 24" fill="#f97316" stroke="#ea580c" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M16 29C16 29 15 18 21 14C27 10 27 24 27 24" fill="#fed7aa" />
-      <path d="M48 29C48 29 49 18 43 14C37 10 37 24 37 24" fill="#fed7aa" />
-      <circle cx="32" cy="36" r="20" fill="#f97316" stroke="#ea580c" strokeWidth="1.5" />
-      <circle cx="18" cy="40" r="4" fill="#fed7aa" opacity="0.6" />
-      <circle cx="46" cy="40" r="4" fill="#fed7aa" opacity="0.6" />
-      <circle cx="24" cy="33" r="4" fill="#1c1917" />
-      <circle cx="40" cy="33" r="4" fill="#1c1917" />
-      <circle cx="26" cy="31" r="1.5" fill="white" />
-      <circle cx="42" cy="31" r="1.5" fill="white" />
-      <ellipse cx="32" cy="39" rx="2" ry="1.5" fill="#ea580c" />
-      <path d="M27 41Q29 44 32 42Q35 44 37 41" stroke="#1c1917" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M29.5 42L30.5 42L30 43Z" fill="white" />
-      <path d="M33.5 42L34.5 42L34 43Z" fill="white" />
-      <line x1="18" y1="37" x2="6" y2="34" stroke="#c2410c" strokeWidth="0.8" strokeLinecap="round" />
-      <line x1="18" y1="40" x2="5" y2="40" stroke="#c2410c" strokeWidth="0.8" strokeLinecap="round" />
-      <line x1="18" y1="43" x2="6" y2="46" stroke="#c2410c" strokeWidth="0.8" strokeLinecap="round" />
-      <line x1="46" y1="37" x2="58" y2="34" stroke="#c2410c" strokeWidth="0.8" strokeLinecap="round" />
-      <line x1="46" y1="40" x2="59" y2="40" stroke="#c2410c" strokeWidth="0.8" strokeLinecap="round" />
-      <line x1="46" y1="43" x2="58" y2="46" stroke="#c2410c" strokeWidth="0.8" strokeLinecap="round" />
-      <ellipse cx="35" cy="44" rx="1.2" ry="1.5" fill="#38bdf8" />
-    </svg>
-  )
-}
-
-function GoogleIcon() {
-  return (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-    </svg>
-  )
-}
-
-interface TextFieldProps {
-  id: keyof RegisterFormValues
-  label: string
-  type?: string
-  placeholder?: string
-  autoComplete?: string
-  hint?: string
-  value: string
-  error?: string
-  onChange: (value: string) => void
-}
-
-function TextField({
-  id,
-  label,
-  type = 'text',
-  placeholder,
-  autoComplete,
-  hint,
-  value,
-  error,
-  onChange,
-}: TextFieldProps) {
-  return (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium text-surface-700 mb-1">
-        {label}
-      </label>
-      <input
-        id={id}
-        name={id}
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        onChange={(e) => onChange(e.target.value)}
-        aria-invalid={error ? true : undefined}
-        className={`w-full px-4 py-2.5 border rounded-lg text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200 ${
-          error ? 'border-red-300 bg-red-50' : 'border-surface-300'
-        }`}
-      />
-      {error ? (
-        <p className="text-xs text-red-600 mt-1">{error}</p>
-      ) : (
-        hint && <p className="text-xs text-surface-400 mt-1">{hint}</p>
-      )}
-    </div>
-  )
 }
 
 export default function RegisterPage() {
   const [form, setForm] = useState<RegisterFormValues>(EMPTY_FORM)
   const [agree, setAgree] = useState(false)
   const [errors, setErrors] = useState<FieldErrors>({})
-  const [banner, setBanner] = useState<Banner | null>(null)
+  const [banner, setBanner] = useState<BannerState | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [session, setSession] = useState<AuthResponse | null>(null)
-  const [googleState, setGoogleState] = useState<GoogleState>(() =>
-    getGoogleClientId() ? 'loading' : 'unconfigured',
-  )
-  const [googleAttempt, setGoogleAttempt] = useState(0)
-  const googleButtonRef = useRef<HTMLDivElement>(null)
+
+  const { state: googleState, buttonRef: googleButtonRef, retry: retryGoogle } = useGoogleSignIn({
+    text: 'signup_with',
+    onSuccess: (auth) => {
+      setBanner(null)
+      setSession(auth)
+    },
+    onError: setBanner,
+  })
 
   function setField<K extends keyof RegisterFormValues>(key: K, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }))
     setErrors((prev) => ({ ...prev, [key]: undefined }))
   }
-
-  const handleGoogleCredential = useCallback(async (credential: string) => {
-    if (!credential) {
-      setBanner({
-        kind: 'error',
-        title: 'Đăng nhập Google thất bại',
-        detail: 'Không nhận được credential từ Google.',
-      })
-      return
-    }
-    setBanner(null)
-    setSubmitting(true)
-    try {
-      const auth = await googleLogin(credential)
-      saveSession(auth)
-      setSession(auth)
-    } catch (err) {
-      if (!(err instanceof ApiError)) {
-        setBanner({
-          kind: 'error',
-          title: 'Đăng nhập Google thất bại',
-          detail: 'Đã xảy ra lỗi không xác định.',
-        })
-        return
-      }
-      if (err.status === 401) {
-        setBanner({ kind: 'error', title: 'Token Google không hợp lệ', detail: err.message })
-      } else if (err.status === 400) {
-        setBanner({ kind: 'error', title: 'Thông tin Google không đầy đủ', detail: err.message })
-      } else if (err.status === 502 || err.status === 503) {
-        setBanner({
-          kind: 'warning',
-          title: 'Dịch vụ Google đang gặp sự cố',
-          detail: err.message,
-        })
-      } else if (err.status === 429) {
-        setBanner({ kind: 'warning', title: 'Quá nhiều yêu cầu', detail: err.message })
-      } else {
-        setBanner({ kind: 'error', title: 'Đăng nhập Google thất bại', detail: err.message })
-      }
-    } finally {
-      setSubmitting(false)
-    }
-  }, [])
-
-  function retryGoogle() {
-    setGoogleState(getGoogleClientId() ? 'loading' : 'unconfigured')
-    setGoogleAttempt((n) => n + 1)
-  }
-
-  useEffect(() => {
-    const clientId = getGoogleClientId()
-    if (!clientId) {
-      return
-    }
-    let cancelled = false
-    loadGoogleScript()
-      .then(() => {
-        if (cancelled) {
-          return
-        }
-        const gsi = getGsiIdApi()
-        if (!gsi) {
-          console.error('[Google] GIS script loaded but window.google.accounts.id is missing', {
-            hasGoogle: !!window.google,
-          })
-          setGoogleState('failed')
-          return
-        }
-        gsi.initialize({
-          client_id: clientId,
-          callback: (response) => {
-            void handleGoogleCredential(response.credential ?? '')
-          },
-          error_callback: (error) => {
-            console.error('[Google] GIS error', error)
-            setBanner({
-              kind: 'error',
-              title: 'Đăng nhập Google thất bại',
-              detail: error?.message || 'Không nhận được phản hồi từ Google. Vui lòng thử lại.',
-            })
-          },
-        })
-        setGoogleState('ready')
-      })
-      .catch((error: unknown) => {
-        if (cancelled) {
-          return
-        }
-        console.error('[Google] Failed to load Google Identity Services', error)
-        setGoogleState('failed')
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [handleGoogleCredential, googleAttempt])
-
-  useEffect(() => {
-    if (googleState !== 'ready') {
-      return
-    }
-    const container = googleButtonRef.current
-    const gsi = getGsiIdApi()
-    if (!container || !gsi) {
-      console.error('[Google] renderButton aborted: container or google.accounts.id missing')
-      return
-    }
-    gsi.renderButton(container, {
-      theme: 'outline',
-      size: 'large',
-      text: 'signup_with',
-      width: container.offsetWidth || 360,
-    })
-  }, [googleState])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -389,34 +183,7 @@ export default function RegisterPage() {
         </div>
 
         <div className="bg-white rounded-xl border border-surface-200 p-6 shadow-sm">
-          {banner && (
-            <div
-              role="alert"
-              className={`rounded-lg p-4 mb-4 flex items-start gap-3 border ${
-                banner.kind === 'warning'
-                  ? 'bg-amber-50 border-amber-200'
-                  : 'bg-red-50 border-red-200'
-              }`}
-            >
-              <svg
-                className={`w-5 h-5 shrink-0 mt-0.5 ${banner.kind === 'warning' ? 'text-amber-500' : 'text-red-500'}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              <div className="min-w-0 flex-1">
-                <p className={`text-sm font-medium ${banner.kind === 'warning' ? 'text-amber-800' : 'text-red-800'}`}>
-                  {banner.title}
-                </p>
-                <p className={`text-xs mt-1 ${banner.kind === 'warning' ? 'text-amber-600' : 'text-red-600'}`}>
-                  {banner.detail}
-                </p>
-              </div>
-            </div>
-          )}
+          {banner && <Banner kind={banner.kind} title={banner.title} detail={banner.detail} />}
 
           {googleState === 'ready' ? (
             <div ref={googleButtonRef} className="mb-4 [&>div]:w-full" />
