@@ -51,6 +51,9 @@ model User {
   twoFactorEnabled   Boolean   @default(false) @map("two_factor_enabled")
   lockoutEnabled     Boolean   @default(false) @map("lockout_enabled")
   accessFailedCount  Int       @default(0) @map("access_failed_count")
+  // Set by FR-AUTH-002 when accessFailedCount reaches the threshold, cleared
+  // on the next successful login. NULL means the account is not locked.
+  lockedUntil        DateTime? @map("locked_until")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
   isDeleted          Boolean   @default(false) @map("is_deleted")
