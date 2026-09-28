@@ -1,6 +1,7 @@
 import { Link, Route, Routes } from 'react-router-dom'
 
 import RegisterPage from './pages/RegisterPage'
+import LoginPage from './pages/LoginPage'
 
 function HomePage() {
   return (
@@ -19,20 +20,6 @@ function HomePage() {
           className="px-6 py-3 border border-surface-300 bg-white rounded-lg font-medium text-surface-700 hover:bg-surface-50 justify-center"
         >
           Đăng nhập
-        </Link>
-      </div>
-    </main>
-  )
-}
-
-function LoginPage() {
-  return (
-    <main className="min-h-screen bg-surface-50 flex items-center justify-center p-8">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-surface-900">Đăng nhập</h1>
-        <p className="text-surface-500 mt-2 text-sm">Trang đăng nhập sẽ được triển khai ở Issue #2.</p>
-        <Link to="/auth/register" className="text-brand-600 font-medium hover:text-brand-700 mt-4 inline-block">
-          Đăng ký ngay
         </Link>
       </div>
     </main>
