@@ -18,15 +18,21 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState('')
   const [showLogoutModal, setShowLogoutModal] = useState(false)
 
+  const accessToken = session?.accessToken
+
   useEffect(() => {
-    if (!session) return
-    getCurrentUser(session.accessToken)
+    if (!accessToken) return
+    let active = true
+
+    getCurrentUser(accessToken)
       .then((user) => {
+        if (!active) return
         setProfile(user)
         setDisplayName(user.displayName)
         setBio(user.bio ?? '')
       })
       .catch((reason: unknown) => {
+        if (!active) return
         if (reason instanceof ApiError && reason.status === 401) {
           clearSession()
           navigate('/auth/login', { replace: true })
@@ -34,8 +40,14 @@ export default function ProfilePage() {
         }
         setError(reason instanceof Error ? reason.message : 'Không thể tải hồ sơ.')
       })
-      .finally(() => setLoading(false))
-  }, [navigate, session])
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [accessToken, navigate])
 
   if (!session) {
     navigate('/auth/login', { replace: true })
