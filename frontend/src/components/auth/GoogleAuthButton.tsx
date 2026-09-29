@@ -36,7 +36,11 @@ export function GoogleAuthButton({ state, gisRendered, buttonRef, retry }: Googl
       />
 
       <div className="flex flex-wrap items-center gap-2 mt-2">
-        <p className="text-xs text-surface-500">{GOOGLE_HINTS[state]}</p>
+        {/* data-testid so tests can assert the status line exists without
+            depending on which state the copy below happens to be. */}
+        <p data-testid="google-status" className="text-xs text-surface-500">
+          {GOOGLE_HINTS[state]}
+        </p>
         {state === 'failed' && (
           <button type="button" onClick={retry} className="text-xs text-brand-600 hover:underline">
             Thử tải lại

@@ -75,9 +75,10 @@ describe('RegisterPage', () => {
   it('shows a status line so the user is never left with a silent dead control', () => {
     renderRegister()
 
-    // jsdom cannot load the real GIS script, so the exact state is not
-    // deterministic. What matters is that some status is always shown; the
-    // per-state copy is asserted in useGoogleSignIn.test.tsx.
-    expect(screen.getByText(/Google/)).toBeInTheDocument()
+    // Assert the line exists, not what it says. The starting state depends on
+    // VITE_GOOGLE_CLIENT_ID, which is gitignored and therefore absent in CI, so
+    // the copy differs between a dev machine and the runner. The per-state
+    // wording is covered in useGoogleSignIn.test.tsx.
+    expect(screen.getByTestId('google-status')).toBeInTheDocument()
   })
 })
