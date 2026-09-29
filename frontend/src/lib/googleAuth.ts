@@ -42,6 +42,29 @@ export function getGsiIdApi(): GsiIdApi | undefined {
   return window.google?.accounts?.id
 }
 
+export const GSI_READY_TIMEOUT_MS = 5000
+export const GSI_POLL_INTERVAL_MS = 100
+
+/**
+ * The GIS script can fire `onload` before `google.accounts.id` is actually
+ * usable, and some browsers never expose it at all (Firefox blocks the
+ * third-party accounts.google.com iframe). Poll for a bounded time instead of
+ * assuming the API is there, and report the difference so the caller can fall
+ * back rather than render an empty container.
+ */
+export async function waitForGsiIdApi(
+  timeoutMs: number = GSI_READY_TIMEOUT_MS,
+  intervalMs: number = GSI_POLL_INTERVAL_MS,
+): Promise<GsiIdApi | null> {
+  const deadline = Date.now() + timeoutMs
+  for (;;) {
+    const api = getGsiIdApi()
+    if (api) return api
+    if (Date.now() >= deadline) return null
+    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+  }
+}
+
 export function loadGoogleScript(): Promise<void> {
   if (getGsiIdApi()) {
     return Promise.resolve()

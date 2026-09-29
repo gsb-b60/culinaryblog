@@ -23,8 +23,12 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.string().email().max(256),
-  password: z.string().min(1).max(128),
+  // Must mirror registerSchema: accounts are stored lowercased, so a
+  // mixed-case login would otherwise miss the user entirely.
+  email: z.string().trim().toLowerCase().email('Invalid email address').max(256),
+  // Deliberately no complexity rules here — strength is enforced at
+  // registration time. Login only needs to reject an empty password.
+  password: z.string().min(1, 'Password is required').max(128, 'Password must be at most 128 characters'),
 });
 
 export const refreshTokenSchema = z.object({

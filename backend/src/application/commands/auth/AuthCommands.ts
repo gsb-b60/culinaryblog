@@ -15,7 +15,9 @@ export class RegisterCommand extends Command<AuthResponseDto> {
   }
 }
 
-export class LoginCommand extends Command<import('../../dtos/UserDto.js').AuthTokensDto> {
+// Returns the same AuthResponseDto as RegisterCommand/GoogleAuthCommand so
+// the client can store one uniform session shape after any login method.
+export class LoginCommand extends Command<AuthResponseDto> {
   readonly type = 'LoginCommand';
 
   constructor(public readonly input: LoginInput) {

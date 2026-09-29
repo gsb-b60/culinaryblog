@@ -78,48 +78,17 @@ describe('GoogleAuthCommandHandler', () => {
     mocks = createMocks();
   });
 
-  it('creates a new AUTHOR account on first Google login with avatar and googleId (AC1, AC3)', async () => {
+  it('rejects an unknown Google identity instead of auto-creating an account (AC1)', async () => {
+    mocks.user.findUnique.mockResolvedValue(null);
+
     const handler = new GoogleAuthCommandHandler(mocks.deps);
-    const result = await handler.execute(validCommand);
 
-    expect(mocks.verifyGoogleToken).toHaveBeenCalledWith('signed-google-token');
-    expect(mocks.user.create).toHaveBeenCalledTimes(1);
-    const createArgs = mocks.user.create.mock.calls[0]?.[0] as {
-      data: Record<string, unknown>;
-    };
-    expect(createArgs.data).toMatchObject({
-      email: 'google.user@example.com',
-      role: 'AUTHOR',
-      googleId: 'google-sub-123',
-      avatarUrl: 'https://lh3.googleusercontent.com/a/pic.jpg',
-      fullName: 'Google User',
-      displayName: 'Google User',
-      emailVerified: true,
+    await expect(handler.execute(validCommand)).rejects.toMatchObject({
+      statusCode: 403,
+      code: 'AUTH_ACCOUNT_NOT_REGISTERED',
     });
-    expect(createArgs.data).not.toHaveProperty('passwordHash');
-
-    expect(result).toMatchObject({
-      accessToken: 'signed-access-token',
-      refreshToken: expect.stringMatching(/^[0-9a-f]{128}$/),
-      user: {
-        email: 'google.user@example.com',
-        fullName: 'Google User',
-        userName: '',
-        avatarUrl: 'https://lh3.googleusercontent.com/a/pic.jpg',
-        roles: ['AUTHOR'],
-      },
-    });
-
-    const refreshArgs = mocks.refreshToken.create.mock.calls[0]?.[0] as {
-      data: { userId: string; tokenHash: string };
-    };
-    expect(refreshArgs.data.tokenHash).toBe(
-      createHash('sha256').update(result.refreshToken).digest('hex'),
-    );
-    expect(mocks.enqueueWelcomeEmail).toHaveBeenCalledWith({
-      email: 'google.user@example.com',
-      displayName: 'Google User',
-    });
+    expect(mocks.user.create).not.toHaveBeenCalled();
+    expect(mocks.refreshToken.create).not.toHaveBeenCalled();
   });
 
   it('links an existing manually registered email to Google without creating a duplicate (AC2)', async () => {
@@ -269,45 +238,51 @@ describe('GoogleAuthCommandHandler', () => {
     });
   });
 
-  it('still succeeds when enqueueWelcomeEmail throws (fire-and-forget)', async () => {
-    mocks.enqueueWelcomeEmail.mockImplementation(() => {
-      throw new Error('redis down');
-    });
-    const handler = new GoogleAuthCommandHandler(mocks.deps);
-
-    const result = await handler.execute(validCommand);
-    expect(result.accessToken).toBe('signed-access-token');
-  });
-
-  it('recovers when a concurrent request wins the unique-violation race', async () => {
-    const winner = {
-      id: 'race-winner',
+  it('signs in directly when the googleId is already linked', async () => {
+    const linked = {
+      id: 'linked-user',
       email: 'google.user@example.com',
-      userName: null,
+      userName: 'nguyenvana',
       fullName: 'Google User',
       displayName: 'Google User',
-      avatarUrl: 'https://lh3.googleusercontent.com/a/pic.jpg',
+      avatarUrl: null,
       role: 'AUTHOR',
       googleId: 'google-sub-123',
     };
-    mocks.user.findUnique
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(winner);
-    mocks.user.create.mockRejectedValue({ code: 'P2002', meta: { target: ['email'] } });
+    mocks.user.findUnique.mockResolvedValue(linked);
 
     const handler = new GoogleAuthCommandHandler(mocks.deps);
     const result = await handler.execute(validCommand);
 
-    expect(result.user.id).toBe('race-winner');
-    expect(mocks.enqueueWelcomeEmail).not.toHaveBeenCalled();
+    expect(result.user.id).toBe('linked-user');
+    expect(mocks.user.create).not.toHaveBeenCalled();
+    expect(mocks.user.update).not.toHaveBeenCalled();
   });
 
-  it('rethrows non-unique-violation create errors', async () => {
-    mocks.user.create.mockRejectedValue(new Error('disk full'));
-    const handler = new GoogleAuthCommandHandler(mocks.deps);
+  it('links the Google identity to an account that shares the email', async () => {
+    const existing = {
+      id: 'existing-user',
+      email: 'google.user@example.com',
+      userName: 'nguyenvana',
+      fullName: 'Nguyen Van A',
+      displayName: 'Nguyen Van A',
+      avatarUrl: null,
+      role: 'AUTHOR',
+      googleId: null,
+    };
+    mocks.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(existing);
+    mocks.user.update.mockResolvedValue({ ...existing, googleId: 'google-sub-123' });
 
-    await expect(handler.execute(validCommand)).rejects.toThrow('disk full');
+    const handler = new GoogleAuthCommandHandler(mocks.deps);
+    const result = await handler.execute(validCommand);
+
+    expect(mocks.user.update).toHaveBeenCalledWith({
+      where: { id: 'existing-user' },
+      data: expect.objectContaining({ googleId: 'google-sub-123' }),
+    });
+    expect(mocks.user.create).not.toHaveBeenCalled();
+    expect(result.user.id).toBe('existing-user');
   });
 });

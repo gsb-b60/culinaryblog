@@ -71,7 +71,7 @@ New account created, "Author" role assigned, refresh token persisted, welcome em
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-auth.md` §FR-AUTH-002 |
 | Endpoint | `POST /api/v1/auth/login` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -102,11 +102,11 @@ New access token and refresh token created and returned. Refresh token persisted
 
 **Acceptance Criteria:**
 
-- [ ] Valid credentials return 200 with token pair
-- [ ] Wrong email OR wrong password both return 401 with identical generic message
-- [ ] Locked account returns 403
-- [ ] After 5 failed attempts, account is temporarily locked
-- [ ] Old refresh token marked as used (not deleted) on new login
+- [x] Valid credentials return 200 with token pair
+- [x] Wrong email OR wrong password both return 401 with identical generic message
+- [x] Locked account returns 403
+- [x] After 5 failed attempts, account is temporarily locked
+- [x] Old refresh token marked as used (not deleted) on new login
 
 ---
 
@@ -126,7 +126,7 @@ New access token and refresh token created and returned. Refresh token persisted
 
 **Description:**
 
-Support login via Google account using OAuth 2.0 Authorization Code Flow with PKCE. First-time Google login auto-creates an account from Google profile (email, display name, avatar) and assigns "Author" role. If email already exists from manual registration, link the Google login to the existing account.
+Support login via Google account using OAuth 2.0 Authorization Code Flow with PKCE. A Google identity is linked to an existing account — matched by `googleId`, then by email — and the "Author" role comes from that account. If the email already exists from a manual registration, the Google login is linked to it. If no account matches, the request is rejected with 403 `AUTH_ACCOUNT_NOT_REGISTERED` so the user registers first; nothing is auto-created.
 
 **Main Flow:**
 
@@ -136,7 +136,7 @@ Support login via Google account using OAuth 2.0 Authorization Code Flow with PK
 4. Auth.js v5 (Next.js) handles callback, obtains access token, fetches profile.
 5. Frontend sends `POST /api/v1/auth/google` with Google ExternalLoginInfo.
 6. Handler finds user: `prisma.user.findFirst({ where: { googleId: providerKey } })`.
-7. If no account: check email — if not registered, create new user from Google profile, assign "Author" role, persist Google link.
+7. If no account by `googleId`: check the email — if not registered, reject with 403 `AUTH_ACCOUNT_NOT_REGISTERED` (no account is created).
 8. If email exists (manual registration): link Google login to existing account.
 9. Create access + refresh tokens, persist to database.
 10. Return HTTP 200 with AuthResponseDto.
@@ -145,6 +145,7 @@ Support login via Google account using OAuth 2.0 Authorization Code Flow with PK
 
 - A1 — Google token invalid or expired → HTTP 401.
 - A2 — Google email revokes permission → HTTP 400.
+- A4 — No account matches the Google identity → HTTP 403 `AUTH_ACCOUNT_NOT_REGISTERED`; the user registers with that email and signs in again.
 - A3 — Google API unavailable → HTTP 502 Bad Gateway.
 
 **Expected Result:**
@@ -153,7 +154,8 @@ User is logged in (or auto-registered) and receives AuthResponseDto.
 
 **Acceptance Criteria:**
 
-- [ ] First Google login creates new account with Author role
+- [x] First Google login links to the account that already owns that email; an unregistered Google identity is rejected with 403 `AUTH_ACCOUNT_NOT_REGISTERED` and never auto-creates an account
+      > *Amended.* Originally "First Google login creates new account with Author role". Auto-creation was removed in Issue #2's branch: it produced half-provisioned accounts (no username, no password) and left the user with no next step.
 - [ ] Existing email from manual registration gets linked to Google (no duplicate)
 - [ ] Google profile avatar saved to AvatarUrl
 - [ ] Invalid Google token returns 401

@@ -1,4 +1,4 @@
-import type { AuthResponse, ProblemDetails, RegisterPayload } from '../types/auth'
+import type { AuthResponse, LoginPayload, ProblemDetails, RegisterPayload } from '../types/auth'
 
 const API_BASE: string = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api/v1'
 
@@ -49,6 +49,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function register(payload: RegisterPayload): Promise<AuthResponse> {
   return request<AuthResponse>('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function login(payload: LoginPayload): Promise<AuthResponse> {
+  return request<AuthResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify(payload),
   })

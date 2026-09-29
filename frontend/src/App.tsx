@@ -1,43 +1,9 @@
 import { Link, Route, Routes } from 'react-router-dom'
 
+import AuthCallbackPage from './pages/AuthCallbackPage'
+import HomePage from './pages/HomePage'
 import RegisterPage from './pages/RegisterPage'
-
-function HomePage() {
-  return (
-    <main className="min-h-screen bg-surface-50 flex flex-col items-center justify-center p-8 text-center">
-      <h1 className="text-3xl font-extrabold text-surface-900">Culinary Blog</h1>
-      <p className="text-surface-500 mt-2">Nền tảng chia sẻ công thức nấu ăn Việt Nam</p>
-      <div className="flex flex-wrap gap-3 mt-6 justify-center">
-        <Link
-          to="/auth/register"
-          className="px-6 py-3 bg-brand-500 text-white rounded-lg font-bold hover:bg-brand-600 justify-center"
-        >
-          Đăng ký
-        </Link>
-        <Link
-          to="/auth/login"
-          className="px-6 py-3 border border-surface-300 bg-white rounded-lg font-medium text-surface-700 hover:bg-surface-50 justify-center"
-        >
-          Đăng nhập
-        </Link>
-      </div>
-    </main>
-  )
-}
-
-function LoginPage() {
-  return (
-    <main className="min-h-screen bg-surface-50 flex items-center justify-center p-8">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-surface-900">Đăng nhập</h1>
-        <p className="text-surface-500 mt-2 text-sm">Trang đăng nhập sẽ được triển khai ở Issue #2.</p>
-        <Link to="/auth/register" className="text-brand-600 font-medium hover:text-brand-700 mt-4 inline-block">
-          Đăng ký ngay
-        </Link>
-      </div>
-    </main>
-  )
-}
+import LoginPage from './pages/LoginPage'
 
 function NotFoundPage() {
   return (
@@ -59,6 +25,7 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/auth/register" element={<RegisterPage />} />
       <Route path="/auth/login" element={<LoginPage />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

@@ -18,6 +18,9 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_CALLBACK_URL: z.string().optional(),
+  // Where the Google OAuth redirect flow returns the browser. Defaults to the
+  // first CORS_ORIGINS entry when unset.
+  GOOGLE_POST_LOGIN_REDIRECT: z.string().optional(),
 
   CORS_ORIGINS: z.string().default('http://localhost:5173'),
 
