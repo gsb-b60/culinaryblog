@@ -202,6 +202,12 @@ Google button is refused and you must sign in with email and password.
 
 If you deploy, replace the localhost entries with your real origins in both lists.
 
+> **Register before signing in with Google.** A Google identity is only ever *linked* to an
+> account that already exists, matched by email. The backend does not auto-create accounts, so
+> register with email and password first, then sign in with Google using **the same email address**.
+> Signing in with an unregistered Google account returns `403 AUTH_ACCOUNT_NOT_REGISTERED`, and the
+> login page offers a link to sign up.
+
 #### Which port can actually sign in?
 
 | URL | What it is | Can it complete an auth flow? |
@@ -218,6 +224,8 @@ origin and the backend's `CORS_ORIGINS` must both match it. If you change the po
 
 | Symptom | Cause |
 |---|---|
+| `Bạn chưa có tài khoản` on the login page | `403 AUTH_ACCOUNT_NOT_REGISTERED` — register with that email first, then sign in with Google |
+| Google sign-in returns to the login page with no message | A service worker on `localhost:5173` serving an old bundle. See the stale-bundle row below |
 | `Error 400: origin_mismatch` | The page origin is missing from **Authorized JavaScript origins** |
 | `gsi/button` returns **403**, `GSI_LOGGER: The given origin is not allowed for the given client ID` | Same as above |
 | `AUTH_GOOGLE_CODE_EXCHANGE_FAILED` | The redirect URI does not match the Console entry byte for byte |
