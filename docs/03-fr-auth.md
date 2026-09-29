@@ -115,7 +115,9 @@ The system allows users with an account to log in with email and password. Each 
 
 **Description:**
 
-The system supports login via Google account using OAuth 2.0 Authorization Code Flow with PKCE. If this is the first Google login, the system automatically creates a new account from the Google profile info (email, display name, avatar URL) and assigns the "Author" role. If the email already exists from a manual registration, the system links the Google login to the existing account.
+The system supports login via Google account using OAuth 2.0 Authorization Code Flow with PKCE. A Google identity is only ever **linked** to an account that already exists, matched by `googleId` first and then by email. If the email already exists from a manual registration, the system links the Google login to the existing account. If no account matches, the request is **rejected** with `403 AUTH_ACCOUNT_NOT_REGISTERED` and the client directs the user to register first — the system does not auto-create accounts from a Google profile.
+
+> **Change note.** This requirement originally specified that a first Google login *automatically creates* an account. That was replaced by link-only behaviour: auto-creating from a Google profile produced half-provisioned accounts (no username, no password) and left the user with no obvious next step. The user must now register with email and password first, then sign in with Google using the same email address.
 
 **Preconditions:**
 
@@ -131,7 +133,7 @@ The system supports login via Google account using OAuth 2.0 Authorization Code 
 4. Auth.js v5 (Next.js) handles the callback, obtains the access token from Google, and fetches the profile.
 5. Frontend sends POST /api/v1/auth/google with Google ExternalLoginInfo.
 6. GoogleLoginCommandHandler finds the user: `prisma.user.findFirst({ where: { googleId: providerKey } })`.
-7. If no account exists: check the email — if the email is not yet registered, create a new user from the Google profile, assign the "Author" role → persist the Google link.
+7. If no account exists: check the email — if the email is not yet registered, reject with HTTP 403 Forbidden and error code `AUTH_ACCOUNT_NOT_REGISTERED` so the client can offer registration. No account is created.
 8. If the email already exists (manually registered): link the Google login to the existing account.
 9. Create access token and refresh token, persist to database.
 10. Return HTTP 200 OK with AuthResponseDto.
@@ -141,12 +143,13 @@ The system supports login via Google account using OAuth 2.0 Authorization Code 
 - A1 – Google token invalid or expired: HTTP 401 Unauthorized.
 - A2 – Google email revokes permission: HTTP 400 Bad Request.
 - A3 – Google API unavailable: HTTP 502 Bad Gateway.
+- A4 – No account matches the Google identity: HTTP 403 Forbidden with `AUTH_ACCOUNT_NOT_REGISTERED`. The user registers with the same email, then signs in with Google.
 
 | | |
 |---|---|
 | HTTP Method & Endpoint | POST /api/v1/auth/google |
 | Expected result | User is logged in (or auto-registered) and receives AuthResponseDto. |
-| HTTP Status Codes | 200 OK – login/registration succeeded. 401 Unauthorized – invalid Google token. 400 Bad Request – missing Google profile info. |
+| HTTP Status Codes | 200 OK – login/registration succeeded. 401 Unauthorized – invalid Google token. 400 Bad Request – missing Google profile info. 403 Forbidden – `AUTH_ACCOUNT_NOT_REGISTERED`, no account for this Google identity. |
 
 ### FR-AUTH-004: Refresh Access Token
 
