@@ -34,7 +34,13 @@ export default function RegisterPage() {
   const [submitting, setSubmitting] = useState(false)
   const [session, setSession] = useState<AuthResponse | null>(null)
 
-  const { state: googleState, buttonRef: googleButtonRef, retry: retryGoogle } = useGoogleSignIn({
+  const {
+    state: googleState,
+    gisRendered,
+    buttonRef: googleButtonRef,
+    retry: retryGoogle,
+    reset: resetGoogle,
+  } = useGoogleSignIn({
     text: 'signup_with',
     onSuccess: (auth) => {
       setBanner(null)
@@ -153,14 +159,18 @@ export default function RegisterPage() {
             </Link>
             <button
               type="button"
-              onClick={() => {
-                clearSession()
-                setSession(null)
-                setForm(EMPTY_FORM)
-                setAgree(false)
-                setErrors({})
-                setBanner(null)
-              }}
+                onClick={() => {
+                  clearSession()
+                  setSession(null)
+                  setForm(EMPTY_FORM)
+                  setAgree(false)
+                  setErrors({})
+                  setBanner(null)
+                  // Rebuild the Google button: the old one holds a consumed
+                  // credential and would fail a second sign-up attempt.
+                  resetGoogle()
+                }}
+
               className="w-full py-2.5 border border-surface-300 rounded-lg font-medium text-surface-600 hover:bg-surface-50 text-sm justify-center"
             >
               Đăng xuất
@@ -187,6 +197,7 @@ export default function RegisterPage() {
 
           <GoogleAuthButton
             state={googleState}
+            gisRendered={gisRendered}
             buttonRef={googleButtonRef}
             label="Đăng ký với Google"
             retry={retryGoogle}

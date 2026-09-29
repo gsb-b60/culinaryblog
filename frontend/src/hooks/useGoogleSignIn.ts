@@ -13,6 +13,10 @@ import type { AuthResponse } from '../types/auth'
  */
 export type GoogleState = 'loading' | 'ready' | 'unavailable' | 'failed' | 'unconfigured'
 
+/** How long to wait for Google to actually inject a button before giving up. */
+export const GSI_RENDER_TIMEOUT_MS = 1500
+export const GSI_RENDER_POLL_MS = 100
+
 export const GOOGLE_HINTS: Record<GoogleState, string> = {
   loading: 'Đang tải Google Sign-In...',
   ready: '',
@@ -29,6 +33,51 @@ export interface GoogleAuthNotice {
   detail: string
 }
 
+export interface GsiCallbacks {
+  onCredential: (credential: string) => void
+  onError: (error: { type?: string; message?: string }) => void
+}
+
+/**
+ * GIS is a global singleton: calling initialize() more than once makes Google
+ * warn that only the last instance is used. A per-hook ref cannot prevent that
+ * because every page visit creates a new hook instance, so the guard lives at
+ * module scope and is keyed by client id.
+ *
+ * The callbacks are held in a module-level slot that each hook refreshes, so
+ * initialising only once never leaves us calling back into a page that has
+ * already unmounted.
+ */
+let initializedClientId: string | null = null
+let activeCallbacks: GsiCallbacks | null = null
+
+function ensureGsiInitialized(clientId: string): boolean {
+  const gsi = getGsiIdApi()
+  if (!gsi) {
+    return false
+  }
+  if (initializedClientId === clientId) {
+    return true
+  }
+  gsi.initialize({
+    client_id: clientId,
+    callback: (response) => {
+      activeCallbacks?.onCredential(response.credential ?? '')
+    },
+    error_callback: (error) => {
+      activeCallbacks?.onError(error)
+    },
+  })
+  initializedClientId = clientId
+  return true
+}
+
+/** Forces the next mount (or an explicit reset) to build a brand new button. */
+export function resetGoogleSignIn(): void {
+  initializedClientId = null
+  activeCallbacks = null
+}
+
 interface UseGoogleSignInOptions {
   /** Button label rendered by Google, e.g. 'signin_with' or 'signup_with'. */
   text: 'signin_with' | 'signup_with'
@@ -41,16 +90,16 @@ export function useGoogleSignIn({ text, onSuccess, onError }: UseGoogleSignInOpt
     getGoogleClientId() ? 'loading' : 'unconfigured',
   )
   const [attempt, setAttempt] = useState(0)
+  const [gisRendered, setGisRendered] = useState(false)
   const buttonRef = useRef<HTMLDivElement>(null)
+  // Guard so StrictMode's double effect run cannot stack two Google iframes
+  // into the same slot.
+  const renderedRef = useRef(false)
 
   // Keep the latest callbacks without re-running the GIS init effect, which
-  // would otherwise call gsi.initialize again on every parent re-render.
+  // would otherwise re-initialise Google on every parent re-render.
   const onSuccessRef = useRef(onSuccess)
   const onErrorRef = useRef(onError)
-  useEffect(() => {
-    onSuccessRef.current = onSuccess
-    onErrorRef.current = onError
-  }, [onSuccess, onError])
 
   const handleCredential = useCallback(async (credential: string) => {
     if (!credential) {
@@ -70,7 +119,41 @@ export function useGoogleSignIn({ text, onSuccess, onError }: UseGoogleSignInOpt
     }
   }, [])
 
+  useEffect(() => {
+    onSuccessRef.current = onSuccess
+    onErrorRef.current = onError
+    // Publish to the module-level slot that the one-time Google
+    // initialisation closes over, so navigating between the auth pages never
+    // leaves us calling back into a page that has already unmounted.
+    activeCallbacks = {
+      onCredential: (credential) => {
+        void handleCredential(credential)
+      },
+      onError: (error) => {
+        console.error('[Google] GIS error', error)
+        onErrorRef.current({
+          kind: 'error',
+          title: 'Đăng nhập Google thất bại',
+          detail: error?.message || 'Không nhận được phản hồi từ Google. Vui lòng thử lại.',
+        })
+      },
+    }
+  }, [onSuccess, onError, handleCredential])
+
   function retry() {
+    setState(getGoogleClientId() ? 'loading' : 'unconfigured')
+    setAttempt((n) => n + 1)
+  }
+
+  /**
+   * Rebuilds the Google button from scratch. Needed after signing out: the
+   * previous button holds a consumed single-use credential, so clicking it a
+   * second time can silently do nothing.
+   */
+  function reset() {
+    resetGoogleSignIn()
+    renderedRef.current = false
+    setGisRendered(false)
     setState(getGoogleClientId() ? 'loading' : 'unconfigured')
     setAttempt((n) => n + 1)
   }
@@ -95,20 +178,10 @@ export function useGoogleSignIn({ text, onSuccess, onError }: UseGoogleSignInOpt
           setState('unavailable')
           return
         }
-        gsi.initialize({
-          client_id: clientId,
-          callback: (response) => {
-            void handleCredential(response.credential ?? '')
-          },
-          error_callback: (error) => {
-            console.error('[Google] GIS error', error)
-            onErrorRef.current({
-              kind: 'error',
-              title: 'Đăng nhập Google thất bại',
-              detail: error?.message || 'Không nhận được phản hồi từ Google. Vui lòng thử lại.',
-            })
-          },
-        })
+        if (!ensureGsiInitialized(clientId)) {
+          setState('unavailable')
+          return
+        }
         setState('ready')
       })
       .catch((error: unknown) => {
@@ -123,6 +196,28 @@ export function useGoogleSignIn({ text, onSuccess, onError }: UseGoogleSignInOpt
     }
   }, [handleCredential, attempt])
 
+  /**
+   * Polls the slot until Google injects a node. renderButton returning without
+   * throwing is not proof of success: in Firefox it can complete while
+   * inserting nothing at all.
+   */
+  function watchForButton(container: HTMLElement) {
+    const deadline = Date.now() + GSI_RENDER_TIMEOUT_MS
+    const poll = () => {
+      if (container.childElementCount > 0) {
+        setGisRendered(true)
+        return
+      }
+      if (Date.now() >= deadline) {
+        console.warn('[Google] renderButton produced no button; using the OAuth redirect instead')
+        setState('unavailable')
+        return
+      }
+      setTimeout(poll, GSI_RENDER_POLL_MS)
+    }
+    setTimeout(poll, GSI_RENDER_POLL_MS)
+  }
+
   useEffect(() => {
     if (state !== 'ready') {
       return
@@ -132,8 +227,13 @@ export function useGoogleSignIn({ text, onSuccess, onError }: UseGoogleSignInOpt
     const timer = setTimeout(() => {
       const container = buttonRef.current
       if (!container) {
+        // The slot is mounted unconditionally, so this should not happen; keep
+        // the guard rather than throwing on a null dereference.
         console.error('[Google] renderButton aborted: container ref was not attached')
         setState('unavailable')
+        return
+      }
+      if (renderedRef.current) {
         return
       }
       const gsi = getGsiIdApi()
@@ -144,8 +244,6 @@ export function useGoogleSignIn({ text, onSuccess, onError }: UseGoogleSignInOpt
         setState('unavailable')
         return
       }
-      // StrictMode runs effects twice in dev; clear first so we do not stack
-      // two Google iframes in the same container.
       container.innerHTML = ''
       try {
         gsi.renderButton(container, {
@@ -154,6 +252,11 @@ export function useGoogleSignIn({ text, onSuccess, onError }: UseGoogleSignInOpt
           text,
           width: container.offsetWidth || 360,
         })
+        renderedRef.current = true
+        // renderButton returning without throwing is not proof of success: in
+        // Firefox it can complete while inserting nothing at all. Watch the
+        // slot until a node actually appears, and fall back if it stays empty.
+        watchForButton(container)
       } catch (error) {
         console.error('[Google] renderButton threw; falling back to the OAuth redirect', error)
         setState('unavailable')
@@ -162,7 +265,7 @@ export function useGoogleSignIn({ text, onSuccess, onError }: UseGoogleSignInOpt
     return () => clearTimeout(timer)
   }, [state, text])
 
-  return { state, buttonRef, retry, handleCredential }
+  return { state, gisRendered, buttonRef, retry, reset, handleCredential }
 }
 
 function describeGoogleError(err: unknown): GoogleAuthNotice {

@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { useGoogleSignIn, type GoogleState } from '../hooks/useGoogleSignIn'
+import { resetGoogleSignIn, useGoogleSignIn, type GoogleState } from '../hooks/useGoogleSignIn'
 
 const gsiMock = {
   initialize: vi.fn(),
@@ -23,20 +23,25 @@ vi.mock('../lib/googleAuth', async (importOriginal) => {
   }
 })
 
-/** Mirrors how the pages consume the hook, including the ref'd slot. */
-function Harness() {
-  const { state, buttonRef, retry } = useGoogleSignIn({
+/** Mirrors how the pages consume the hook, including the always-mounted slot. */
+function Harness({ onReset }: { onReset?: (reset: () => void) => void }) {
+  const { state, gisRendered, buttonRef, retry, reset } = useGoogleSignIn({
     text: 'signin_with',
     onSuccess: () => {},
     onError: () => {},
   })
+  onReset?.(reset)
   return (
     <div>
       <span data-testid="state">{state}</span>
+      <span data-testid="rendered">{String(gisRendered)}</span>
       <button type="button" onClick={retry}>
         retry
       </button>
-      {state === 'ready' ? <div data-testid="gsi-slot" ref={buttonRef} /> : null}
+      <button type="button" onClick={reset}>
+        reset
+      </button>
+      <div data-testid="gsi-slot" ref={buttonRef} />
     </div>
   )
 }
@@ -46,6 +51,8 @@ function currentState(): GoogleState {
 }
 
 beforeEach(() => {
+  // The initialize guard is module scoped by design, so each test starts clean.
+  resetGoogleSignIn()
   gsiMock.initialize.mockReset()
   gsiMock.renderButton.mockReset()
   waitForGsiIdApiMock.mockReset()
@@ -68,7 +75,11 @@ describe('useGoogleSignIn', () => {
     )
   })
 
-  it('renders the Google button into the slot', async () => {
+  it('renders the Google button into the slot and reports it as rendered', async () => {
+    // Simulate Google injecting its node, which is what the watchdog watches for.
+    gsiMock.renderButton.mockImplementation((element: HTMLElement) => {
+      element.appendChild(document.createElement('div'))
+    })
     render(<Harness />)
     await waitFor(() => expect(currentState()).toBe('ready'))
 
@@ -76,6 +87,74 @@ describe('useGoogleSignIn', () => {
     await waitFor(() => expect(gsiMock.renderButton).toHaveBeenCalledTimes(1))
     const slot = screen.getByTestId('gsi-slot')
     expect(gsiMock.renderButton.mock.calls[0]?.[0]).toBe(slot)
+    await waitFor(() => expect(screen.getByTestId('rendered').textContent).toBe('true'))
+  })
+
+  it('keeps the slot mounted so the ref is never null', async () => {
+    waitForGsiIdApiMock.mockResolvedValue(null)
+    render(<Harness />)
+
+    // Present before Google is even loaded, so no state can null the ref.
+    expect(screen.getByTestId('gsi-slot')).toBeInTheDocument()
+    await waitFor(() => expect(currentState()).toBe('unavailable'))
+    expect(screen.getByTestId('gsi-slot')).toBeInTheDocument()
+  })
+
+  it('initializes GIS only once even when effects run twice', async () => {
+    render(<Harness />)
+    await waitFor(() => expect(currentState()).toBe('ready'))
+
+    expect(gsiMock.initialize).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not re-initialize when a second page mounts the hook', async () => {
+    // /auth/login -> /auth/register creates a brand new hook instance. The
+    // guard is module scoped precisely so this does not warn again.
+    const first = render(<Harness />)
+    await waitFor(() => expect(currentState()).toBe('ready'))
+    first.unmount()
+
+    render(<Harness />)
+    await waitFor(() => expect(currentState()).toBe('ready'))
+
+    expect(gsiMock.initialize).toHaveBeenCalledTimes(1)
+  })
+
+  it('rebuilds the button after reset, so a second sign-in gets a fresh one', async () => {
+    gsiMock.renderButton.mockImplementation((element: HTMLElement) => {
+      element.appendChild(document.createElement('div'))
+    })
+    render(<Harness />)
+    await waitFor(() => expect(currentState()).toBe('ready'))
+    await waitFor(() => expect(gsiMock.renderButton).toHaveBeenCalledTimes(1))
+
+    await userEvent.click(screen.getByRole('button', { name: 'reset' }))
+
+    // A fresh button, not the one holding the already-consumed credential.
+    await waitFor(() => expect(gsiMock.renderButton).toHaveBeenCalledTimes(2))
+    // Reset clears the module guard too, so Google is genuinely re-initialised
+    // rather than reusing an instance that already spent a credential.
+    expect(gsiMock.initialize).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not stack duplicate buttons across double effect runs', async () => {
+    gsiMock.renderButton.mockImplementation((element: HTMLElement) => {
+      element.appendChild(document.createElement('div'))
+    })
+    render(<Harness />)
+    await waitFor(() => expect(currentState()).toBe('ready'))
+    await waitFor(() => expect(gsiMock.renderButton).toHaveBeenCalled())
+
+    expect(screen.getByTestId('gsi-slot').childElementCount).toBe(1)
+  })
+
+  it('falls back to unavailable when renderButton produces no DOM', async () => {
+    // Firefox: renderButton returns normally but inserts nothing at all.
+    gsiMock.renderButton.mockImplementation(() => {})
+    render(<Harness />)
+
+    await waitFor(() => expect(currentState()).toBe('unavailable'), { timeout: 4000 })
+    expect(screen.getByTestId('rendered').textContent).toBe('false')
   })
 
   it('reports unavailable when google.accounts.id never appears', async () => {

@@ -31,7 +31,13 @@ export default function LoginPage() {
   // created by this page still shows the success card instead of redirecting.
   const [alreadyLoggedIn] = useState(() => loadSession() !== null)
 
-  const { state: googleState, buttonRef: googleButtonRef, retry: retryGoogle } = useGoogleSignIn({
+  const {
+    state: googleState,
+    gisRendered,
+    buttonRef: googleButtonRef,
+    retry: retryGoogle,
+    reset: resetGoogle,
+  } = useGoogleSignIn({
     text: 'signin_with',
     onSuccess: setSession,
     onError: setNotice,
@@ -78,7 +84,20 @@ export default function LoginPage() {
   }
 
   if (session) {
-    return <LoginSuccess session={session} onSignOut={() => setSession(null)} />
+    return (
+      <LoginSuccess
+        session={session}
+        onSignOut={() => {
+          setSession(null)
+          setForm(EMPTY_FORM)
+          setErrors({})
+          setNotice(null)
+          // The previous Google button holds a consumed credential; rebuild it
+          // so a second sign-in attempt works.
+          resetGoogle()
+        }}
+      />
+    )
   }
 
   return (
@@ -97,6 +116,7 @@ export default function LoginPage() {
 
           <GoogleAuthButton
             state={googleState}
+            gisRendered={gisRendered}
             buttonRef={googleButtonRef}
             label="Tiếp tục với Google"
             retry={retryGoogle}
