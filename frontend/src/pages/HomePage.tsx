@@ -8,7 +8,7 @@ import type { AuthResponse } from '../types/auth'
  * Public landing page. Authenticated users continue from the dashboard.
  */
 export default function HomePage() {
-  const [session, setSession] = useState<AuthResponse | null>(() => loadSession())
+  const [session] = useState<AuthResponse | null>(() => loadSession())
 
   if (session) {
     return <Navigate to="/dashboard" replace />
