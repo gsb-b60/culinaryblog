@@ -26,12 +26,12 @@ import {
   UpdateProfileCommandHandler,
   type GoogleProfile,
 } from '../../application/handlers/AuthCommandHandlers.js';
+import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
 import {
   AddRecipeIngredientCommandHandler,
   DeleteRecipeIngredientCommandHandler,
   UpdateRecipeIngredientCommandHandler,
 } from '../../application/handlers/RecipeIngredientCommandHandlers.js';
-import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';

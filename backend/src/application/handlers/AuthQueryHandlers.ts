@@ -1,9 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 
-import { IQueryHandler } from '../command-bus.js';
-import { GetCurrentUserQuery } from '../queries/auth/AuthQueries.js';
-import { UserDto } from '../dtos/UserDto.js';
 import { NotFoundError } from '../../config-middleware/shared/errors/AppError.js';
+import { IQueryHandler } from '../command-bus.js';
+import { UserDto } from '../dtos/UserDto.js';
+import { GetCurrentUserQuery } from '../queries/auth/AuthQueries.js';
 
 export class GetCurrentUserQueryHandler implements IQueryHandler<GetCurrentUserQuery, UserDto> {
   constructor(private readonly prisma: PrismaClient) {}
