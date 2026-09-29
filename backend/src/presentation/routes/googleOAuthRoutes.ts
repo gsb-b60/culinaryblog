@@ -3,6 +3,7 @@ import { randomBytes } from 'crypto';
 import { Router, type Router as RouterType } from 'express';
 
 import type { AuthResponseDto } from '../../application/dtos/UserDto.js';
+import { logger } from '../../config-middleware/config/logger.js';
 import { AppError } from '../../config-middleware/shared/errors/AppError.js';
 
 /**
@@ -128,6 +129,13 @@ export function createGoogleOAuthRouter(deps: GoogleOAuthRouterDeps): RouterType
       } catch (err) {
         const statusCode = (err as { statusCode?: number }).statusCode;
         const failureCode = (err as { code?: string }).code ?? 'AUTH_GOOGLE_FAILED';
+        // This handler catches its own errors, so nothing reaches the global
+        // error handler. Without this the user is bounced to the login page and
+        // the actual cause is logged nowhere.
+        logger.error(
+          { err, code: failureCode, status: statusCode },
+          'Google OAuth callback failed',
+        );
         res.redirect(302, errorRedirect(deps.postLoginErrorRedirect, failureCode, statusCode));
         return;
       }

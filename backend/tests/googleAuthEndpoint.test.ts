@@ -76,7 +76,18 @@ beforeEach(() => {
 });
 
 describe('POST /api/v1/auth/google', () => {
-  it('returns 200 with a token pair and the created user (AC1)', async () => {
+  it('returns 200 with a token pair and the user for a known Google identity (AC1)', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: 'existing-user',
+      email: 'google.user@example.com',
+      userName: 'nguyenvana',
+      fullName: 'Google User',
+      displayName: 'Google User',
+      avatarUrl: null,
+      role: 'AUTHOR',
+      googleId: 'google-sub-123',
+    });
+
     const res = await request(app).post('/api/v1/auth/google').send({ idToken: 'jwt-from-gsi' });
 
     expect(res.status).toBe(200);
@@ -98,6 +109,22 @@ describe('POST /api/v1/auth/google', () => {
     ) as jwt.JwtPayload & { userId: string; roles: string[] };
     expect(claims.userId).toBe(res.body.user.id);
     expect(claims.roles).toEqual(['AUTHOR']);
+  });
+
+  it('returns 403 AUTH_ACCOUNT_NOT_REGISTERED for an unknown Google identity (AC1)', async () => {
+    prismaMock.user.findUnique.mockResolvedValue(null);
+
+    const res = await request(app).post('/api/v1/auth/google').send({ idToken: 'jwt-from-gsi' });
+
+    expect(res.status).toBe(403);
+    expect(res.headers['content-type']).toContain('application/problem+json');
+    expect(res.body).toMatchObject({
+      type: 'AUTH_ACCOUNT_NOT_REGISTERED',
+      title: 'Forbidden',
+      status: 403,
+    });
+    expect(prismaMock.user.create).not.toHaveBeenCalled();
+    expect(prismaMock.refreshToken.create).not.toHaveBeenCalled();
   });
 
   it('returns 422 when idToken is missing (validation)', async () => {

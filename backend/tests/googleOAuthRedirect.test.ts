@@ -201,6 +201,26 @@ describe('GET /api/v1/auth/google/callback', () => {
     expect(location.hash).toBe('');
   });
 
+  it('redirects with 403 AUTH_ACCOUNT_NOT_REGISTERED so the UI can offer sign-up', async () => {
+    const { app, deps } = buildApp();
+    deps.authenticateWithGoogle.mockRejectedValue(
+      Object.assign(new Error('No account for this Google identity'), {
+        statusCode: 403,
+        code: 'AUTH_ACCOUNT_NOT_REGISTERED',
+      }),
+    );
+    const state = await freshState(app);
+
+    const res = await request(app)
+      .get('/api/v1/auth/google/callback')
+      .query({ code: 'auth-code', state });
+
+    expect(res.status).toBe(302);
+    const location = new URL(res.headers.location as string);
+    expect(location.searchParams.get('error')).toBe('AUTH_ACCOUNT_NOT_REGISTERED');
+    expect(location.searchParams.get('status')).toBe('403');
+  });
+
   it('surfaces the error Google reported when it bounces straight to the callback', async () => {
     const { app, deps } = buildApp();
     const state = await freshState(app);

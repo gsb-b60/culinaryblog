@@ -334,7 +334,7 @@ export class GoogleAuthCommandHandler implements ICommandHandler<GoogleAuthComma
     }
 
     const email = profile.email.trim().toLowerCase();
-    const { user, isNewUser } = await this.resolveUser(profile, email);
+    const user = await this.resolveUser(profile, email);
 
     const roles = [user.role];
     const accessToken = this.deps.jwtService.generateAccessToken({
@@ -353,14 +353,6 @@ export class GoogleAuthCommandHandler implements ICommandHandler<GoogleAuthComma
       },
     });
 
-    if (isNewUser) {
-      try {
-        await this.deps.enqueueWelcomeEmail({ email: user.email, displayName: user.displayName });
-      } catch (error) {
-        logger.warn({ err: error }, 'Failed to enqueue welcome email');
-      }
-    }
-
     return {
       accessToken,
       refreshToken,
@@ -376,52 +368,35 @@ export class GoogleAuthCommandHandler implements ICommandHandler<GoogleAuthComma
     };
   }
 
-  private async resolveUser(
-    profile: GoogleProfile,
-    email: string,
-  ): Promise<{ user: User; isNewUser: boolean }> {
+  /**
+   * Resolves the account for a verified Google identity.
+   *
+   * No account is created here. A Google identity is only ever *linked* to an
+   * account that already exists, matched by googleId first and then by email.
+   * An unknown identity is rejected so the UI can send the user to sign up.
+   */
+  private async resolveUser(profile: GoogleProfile, email: string): Promise<User> {
     const linked = await this.deps.prisma.user.findUnique({ where: { googleId: profile.sub } });
     if (linked) {
-      return { user: linked, isNewUser: false };
+      return linked;
     }
 
     const existing = await this.deps.prisma.user.findUnique({ where: { email } });
     if (existing) {
-      const user = await this.deps.prisma.user.update({
+      return this.deps.prisma.user.update({
         where: { id: existing.id },
         data: {
           googleId: profile.sub,
           ...(existing.avatarUrl ? {} : profile.picture ? { avatarUrl: profile.picture } : {}),
         },
       });
-      return { user, isNewUser: false };
     }
 
-    try {
-      const user = await this.deps.prisma.user.create({
-        data: {
-          id: randomUUID(),
-          email,
-          displayName: (profile.name ?? email).slice(0, 100),
-          fullName: profile.name?.slice(0, 100) ?? null,
-          avatarUrl: profile.picture ?? null,
-          googleId: profile.sub,
-          emailVerified: true,
-          role: 'AUTHOR',
-        },
-      });
-      return { user, isNewUser: true };
-    } catch (error) {
-      if (!isUniqueViolation(error)) {
-        throw error;
-      }
-      const recovered =
-        (await this.deps.prisma.user.findUnique({ where: { googleId: profile.sub } })) ??
-        (await this.deps.prisma.user.findUnique({ where: { email } }));
-      if (!recovered) {
-        throw error;
-      }
-      return { user: recovered, isNewUser: false };
-    }
+    throw authError(
+      403,
+      'No account exists for this Google identity. Register with this email first.',
+      'AUTH_ACCOUNT_NOT_REGISTERED',
+      'Forbidden',
+    );
   }
 }
