@@ -14,7 +14,7 @@ Learning goals: **Auth (OAuth/JWT), Transactions, Image Storage, Algorithm**
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-auth.md` §FR-AUTH-001 |
 | Endpoint | `POST /api/v1/auth/register` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -122,7 +122,7 @@ New access token and refresh token created and returned. Refresh token persisted
 | Priority | S – Should Have |
 | Doc reference | `docs/03-fr-auth.md` §FR-AUTH-003 |
 | Endpoint | `POST /api/v1/auth/google` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -176,7 +176,7 @@ User is logged in (or auto-registered) and receives AuthResponseDto.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-auth.md` §FR-AUTH-004 |
 | Endpoint | `POST /api/v1/auth/refresh` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -227,7 +227,7 @@ Old refresh token invalidated. New access token (15 min) and new refresh token (
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-auth.md` §FR-AUTH-005 |
 | Endpoint | `POST /api/v1/auth/logout` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -273,7 +273,7 @@ Refresh token marked `isRevoked = true` in the database.
 | Priority | S – Should Have |
 | Doc reference | `docs/03-fr-auth.md` §FR-AUTH-006 |
 | Endpoint | `GET /api/v1/auth/me` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -318,7 +318,7 @@ Returns the user's full profile excluding sensitive data (password hash).
 | Priority | S – Should Have |
 | Doc reference | `docs/03-fr-auth.md` §FR-AUTH-007 |
 | Endpoint | `PATCH /api/v1/auth/me` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
