@@ -2,7 +2,12 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { resetGoogleSignIn, useGoogleSignIn, type GoogleState } from '../hooks/useGoogleSignIn'
+import {
+  GOOGLE_HINTS,
+  resetGoogleSignIn,
+  useGoogleSignIn,
+  type GoogleState,
+} from '../hooks/useGoogleSignIn'
 
 const gsiMock = {
   initialize: vi.fn(),
@@ -194,5 +199,23 @@ describe('useGoogleSignIn', () => {
 
     await waitFor(() => expect(currentState()).toBe('ready'))
     expect(loadGoogleScriptMock.mock.calls.length).toBeGreaterThan(callsBefore)
+  })
+})
+
+describe('GOOGLE_HINTS', () => {
+  it('sends the user to email and password when the button is unavailable', () => {
+    // There is no second Google control, so the status line is the only thing
+    // that explains the button did not work.
+    expect(GOOGLE_HINTS.unavailable).toMatch(/email và mật khẩu/)
+  })
+
+  it('never points at another Google button', () => {
+    for (const hint of Object.values(GOOGLE_HINTS)) {
+      expect(hint).not.toMatch(/nút bên dưới/i)
+    }
+  })
+
+  it('shows no hint once the button is ready', () => {
+    expect(GOOGLE_HINTS.ready).toBe('')
   })
 })

@@ -206,7 +206,13 @@ If you deploy, replace the localhost entries with your real origins in both list
 > account that already exists, matched by email. The backend does not auto-create accounts, so
 > register with email and password first, then sign in with Google using **the same email address**.
 > Signing in with an unregistered Google account returns `403 AUTH_ACCOUNT_NOT_REGISTERED`, and the
-> login page offers a link to sign up.
+> login page offers a **Đăng ký tài khoản mới** button.
+
+> **The Google button is the only Google control.** There is no redirect fallback link in the UI.
+> If `gsi/button` returns 403 the button cannot work, and the status line under it says so and
+> points to email and password — so a blocked or unconfigured browser is never left with a silently
+> dead button. The OAuth 2.0 redirect endpoints still exist on the backend (`/auth/google/redirect`
+> and `/auth/google/callback`) and remain tested, but the UI does not link to them.
 
 #### Which port can actually sign in?
 
@@ -230,7 +236,8 @@ origin and the backend's `CORS_ORIGINS` must both match it. If you change the po
 | `gsi/button` returns **403**, `GSI_LOGGER: The given origin is not allowed for the given client ID` | Same as above |
 | `AUTH_GOOGLE_CODE_EXCHANGE_FAILED` | The redirect URI does not match the Console entry byte for byte |
 | `invalid_client` | Wrong client secret, **or a trailing space in `GOOGLE_CLIENT_ID`** — `dotenv` keeps the whitespace and the env schema does not trim it |
-| Sign-in works once, then the button does nothing | The Google ID token is single-use. Sign out and the app rebuilds the button; if it persists, the button is a hollow placeholder — use the redirect link |
+| Sign-in works once, then the button does nothing | The Google ID token is single-use. Sign out (Đăng xuất on the home page) and the app rebuilds the button |
+| The Google button shows but clicking does nothing | `gsi/button` returned 403 and Google left a hollow placeholder. The status line under the button names the cause — check the Console origin, then reload |
 | The page still behaves like an older version | A **service worker** on `localhost:5173` survives a hard reload, because `localhost` is a shared origin. Check DevTools → Application → Service Workers and unregister, then clear site data. A private window is a quick way to confirm |
 | `prefers-contrast`, `-ms-high-contrast`, `text-size-adjust` warnings | These come from Google's own `credential_button_library` stylesheet, not from this app |
 

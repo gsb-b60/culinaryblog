@@ -58,11 +58,26 @@ describe('RegisterPage', () => {
   it('renders the Google button and the "hoặc" divider', () => {
     renderRegister()
 
-    // Whether the real GIS button or the OAuth redirect fallback shows depends
-    // on VITE_GOOGLE_CLIENT_ID and whether the script loads, so assert the
-    // stable parts: a Google entry point plus the divider.
-    const google = screen.getByRole('link', { name: /Google/ })
-    expect(google).toHaveAttribute('href', expect.stringContaining('/auth/google/redirect'))
     expect(screen.getByText('hoặc')).toBeInTheDocument()
+  })
+
+  it('shows exactly one Google control, never a fallback link', () => {
+    renderRegister()
+
+    // Regression: an earlier version rendered the GIS button *and* an OAuth
+    // redirect link, which looked like two stacked Google buttons.
+    expect(screen.queryByRole('link', { name: /Google/ })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Đăng ký với Google/ }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows a status line so the user is never left with a silent dead control', () => {
+    renderRegister()
+
+    // jsdom cannot load the real GIS script, so the exact state is not
+    // deterministic. What matters is that some status is always shown; the
+    // per-state copy is asserted in useGoogleSignIn.test.tsx.
+    expect(screen.getByText(/Google/)).toBeInTheDocument()
   })
 })

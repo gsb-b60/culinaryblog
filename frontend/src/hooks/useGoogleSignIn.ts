@@ -21,7 +21,7 @@ export const GOOGLE_HINTS: Record<GoogleState, string> = {
   loading: 'Đang tải Google Sign-In...',
   ready: '',
   unavailable:
-    'Trình duyệt này không cho hiển thị nút Google (thường do Enhanced Tracking Protection của Firefox hoặc tiện ích chặn). Bạn vẫn có thể đăng nhập bằng Google qua nút bên dưới.',
+    'Nút Google không hoạt động trong trình duyệt này (thường do Enhanced Tracking Protection của Firefox, tiện ích chặn, hoặc origin chưa được đăng ký trong Google Cloud Console). Vui lòng đăng nhập bằng email và mật khẩu.',
   failed: 'Không tải được Google Sign-In (do mạng hoặc trình duyệt/chặn quảng cáo). Bấm nút để thử lại.',
   unconfigured:
     'Thiếu VITE_GOOGLE_CLIENT_ID trong frontend/.env.local — bấm để thử lại sau khi khởi động lại Vite',

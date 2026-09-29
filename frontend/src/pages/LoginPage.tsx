@@ -150,7 +150,6 @@ export default function LoginPage() {
             state={googleState}
             gisRendered={gisRendered}
             buttonRef={googleButtonRef}
-            label="Tiếp tục với Google"
             retry={retryGoogle}
           />
 

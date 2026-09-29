@@ -2,12 +2,6 @@ import type { AuthResponse, LoginPayload, ProblemDetails, RegisterPayload } from
 
 const API_BASE: string = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api/v1'
 
-/**
- * Entry point for the OAuth 2.0 redirect flow, used when the Google Identity
- * Services button cannot render (Firefox and other blocking browsers).
- */
-export const GOOGLE_OAUTH_REDIRECT_URL = `${API_BASE}/auth/google/redirect`
-
 export class ApiError extends Error {
   readonly status: number
   readonly problem: ProblemDetails | null

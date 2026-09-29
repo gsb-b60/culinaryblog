@@ -94,17 +94,35 @@ describe('LoginPage — showcase #login-1-populated', () => {
     expect(screen.getByRole('link', { name: 'Quên mật khẩu?' })).toBeInTheDocument()
   })
 
-  it('renders the Google button, the divider and the register link', () => {
+  it('renders the divider and the register link alongside the Google slot', () => {
     renderLogin()
 
-    // GIS cannot load in jsdom, so this is the OAuth redirect fallback.
-    const google = screen.getByRole('link', { name: /Google/ })
-    expect(google).toHaveAttribute('href', expect.stringContaining('/auth/google/redirect'))
+    // GIS cannot load in jsdom, so the slot stays empty here. The Google
+    // control is the button itself; there is no second fallback link.
     expect(screen.getByText('hoặc')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Đăng ký ngay' })).toHaveAttribute(
       'href',
       '/auth/register',
     )
+  })
+
+  it('shows exactly one Google control, never a fallback link', () => {
+    renderLogin()
+
+    // Regression: an earlier version rendered the GIS button *and* an OAuth
+    // redirect link, which looked like two stacked Google buttons.
+    expect(screen.queryByRole('link', { name: /Google/ })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Tiếp tục với Google|Đăng ký với Google/ }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('keeps the Google slot in the layout even before the button renders', () => {
+    renderLogin()
+
+    // The slot must hold its place so the page does not jump once Google fills it.
+    const slot = document.querySelector('[class*="min-h-"]')
+    expect(slot).toBeInTheDocument()
   })
 })
 

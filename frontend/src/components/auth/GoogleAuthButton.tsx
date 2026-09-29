@@ -1,53 +1,31 @@
 import type { RefObject } from 'react'
 
-import { GOOGLE_OAUTH_REDIRECT_URL } from '../../lib/api'
-import { GoogleIcon } from './GoogleIcon'
 import { GOOGLE_HINTS, type GoogleState } from '../../hooks/useGoogleSignIn'
 
 interface GoogleAuthButtonProps {
   state: GoogleState
-  /** True only once Google has injected a button into the slot. */
+  /** True once Google has actually injected a button into the slot. */
   gisRendered: boolean
   buttonRef: RefObject<HTMLDivElement | null>
-  label: string
   retry: () => void
 }
 
-const LINK_CLASSES =
-  'w-full flex items-center justify-center gap-3 px-4 py-3 border border-surface-300 rounded-lg text-sm font-medium text-surface-600 hover:border-surface-400 hover:bg-surface-50'
-
 /**
- * Renders the real Google Identity Services button when it works, and always
- * renders the OAuth 2.0 redirect link as the primary control.
+ * Renders the Google Identity Services button as the single Google control.
  *
- * The link is never demoted or hidden, deliberately. When `gsi/button` returns
- * 403, Google still injects a *placeholder* into the slot, so "a node appeared"
- * is not proof of a working button — an earlier version trusted that signal,
- * promoted the hollow button and hid the only control that actually worked.
- * Firefox and Chrome each also fail differently (silent no-op, or a consumed
- * single-use credential), so the redirect flow is the dependable path.
+ * There is deliberately no second control. An earlier version also rendered an
+ * OAuth 2.0 redirect link "just in case", which produced two stacked Google
+ * buttons and read as a bug. When `gsi/button` returns 403 Google still injects
+ * a container, so the status line below is what tells the user the button did
+ * not work rather than a second button pretending to be a backup.
  */
-export function GoogleAuthButton({
-  state,
-  gisRendered,
-  buttonRef,
-  label,
-  retry,
-}: GoogleAuthButtonProps) {
+export function GoogleAuthButton({ state, gisRendered, buttonRef, retry }: GoogleAuthButtonProps) {
   return (
     <div className="mb-4">
-      {/* Always mounted so the ref the watchdog reads is never null; hidden
-          until Google has actually injected something. */}
-      <div
-        ref={buttonRef}
-        className={gisRendered ? 'mb-3 [&>div]:w-full' : 'hidden'}
-        aria-hidden={!gisRendered}
-      />
-
-      <a href={GOOGLE_OAUTH_REDIRECT_URL} className={LINK_CLASSES}>
-        <GoogleIcon />
-        {label}
-      </a>
+      {/* Always mounted so the ref the watchdog reads is never null, and always
+          visible: this is the only Google control, so it must hold its place
+          in the layout whether or not Google filled the slot. */}
+      <div ref={buttonRef} className="min-h-[44px] [&>div]:w-full" aria-hidden={!gisRendered} />
 
       <div className="flex flex-wrap items-center gap-2 mt-2">
         <p className="text-xs text-surface-500">{GOOGLE_HINTS[state]}</p>

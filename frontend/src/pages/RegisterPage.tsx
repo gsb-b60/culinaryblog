@@ -199,7 +199,6 @@ export default function RegisterPage() {
             state={googleState}
             gisRendered={gisRendered}
             buttonRef={googleButtonRef}
-            label="Đăng ký với Google"
             retry={retryGoogle}
           />
 
