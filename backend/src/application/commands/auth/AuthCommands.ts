@@ -25,7 +25,7 @@ export class LoginCommand extends Command<AuthResponseDto> {
   }
 }
 
-export class RefreshTokenCommand extends Command<import('../../dtos/UserDto.js').AuthTokensDto> {
+export class RefreshTokenCommand extends Command<AuthResponseDto> {
   readonly type = 'RefreshTokenCommand';
 
   constructor(public readonly input: RefreshTokenInput) {
@@ -44,7 +44,10 @@ export class GoogleAuthCommand extends Command<AuthResponseDto> {
 export class LogoutCommand extends Command<void> {
   readonly type = 'LogoutCommand';
 
-  constructor(public readonly refreshToken: string) {
+  constructor(
+    public readonly userId: string,
+    public readonly refreshToken?: string,
+  ) {
     super();
   }
 }

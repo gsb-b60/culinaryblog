@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { logout } from '../lib/api'
 import { clearSession, loadSession } from '../lib/tokenStorage'
 import type { AuthResponse } from '../types/auth'
 
@@ -34,9 +35,13 @@ export default function HomePage() {
               ))}
             </div>
           )}
+          <Link to="/dashboard" className="mt-6 w-full justify-center rounded-lg bg-brand-500 py-2.5 text-sm font-medium text-white hover:bg-brand-600">
+            Mở Dashboard
+          </Link>
           <button
             type="button"
             onClick={() => {
+              void logout(session.accessToken, session.refreshToken).catch(() => undefined)
               clearSession()
               setSession(null)
             }}
