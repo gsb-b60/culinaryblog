@@ -164,6 +164,70 @@ Frontend runs at: **http://localhost:5173**
 
 ---
 
+### 7. Google OAuth Setup (required for Google sign-in)
+
+Google sign-in needs an OAuth client configured in the Google Cloud Console. Without it the
+Google button is refused and you must sign in with email and password.
+
+1. Go to <https://console.cloud.google.com/apis/credentials> and create an
+   **Web application** OAuth client (other types are refused by the button endpoint).
+2. On the client page, under **Authorized JavaScript origins**, add the exact origin of the
+   page that loads the button:
+
+   ```
+   http://localhost:5173
+   ```
+
+   Ports are part of the origin. `http://localhost` and `http://localhost:5173/` are different
+   and the trailing-slash form will not match.
+3. Under **Authorized redirect URIs**, add the OAuth 2.0 callback:
+
+   ```
+   http://localhost:5000/api/v1/auth/google/callback
+   ```
+4. Copy the credentials into the backend, and the same client id into the frontend:
+
+   ```bash
+   # backend/.env
+   GOOGLE_CLIENT_ID=<your-client-id>
+   GOOGLE_CLIENT_SECRET=<your-client-secret>
+   GOOGLE_CALLBACK_URL=http://localhost:5000/api/v1/auth/google/callback
+
+   # frontend/.env.local
+   VITE_GOOGLE_CLIENT_ID=<the-same-client-id>
+   ```
+5. **Wait 2–5 minutes after saving.** The new configuration does not apply immediately; testing
+   straight away still returns `403` from `accounts.google.com/gsi/button` and looks like a
+   failed setup.
+
+If you deploy, replace the localhost entries with your real origins in both lists.
+
+#### Which port can actually sign in?
+
+| URL | What it is | Can it complete an auth flow? |
+|---|---|---|
+| `http://localhost:5173` | Frontend dev server | ✅ Yes — this is the supported origin |
+| `http://localhost:5000` | Backend API | ❌ No. Returns RFC 7807 JSON, never a page |
+| `http://localhost:4173` | `vite preview` | ❌ No. Blocked by `CORS_ORIGINS` |
+
+`vite.config.ts` pins the dev server to port 5173 with `strictPort`, because Google's authorized
+origin and the backend's `CORS_ORIGINS` must both match it. If you change the port, update
+`CORS_ORIGINS`, the Console's JavaScript origins, and `vite.config.ts` together.
+
+#### Troubleshooting
+
+| Symptom | Cause |
+|---|---|
+| `Error 400: origin_mismatch` | The page origin is missing from **Authorized JavaScript origins** |
+| `gsi/button` returns **403**, `GSI_LOGGER: The given origin is not allowed for the given client ID` | Same as above |
+| `AUTH_GOOGLE_CODE_EXCHANGE_FAILED` | The redirect URI does not match the Console entry byte for byte |
+| `invalid_client` | Wrong client secret, **or a trailing space in `GOOGLE_CLIENT_ID`** — `dotenv` keeps the whitespace and the env schema does not trim it |
+| Sign-in works once, then the button does nothing | The Google ID token is single-use. Sign out and the app rebuilds the button; if it persists, the button is a hollow placeholder — use the redirect link |
+| The page still behaves like an older version | A **service worker** on `localhost:5173` survives a hard reload, because `localhost` is a shared origin. Check DevTools → Application → Service Workers and unregister, then clear site data. A private window is a quick way to confirm |
+| `prefers-contrast`, `-ms-high-contrast`, `text-size-adjust` warnings | These come from Google's own `credential_button_library` stylesheet, not from this app |
+
+---
+
 ## 🐳 Full Docker Development Stack
 
 Run everything (backend + frontend + infrastructure) with Docker Compose:

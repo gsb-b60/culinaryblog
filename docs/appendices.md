@@ -34,6 +34,9 @@ The system uses Application Error Codes (custom error codes) in the RFC 7807 "ty
 | AUTH_REFRESH_TOKEN_EXPIRED | 401 | Refresh Token has expired (7 days). | Auth |
 | AUTH_REFRESH_TOKEN_REVOKED | 401 | Refresh Token has been revoked (reuse detection). | Auth |
 | AUTH_GOOGLE_TOKEN_INVALID | 400 | Google ID Token is invalid or expired. | Auth |
+| AUTH_GOOGLE_INVALID_STATE | 400 | OAuth `state` is missing, unsigned, tampered with, or expired. | Auth |
+| AUTH_GOOGLE_MISSING_CODE | 400 | OAuth callback arrived without an authorization `code`. | Auth |
+| AUTH_GOOGLE_CODE_EXCHANGE_FAILED | 400 | The authorization code could not be exchanged for tokens. Usually a redirect URI that does not match the Console entry. | Auth |
 | AUTH_ACCOUNT_DISABLED | 403 | Account has been disabled (IsActive=false) by Admin. | Auth |
 | AUTH_ACCOUNT_LOCKED | 403 | Account is temporarily locked after 5 failed login attempts (LockedUntil). | Auth |
 | RECIPE_NOT_FOUND | 404 | Recipe with the given id/slug does not exist or has been deleted. | Recipe |

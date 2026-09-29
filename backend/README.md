@@ -286,10 +286,11 @@ docker-compose -f docker-compose.prod.yml up --build -d
 | `JWT_REFRESH_SECRET` | Yes | - | Refresh token secret (32+ chars) |
 | `JWT_ACCESS_EXPIRES_IN` | No | `15m` | Access token TTL |
 | `JWT_REFRESH_EXPIRES_IN` | No | `7d` | Refresh token TTL |
-| `GOOGLE_CLIENT_ID` | No | - | Google OAuth client ID |
+| `GOOGLE_CLIENT_ID` | No | - | Google OAuth client ID. Watch for a **trailing space**: `dotenv` preserves it and causes `invalid_client` |
 | `GOOGLE_CLIENT_SECRET` | No | - | Google OAuth secret |
-| `GOOGLE_CALLBACK_URL` | No | - | OAuth redirect URI |
-| `CORS_ORIGINS` | No | `http://localhost:5173` | Allowed origins |
+| `GOOGLE_CALLBACK_URL` | No | `http://localhost:5000/api/v1/auth/google/callback` | Must match an Authorized redirect URI in the Console byte for byte |
+| `GOOGLE_POST_LOGIN_REDIRECT` | No | first entry of `CORS_ORIGINS` | Where the OAuth redirect flow returns the browser |
+| `CORS_ORIGINS` | No | `http://localhost:5173` | Allowed origins. Only `:5173` can complete an auth flow; `vite preview` (`:4173`) is blocked |
 | `S3_ENDPOINT` | No | - | MinIO/S3 endpoint |
 | `S3_BUCKET` | No | - | Bucket name |
 | `S3_ACCESS_KEY` | No | - | Access key |
