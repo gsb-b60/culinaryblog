@@ -18,7 +18,7 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
     res.status(err.statusCode).json({
       error: err.code || 'ERROR',
       message: err.message,
-      ...(err instanceof AppError && 'errors' in err ? { errors: (err as any).errors } : {}),
+      ...(err.errors ? { errors: err.errors } : {}),
     });
     return;
   }

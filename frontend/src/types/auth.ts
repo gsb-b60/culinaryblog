@@ -26,6 +26,24 @@ export interface AuthResponse {
   user: AuthUser
 }
 
+export interface UserProfile {
+  id: string
+  email: string
+  displayName: string
+  avatarUrl?: string
+  bio?: string
+  role: string
+  emailVerified: boolean
+  isActive: boolean
+  createdAt: string
+}
+
+export interface UpdateProfilePayload {
+  displayName?: string
+  avatarUrl?: string
+  bio?: string
+}
+
 export interface ProblemDetails {
   type?: string
   title?: string
