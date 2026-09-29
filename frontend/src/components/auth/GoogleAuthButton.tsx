@@ -24,8 +24,16 @@ export function GoogleAuthButton({ state, gisRendered, buttonRef, retry }: Googl
     <div className="mb-4">
       {/* Always mounted so the ref the watchdog reads is never null, and always
           visible: this is the only Google control, so it must hold its place
-          in the layout whether or not Google filled the slot. */}
-      <div ref={buttonRef} className="min-h-[44px] [&>div]:w-full" aria-hidden={!gisRendered} />
+          in the layout whether or not Google filled the slot.
+
+          Google's button is an injected node, so centring it means centring
+          the slot and capping the injected width. The cap mirrors
+          GSI_BUTTON_WIDTH, which is what the hook passes to renderButton. */}
+      <div
+        ref={buttonRef}
+        className="flex min-h-[44px] justify-center [&>div]:max-w-[360px]"
+        aria-hidden={!gisRendered}
+      />
 
       <div className="flex flex-wrap items-center gap-2 mt-2">
         <p className="text-xs text-surface-500">{GOOGLE_HINTS[state]}</p>

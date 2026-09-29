@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   GOOGLE_HINTS,
+  GSI_BUTTON_WIDTH,
   resetGoogleSignIn,
   useGoogleSignIn,
   type GoogleState,
@@ -93,6 +94,16 @@ describe('useGoogleSignIn', () => {
     const slot = screen.getByTestId('gsi-slot')
     expect(gsiMock.renderButton.mock.calls[0]?.[0]).toBe(slot)
     await waitFor(() => expect(screen.getByTestId('rendered').textContent).toBe('true'))
+  })
+
+  it('requests a capped width so the injected button stays centred', async () => {
+    render(<Harness />)
+    await waitFor(() => expect(gsiMock.renderButton).toHaveBeenCalled())
+
+    // The slot is wider than the button, so passing the container width would
+    // stretch the button across the whole card.
+    const options = gsiMock.renderButton.mock.calls[0]?.[1] as { width?: number }
+    expect(options.width).toBeLessThanOrEqual(GSI_BUTTON_WIDTH)
   })
 
   it('keeps the slot mounted so the ref is never null', async () => {

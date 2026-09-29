@@ -17,6 +17,13 @@ export type GoogleState = 'loading' | 'ready' | 'unavailable' | 'failed' | 'unco
 export const GSI_RENDER_TIMEOUT_MS = 1500
 export const GSI_RENDER_POLL_MS = 100
 
+/**
+ * Width requested from Google. Matches the `max-w-[360px]` cap on the slot in
+ * GoogleAuthButton, so the injected node is not stretched by the flex parent
+ * and stays centred in the card.
+ */
+export const GSI_BUTTON_WIDTH = 360
+
 export const GOOGLE_HINTS: Record<GoogleState, string> = {
   loading: 'Đang tải Google Sign-In...',
   ready: '',
@@ -250,7 +257,10 @@ export function useGoogleSignIn({ text, onSuccess, onError }: UseGoogleSignInOpt
           theme: 'outline',
           size: 'large',
           text,
-          width: container.offsetWidth || 360,
+          // A fixed width keeps the injected button centred. Using
+          // container.offsetWidth made it stretch to the full card width, since
+          // the slot is wider than the button.
+          width: Math.min(container.offsetWidth || GSI_BUTTON_WIDTH, GSI_BUTTON_WIDTH),
         })
         renderedRef.current = true
         // renderButton returning without throwing is not proof of success: in

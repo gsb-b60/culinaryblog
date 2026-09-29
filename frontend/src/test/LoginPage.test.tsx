@@ -117,12 +117,14 @@ describe('LoginPage — showcase #login-1-populated', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('keeps the Google slot in the layout even before the button renders', () => {
+  it('keeps the Google slot in the layout, centred, even before the button renders', () => {
     renderLogin()
 
-    // The slot must hold its place so the page does not jump once Google fills it.
+    // The slot must hold its place so the page does not jump once Google fills
+    // it, and it centres the injected button.
     const slot = document.querySelector('[class*="min-h-"]')
     expect(slot).toBeInTheDocument()
+    expect(slot).toHaveClass('justify-center')
   })
 })
 
