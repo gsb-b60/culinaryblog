@@ -8,6 +8,7 @@ import {
   RefreshTokenCommand,
   GoogleAuthCommand,
   LogoutCommand,
+  UpdateProfileCommand,
 } from '../../application/commands/auth/AuthCommands.js';
 import { GetCurrentUserQuery } from '../../application/queries/auth/AuthQueries.js';
 import {
@@ -100,9 +101,9 @@ router.patch('/me', authenticateJwt, async (req: AuthenticatedRequest, res, next
       bio: z.string().max(2000).optional(),
     });
 
-    updateProfileSchema.parse(req.body);
-    // TODO: Implement UpdateProfileCommand
-    res.json({ message: 'Profile updated successfully' });
+    const input = updateProfileSchema.parse(req.body);
+    const result = await commandBus.executeCommand(new UpdateProfileCommand(req.user!.id, input));
+    res.json(result);
   } catch (error) {
     next(error);
   }

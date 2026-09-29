@@ -5,6 +5,8 @@ import {
   LoginInput,
   RefreshTokenInput,
   GoogleAuthInput,
+  UpdateProfileInput,
+  UserDto,
 } from '../../dtos/UserDto.js';
 
 export class RegisterCommand extends Command<AuthResponseDto> {
@@ -37,6 +39,17 @@ export class GoogleAuthCommand extends Command<AuthResponseDto> {
   readonly type = 'GoogleAuthCommand';
 
   constructor(public readonly input: GoogleAuthInput) {
+    super();
+  }
+}
+
+export class UpdateProfileCommand extends Command<UserDto> {
+  readonly type = 'UpdateProfileCommand';
+
+  constructor(
+    public readonly userId: string,
+    public readonly input: UpdateProfileInput,
+  ) {
     super();
   }
 }

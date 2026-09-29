@@ -10,6 +10,7 @@ import {
   LogoutCommand,
   RefreshTokenCommand,
   RegisterCommand,
+  UpdateProfileCommand,
 } from '../../application/commands/auth/AuthCommands.js';
 import {
   AddRecipeIngredientCommand,
@@ -22,6 +23,7 @@ import {
   LogoutCommandHandler,
   RefreshTokenCommandHandler,
   RegisterCommandHandler,
+  UpdateProfileCommandHandler,
   type GoogleProfile,
 } from '../../application/handlers/AuthCommandHandlers.js';
 import {
@@ -29,6 +31,7 @@ import {
   DeleteRecipeIngredientCommandHandler,
   UpdateRecipeIngredientCommandHandler,
 } from '../../application/handlers/RecipeIngredientCommandHandlers.js';
+import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
@@ -88,6 +91,16 @@ export function createContainer(): Container {
   commandBus.registerCommandHandler(
     DeleteRecipeIngredientCommand.name,
     new DeleteRecipeIngredientCommandHandler(prisma),
+  );
+
+  commandBus.registerQueryHandler(
+    'GetCurrentUserQuery',
+    new GetCurrentUserQueryHandler(prisma),
+  );
+
+  commandBus.registerCommandHandler(
+    UpdateProfileCommand.name,
+    new UpdateProfileCommandHandler(prisma),
   );
 
   commandBus.registerCommandHandler(

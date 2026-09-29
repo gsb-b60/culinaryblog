@@ -1,5 +1,5 @@
 import { loadSession, saveSession, clearSession } from './tokenStorage'
-import type { AuthResponse, LoginPayload, ProblemDetails, RegisterPayload } from '../types/auth'
+import type { AuthResponse, LoginPayload, ProblemDetails, RegisterPayload, UpdateProfilePayload, UserProfile } from '../types/auth'
 
 const API_BASE: string = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api/v1'
 
@@ -87,6 +87,20 @@ export function refresh(refreshToken: string): Promise<AuthResponse> {
   return request<AuthResponse>('/auth/refresh', {
     method: 'POST',
     body: JSON.stringify({ refreshToken }),
+  })
+}
+
+export function getCurrentUser(accessToken: string): Promise<UserProfile> {
+  return request<UserProfile>('/auth/me', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+}
+
+export function updateProfile(accessToken: string, payload: UpdateProfilePayload): Promise<UserProfile> {
+  return request<UserProfile>('/auth/me', {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(payload),
   })
 }
 

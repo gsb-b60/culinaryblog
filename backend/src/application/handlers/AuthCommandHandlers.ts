@@ -11,9 +11,34 @@ import {
   LogoutCommand,
   RefreshTokenCommand,
   RegisterCommand,
+  UpdateProfileCommand,
 } from '../commands/auth/AuthCommands.js';
-import { AuthResponseDto } from '../dtos/UserDto.js';
+import { AuthResponseDto, UserDto } from '../dtos/UserDto.js';
 import { IJwtService } from '../interfaces/IJwtService.js';
+
+export class UpdateProfileCommandHandler implements ICommandHandler<UpdateProfileCommand, UserDto> {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async execute(command: UpdateProfileCommand): Promise<UserDto> {
+    const user = await this.prisma.user.findFirst({ where: { id: command.userId, isDeleted: false } });
+    if (!user) throw new AppError(404, 'User not found', 'NOT_FOUND', { title: 'Not Found' });
+    const updated = await this.prisma.user.update({
+      where: { id: command.userId },
+      data: command.input,
+    });
+    return {
+      id: updated.id,
+      email: updated.email,
+      displayName: updated.displayName,
+      avatarUrl: updated.avatarUrl ?? undefined,
+      bio: updated.bio ?? undefined,
+      role: updated.role as import('../../domain/enums/UserRole.js').UserRole,
+      emailVerified: updated.emailVerified,
+      isActive: updated.isActive,
+      createdAt: updated.createdAt,
+    };
+  }
+}
 
 export interface RegisterHandlerDependencies {
   prisma: PrismaClient;
