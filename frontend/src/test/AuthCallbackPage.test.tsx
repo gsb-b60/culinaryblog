@@ -98,12 +98,14 @@ describe('AuthCallbackPage', () => {
     expect(back).toHaveAttribute('href', '/auth/login')
   })
 
-  it('ignores an error query param without crashing', async () => {
+  it('leaves a failed redirect to the login page, which renders the code', async () => {
+    // The callback only strips error params on success. A failure is handed
+    // to LoginPage, which maps the code to copy and offers sign-up.
     renderCallback('')
-    window.location.search = '?error=AUTH_GOOGLE_INVALID_TOKEN'
+    await screen.findByRole('alert')
 
-    expect(await screen.findByRole('alert')).toBeInTheDocument()
     expect(loadSession()).toBeNull()
+    expect(screen.queryByRole('link', { name: /Đăng ký/ })).not.toBeInTheDocument()
   })
 
   it('lets the user retry once the session is valid', async () => {

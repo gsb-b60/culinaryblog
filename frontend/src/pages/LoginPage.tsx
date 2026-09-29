@@ -7,6 +7,11 @@ import { GoogleAuthButton } from '../components/auth/GoogleAuthButton'
 import { TextField } from '../components/auth/TextField'
 import { useGoogleSignIn } from '../hooks/useGoogleSignIn'
 import { ApiError, login } from '../lib/api'
+import {
+  consumeGoogleErrorCode,
+  describeGoogleErrorCode,
+  requiresRegistration,
+} from '../lib/googleErrors'
 import { clearSession, loadSession, saveSession } from '../lib/tokenStorage'
 import type { AuthResponse } from '../types/auth'
 import { firstErrors, loginFormSchema } from '../validation/login'
@@ -23,7 +28,24 @@ interface Notice {
 export default function LoginPage() {
   const [form, setForm] = useState<LoginFormValues>(EMPTY_FORM)
   const [errors, setErrors] = useState<LoginFieldErrors>({})
-  const [notice, setNotice] = useState<Notice | null>(null)
+  // The OAuth callback redirects failures here with ?error=<application code>.
+  // Read during the initial render rather than in an effect, so no state
+  // update cascades after mount.
+  const [pendingGoogleError] = useState(() => consumeGoogleErrorCode())
+  const [needsRegistration, setNeedsRegistration] = useState(() =>
+    requiresRegistration(pendingGoogleError),
+  )
+  const [notice, setNotice] = useState<Notice | null>(() => {
+    if (!pendingGoogleError) {
+      return null
+    }
+    const { title, detail } = describeGoogleErrorCode(pendingGoogleError)
+    return {
+      kind: requiresRegistration(pendingGoogleError) ? 'warning' : 'error',
+      title,
+      detail,
+    }
+  })
   const [submitting, setSubmitting] = useState(false)
   const [remember, setRemember] = useState(true)
   const [session, setSession] = useState<AuthResponse | null>(null)
@@ -47,6 +69,7 @@ export default function LoginPage() {
     setForm((prev) => ({ ...prev, [key]: value }))
     setErrors((prev) => ({ ...prev, [key]: undefined }))
     setNotice(null)
+    setNeedsRegistration(false)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -73,7 +96,7 @@ export default function LoginPage() {
         setNotice({ kind: 'error', title: 'Đăng nhập thất bại', detail: 'Đã xảy ra lỗi không xác định.' })
         return
       }
-      applyApiError(err, setErrors, setNotice)
+      applyApiError(err, setErrors, setNotice, setNeedsRegistration)
     } finally {
       setSubmitting(false)
     }
@@ -113,6 +136,15 @@ export default function LoginPage() {
 
         <div className="bg-white rounded-xl border border-surface-200 p-6 shadow-sm">
           {notice && <Banner kind={notice.kind} title={notice.title} detail={notice.detail} />}
+
+          {needsRegistration && (
+            <Link
+              to="/auth/register"
+              className="mb-4 w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600"
+            >
+              Đăng ký tài khoản mới
+            </Link>
+          )}
 
           <GoogleAuthButton
             state={googleState}
@@ -262,6 +294,7 @@ function applyApiError(
   err: ApiError,
   setErrors: (errors: LoginFieldErrors) => void,
   setNotice: (notice: Notice) => void,
+  setNeedsRegistration: (value: boolean) => void,
 ): void {
   if (err.status === 422 && err.problem?.errors) {
     const fieldErrors: LoginFieldErrors = {}
@@ -286,6 +319,15 @@ function applyApiError(
   }
 
   if (err.status === 403) {
+    // A Google identity with no local account must reach sign-up, so it gets
+    // its own copy and a dedicated register button.
+    const code = err.problem?.type
+    if (requiresRegistration(code)) {
+      const { title, detail } = describeGoogleErrorCode(code)
+      setNotice({ kind: 'warning', title, detail })
+      setNeedsRegistration(true)
+      return
+    }
     if (err.problem?.type === 'AUTH_ACCOUNT_LOCKED') {
       setNotice({
         kind: 'warning',
