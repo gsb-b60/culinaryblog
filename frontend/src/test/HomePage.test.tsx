@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -72,6 +72,7 @@ describe('HomePage — signed in', () => {
     renderHome()
 
     await userEvent.click(screen.getByRole('button', { name: /Đăng xuất/ }))
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Đăng xuất/ }))
 
     expect(loadSession()).toBeNull()
     expect(screen.getByRole('link', { name: 'Đăng nhập' })).toBeInTheDocument()

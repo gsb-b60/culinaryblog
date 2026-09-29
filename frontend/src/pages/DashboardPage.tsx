@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { ConfirmLogoutModal } from '../components/ConfirmLogoutModal'
 import { logout } from '../lib/api'
 import { clearSession, loadSession } from '../lib/tokenStorage'
 
@@ -24,6 +26,7 @@ function Sidebar({ onLogout }: { onLogout: () => void }) {
 export default function DashboardPage() {
   const navigate = useNavigate()
   const session = loadSession()
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   const handleLogout = () => {
     if (session) void logout(session.accessToken, session.refreshToken).catch(() => undefined)
@@ -38,7 +41,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-surface-50 md:flex">
-      <Sidebar onLogout={handleLogout} />
+      <Sidebar onLogout={() => setShowLogoutModal(true)} />
       <main className="min-w-0 flex-1 p-5 sm:p-8">
         <div className="mb-6 flex items-center justify-between">
           <div>
@@ -58,6 +61,7 @@ export default function DashboardPage() {
         </section>
         <nav className="fixed bottom-0 left-0 right-0 flex border-t border-surface-200 bg-white p-2 md:hidden" aria-label="Mobile navigation"><Link to="/dashboard" className="flex-1 text-center text-xs font-medium text-brand-600">Tổng quan</Link><Link to="/dashboard" className="flex-1 text-center text-xs text-surface-400">Công thức</Link><Link to="/profile" className="flex-1 text-center text-xs text-surface-400">Cá nhân</Link></nav>
       </main>
+      {showLogoutModal && <ConfirmLogoutModal onCancel={() => setShowLogoutModal(false)} onConfirm={handleLogout} />}
     </div>
   )
 }
