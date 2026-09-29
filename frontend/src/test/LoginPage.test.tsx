@@ -43,6 +43,7 @@ function renderLogin() {
       <Routes>
         <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/" element={<h1>Trang chủ</h1>} />
+        <Route path="/dashboard" element={<h1>Dashboard</h1>} />
       </Routes>
     </MemoryRouter>,
   )
@@ -283,10 +284,10 @@ describe('LoginPage — success', () => {
 
     await fillAndSubmit()
 
-    expect(await screen.findByText('Đăng nhập thành công!')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
     expect(loadSession()).toEqual(AUTH)
     expect(localStorage.getItem('culinary_session')).not.toBeNull()
-    expect(screen.getByText('AUTHOR')).toBeInTheDocument()
+    expect(loadSession()?.user.roles).toContain('AUTHOR')
   })
 
   it('stores an un-remembered session in sessionStorage instead', async () => {
@@ -299,30 +300,27 @@ describe('LoginPage — success', () => {
     await user.type(screen.getByLabelText('Mật khẩu'), 'Secret1!')
     await user.click(screen.getByRole('button', { name: 'Đăng nhập' }))
 
-    await screen.findByText('Đăng nhập thành công!')
+    await screen.findByRole('heading', { name: 'Dashboard' })
     expect(sessionStorage.getItem('culinary_session')).not.toBeNull()
     expect(localStorage.getItem('culinary_session')).toBeNull()
   })
 
-  it('clears the session when the user signs out from the success card', async () => {
+  it('stores the session before redirecting to the dashboard', async () => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify(AUTH), { status: 200 }))
     renderLogin()
     await fillAndSubmit()
-    await screen.findByText('Đăng nhập thành công!')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Đăng xuất' }))
-
-    await waitFor(() => expect(loadSession()).toBeNull())
-    expect(screen.getByRole('heading', { name: 'Đăng nhập' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(loadSession()).toEqual(AUTH)
   })
 })
 
 describe('LoginPage — already authenticated', () => {
-  it('redirects to the home page instead of showing the form', async () => {
+  it('redirects to the dashboard instead of showing the form', async () => {
     saveSession(AUTH)
     renderLogin()
 
-    expect(await screen.findByRole('heading', { name: 'Trang chủ' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
     expect(screen.queryByLabelText('Mật khẩu')).not.toBeInTheDocument()
   })
 })
@@ -337,7 +335,7 @@ describe('LoginPage — Google unavailable must not block the form', () => {
     await userEvent.type(screen.getByLabelText('Mật khẩu'), 'Secret1!')
     await userEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }))
 
-    expect(await screen.findByText('Đăng nhập thành công!')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
   })
 
   it('leaves the form enabled and reachable while Google is not ready', async () => {

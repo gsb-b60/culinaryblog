@@ -49,12 +49,12 @@ describe('HomePage — signed out', () => {
 })
 
 describe('HomePage — signed in', () => {
-  it('greets the user and shows their roles instead of the auth links', () => {
+  it('redirects authenticated users to the dashboard', () => {
     saveSession(SESSION)
     renderHome()
 
     expect(screen.getByText(/Nguyen Van A/)).toBeInTheDocument()
-    expect(screen.getByText('AUTHOR')).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Tổng quan' }).length).toBeGreaterThan(0)
     expect(screen.queryByRole('link', { name: 'Đăng nhập' })).not.toBeInTheDocument()
   })
 

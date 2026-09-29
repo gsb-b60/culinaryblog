@@ -12,7 +12,7 @@ import {
   describeGoogleErrorCode,
   requiresRegistration,
 } from '../lib/googleErrors'
-import { clearSession, loadSession, saveSession } from '../lib/tokenStorage'
+import { loadSession, saveSession } from '../lib/tokenStorage'
 import type { AuthResponse } from '../types/auth'
 import { firstErrors, loginFormSchema } from '../validation/login'
 import type { LoginFieldErrors, LoginFormValues } from '../validation/login'
@@ -49,8 +49,6 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false)
   const [remember, setRemember] = useState(true)
   const [session, setSession] = useState<AuthResponse | null>(null)
-  // Showcase M7: "redirect if logged in". Captured once on mount so a session
-  // created by this page still shows the success card instead of redirecting.
   const [alreadyLoggedIn] = useState(() => loadSession() !== null)
 
   const {
@@ -58,7 +56,6 @@ export default function LoginPage() {
     gisRendered,
     buttonRef: googleButtonRef,
     retry: retryGoogle,
-    reset: resetGoogle,
   } = useGoogleSignIn({
     text: 'signin_with',
     onSuccess: setSession,
@@ -102,25 +99,8 @@ export default function LoginPage() {
     }
   }
 
-  if (alreadyLoggedIn) {
-    return <Navigate to="/" replace />
-  }
-
-  if (session) {
-    return (
-      <LoginSuccess
-        session={session}
-        onSignOut={() => {
-          setSession(null)
-          setForm(EMPTY_FORM)
-          setErrors({})
-          setNotice(null)
-          // The previous Google button holds a consumed credential; rebuild it
-          // so a second sign-in attempt works.
-          resetGoogle()
-        }}
-      />
-    )
+  if (alreadyLoggedIn || session) {
+    return <Navigate to="/dashboard" replace />
   }
 
   return (
@@ -232,53 +212,6 @@ export default function LoginPage() {
               Đăng ký ngay
             </Link>
           </p>
-        </div>
-      </div>
-    </main>
-  )
-}
-
-function LoginSuccess({ session, onSignOut }: { session: AuthResponse; onSignOut: () => void }) {
-  return (
-    <main className="min-h-screen bg-surface-50 flex items-center justify-center p-5">
-      <div className="w-full max-w-md bg-white rounded-xl border border-surface-200 p-6 shadow-sm text-center">
-        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <h1 className="text-2xl font-bold text-surface-900">Đăng nhập thành công!</h1>
-        <p className="text-sm text-surface-500 mt-2">
-          Xin chào <strong className="text-surface-800">{session.user.fullName}</strong>
-          {session.user.userName ? ` (${session.user.userName})` : null}
-        </p>
-        <div className="flex justify-center gap-2 mt-3">
-          {session.user.roles.map((role) => (
-            <span key={role} className="px-2 py-0.5 bg-brand-100 text-brand-700 text-xs font-semibold rounded-full">
-              {role}
-            </span>
-          ))}
-        </div>
-        <p className="text-xs text-surface-400 mt-4">
-          Phiên đăng nhập (JWT) đã được lưu trên trình duyệt của bạn.
-        </p>
-        <div className="flex flex-col gap-2 mt-6">
-          <Link
-            to="/"
-            className="w-full py-2.5 bg-brand-500 text-white rounded-lg font-medium hover:bg-brand-600 text-sm justify-center"
-          >
-            Về trang chủ
-          </Link>
-          <button
-            type="button"
-            onClick={() => {
-              clearSession()
-              onSignOut()
-            }}
-            className="w-full py-2.5 border border-surface-300 rounded-lg font-medium text-surface-600 hover:bg-surface-50 text-sm justify-center"
-          >
-            Đăng xuất
-          </button>
         </div>
       </div>
     </main>
