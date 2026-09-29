@@ -4,7 +4,13 @@ import { Request, Response, NextFunction } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 
 import { commandBus } from '../../application/command-bus.js';
-import { GoogleAuthCommand, LoginCommand, RegisterCommand } from '../../application/commands/auth/AuthCommands.js';
+import {
+  GoogleAuthCommand,
+  LoginCommand,
+  LogoutCommand,
+  RefreshTokenCommand,
+  RegisterCommand,
+} from '../../application/commands/auth/AuthCommands.js';
 import {
   AddRecipeIngredientCommand,
   DeleteRecipeIngredientCommand,
@@ -13,6 +19,8 @@ import {
 import {
   GoogleAuthCommandHandler,
   LoginCommandHandler,
+  LogoutCommandHandler,
+  RefreshTokenCommandHandler,
   RegisterCommandHandler,
   type GoogleProfile,
 } from '../../application/handlers/AuthCommandHandlers.js';
@@ -105,6 +113,21 @@ export function createContainer(): Container {
       accessTokenTtlMs: parseDuration(env.JWT_ACCESS_EXPIRES_IN),
       refreshTokenTtlMs: parseDuration(env.JWT_REFRESH_EXPIRES_IN),
     }),
+  );
+
+  commandBus.registerCommandHandler(
+    RefreshTokenCommand.name,
+    new RefreshTokenCommandHandler({
+      prisma,
+      jwtService,
+      accessTokenTtlMs: parseDuration(env.JWT_ACCESS_EXPIRES_IN),
+      refreshTokenTtlMs: parseDuration(env.JWT_REFRESH_EXPIRES_IN),
+    }),
+  );
+
+  commandBus.registerCommandHandler(
+    LogoutCommand.name,
+    new LogoutCommandHandler({ prisma }),
   );
 
   const googleAuthClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -49,12 +49,12 @@ describe('HomePage — signed out', () => {
 })
 
 describe('HomePage — signed in', () => {
-  it('greets the user and shows their roles instead of the auth links', () => {
+  it('redirects authenticated users to the dashboard', () => {
     saveSession(SESSION)
     renderHome()
 
     expect(screen.getByText(/Nguyen Van A/)).toBeInTheDocument()
-    expect(screen.getByText('AUTHOR')).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Tổng quan' }).length).toBeGreaterThan(0)
     expect(screen.queryByRole('link', { name: 'Đăng nhập' })).not.toBeInTheDocument()
   })
 
@@ -72,6 +72,7 @@ describe('HomePage — signed in', () => {
     renderHome()
 
     await userEvent.click(screen.getByRole('button', { name: /Đăng xuất/ }))
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Đăng xuất/ }))
 
     expect(loadSession()).toBeNull()
     expect(screen.getByRole('link', { name: 'Đăng nhập' })).toBeInTheDocument()

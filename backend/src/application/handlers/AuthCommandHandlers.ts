@@ -1,11 +1,17 @@
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 
 import { PrismaClient, User } from '@prisma/client';
 
 import { logger } from '../../config-middleware/config/logger.js';
-import { AppError, ValidationError } from '../../config-middleware/shared/errors/AppError.js';
+import { AppError, UnauthorizedError, ValidationError } from '../../config-middleware/shared/errors/AppError.js';
 import { ICommandHandler } from '../command-bus.js';
-import { GoogleAuthCommand, LoginCommand, RegisterCommand } from '../commands/auth/AuthCommands.js';
+import {
+  GoogleAuthCommand,
+  LoginCommand,
+  LogoutCommand,
+  RefreshTokenCommand,
+  RegisterCommand,
+} from '../commands/auth/AuthCommands.js';
 import { AuthResponseDto } from '../dtos/UserDto.js';
 import { IJwtService } from '../interfaces/IJwtService.js';
 
@@ -118,6 +124,118 @@ export class RegisterCommandHandler implements ICommandHandler<RegisterCommand, 
         roles,
       },
     };
+  }
+}
+
+export interface RefreshTokenHandlerDependencies {
+  prisma: PrismaClient;
+  jwtService: IJwtService;
+  accessTokenTtlMs: number;
+  refreshTokenTtlMs: number;
+}
+
+function refreshError(message: string, code: string): AppError {
+  return new AppError(401, message, code, { type: code, title: 'Unauthorized' });
+}
+
+function toAuthResponse(user: User, accessToken: string, refreshToken: string, accessTokenTtlMs: number): AuthResponseDto {
+  return {
+    accessToken,
+    refreshToken,
+    expiresAt: new Date(Date.now() + accessTokenTtlMs).toISOString(),
+    user: {
+      id: user.id,
+      fullName: user.fullName ?? user.displayName,
+      email: user.email,
+      userName: user.userName ?? '',
+      avatarUrl: user.avatarUrl ?? undefined,
+      roles: [user.role],
+    },
+  };
+}
+
+export class RefreshTokenCommandHandler implements ICommandHandler<RefreshTokenCommand, AuthResponseDto> {
+  constructor(private readonly deps: RefreshTokenHandlerDependencies) {}
+
+  async execute(command: RefreshTokenCommand): Promise<AuthResponseDto> {
+    const tokenHash = this.deps.jwtService.hashRefreshToken(command.input.refreshToken);
+    const storedToken = await this.deps.prisma.refreshToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    });
+
+    if (!storedToken) {
+      throw refreshError('Invalid refresh token', 'AUTH_REFRESH_INVALID');
+    }
+
+    if (storedToken.revokedAt) {
+      const revokedAt = new Date();
+      await this.deps.prisma.refreshToken.updateMany({
+        where: { userId: storedToken.userId, revokedAt: null },
+        data: { revokedAt },
+      });
+      logger.warn({ event: 'refresh_token_reuse', userId: storedToken.userId }, 'Refresh token reuse detected');
+      throw refreshError('Refresh token has been revoked', 'AUTH_REFRESH_REUSED');
+    }
+
+    if (storedToken.expiresAt <= new Date()) {
+      throw refreshError('Refresh token has expired', 'AUTH_REFRESH_EXPIRED');
+    }
+
+    if (!storedToken.user || !storedToken.user.isActive) {
+      throw refreshError('User account is inactive', 'AUTH_REFRESH_USER_INACTIVE');
+    }
+
+    const newRefreshToken = this.deps.jwtService.generateRefreshToken();
+    const newTokenHash = this.deps.jwtService.hashRefreshToken(newRefreshToken);
+    const now = new Date();
+    const newAccessToken = this.deps.jwtService.generateAccessToken({
+      userId: storedToken.user.id,
+      email: storedToken.user.email,
+      roles: [storedToken.user.role],
+      jti: randomUUID(),
+    });
+
+    await this.deps.prisma.$transaction([
+      this.deps.prisma.refreshToken.update({
+        where: { id: storedToken.id },
+        data: { revokedAt: now, replacedByTokenHash: newTokenHash },
+      }),
+      this.deps.prisma.refreshToken.create({
+        data: {
+          tokenHash: newTokenHash,
+          userId: storedToken.user.id,
+          expiresAt: new Date(now.getTime() + this.deps.refreshTokenTtlMs),
+        },
+      }),
+    ]);
+
+    return toAuthResponse(storedToken.user, newAccessToken, newRefreshToken, this.deps.accessTokenTtlMs);
+  }
+}
+
+export interface LogoutHandlerDependencies {
+  prisma: PrismaClient;
+}
+
+export class LogoutCommandHandler implements ICommandHandler<LogoutCommand, void> {
+  constructor(private readonly deps: LogoutHandlerDependencies) {}
+
+  async execute(command: LogoutCommand): Promise<void> {
+    if (!command.refreshToken) {
+      throw new UnauthorizedError('Refresh token is required');
+    }
+
+    const tokenHash = createHash('sha256').update(command.refreshToken).digest('hex');
+    const storedToken = await this.deps.prisma.refreshToken.findUnique({ where: { tokenHash } });
+    if (!storedToken || storedToken.userId !== command.userId || storedToken.revokedAt) {
+      return;
+    }
+
+    await this.deps.prisma.refreshToken.update({
+      where: { id: storedToken.id },
+      data: { revokedAt: new Date() },
+    });
   }
 }
 

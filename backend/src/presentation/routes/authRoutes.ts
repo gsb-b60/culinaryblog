@@ -74,8 +74,7 @@ router.post('/refresh', authRateLimiter, async (req, res, next) => {
 
 router.post('/logout', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { refreshToken } = req.body;
-    const command = new LogoutCommand(refreshToken);
+    const command = new LogoutCommand(req.user!.id, req.body?.refreshToken);
     await commandBus.executeCommand(command);
     res.status(204).send();
   } catch (error) {
