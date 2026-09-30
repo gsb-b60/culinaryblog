@@ -1,5 +1,6 @@
 import { PagedResult } from '../../application/dtos/PagedResult.js';
 import { Recipe, RecipeProps } from '../entities/Recipe.js';
+import { UserRole } from '../enums/UserRole.js';
 
 export interface RecipeFilters {
   categoryId?: string;
@@ -11,6 +12,10 @@ export interface RecipeFilters {
   minCookTime?: number;
   maxCookTime?: number;
   searchQuery?: string;
+  visibility?: {
+    role: UserRole;
+    userId?: string;
+  };
 }
 
 export interface RecipeSortOptions {

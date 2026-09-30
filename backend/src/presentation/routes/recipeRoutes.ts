@@ -28,23 +28,29 @@ import {
   recipeSortSchema,
   paginationSchema 
 } from '../../application/validators/recipeValidators.js';
-import { authenticateJwt, AuthenticatedRequest, authorizeOwnerOrAdmin } from '../middleware/AuthMiddleware.js';
+import { authenticateJwt, AuthenticatedRequest, authorizeOwnerOrAdmin, optionalAuth } from '../middleware/AuthMiddleware.js';
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 const router = Router();
 
 // Public routes
-router.get('/', generalRateLimiter, async (req, res, next) => {
+router.get('/', generalRateLimiter, optionalAuth, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const filters = recipeFiltersSchema.parse(req.query);
-    const sort = recipeSortSchema.parse(req.query);
+    const { sort: sortValue, ...queryFilters } = req.query;
+    const filters = recipeFiltersSchema.parse(queryFilters);
+    const parsedSort = typeof sortValue === 'string' ? sortValue : '-createdAt';
+    const descending = parsedSort.startsWith('-');
+    const field = descending ? parsedSort.slice(1) : parsedSort;
+    const sort = recipeSortSchema.parse({ field, order: descending ? 'desc' : 'asc' });
     const pagination = paginationSchema.parse(req.query);
 
     const query = new GetRecipesQuery(
       filters,
       sort,
       pagination.page,
-      pagination.pageSize
+      pagination.pageSize,
+      req.user?.id,
+      req.user?.roles.includes('ADMIN' as any) ? 'ADMIN' as any : req.user ? 'AUTHOR' as any : 'GUEST' as any
     );
     const result = await commandBus.executeQuery(query);
     res.json(result);

@@ -16,6 +16,8 @@ import { MinioFileStorageService } from '../../infrastructure/file-storage/Minio
 import { NodemailerEmailService } from '../../infrastructure/email/NodemailerEmailService.js';
 import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
 import { healthCheckService } from '../../infrastructure/health/HealthCheckService.js';
+import { GetRecipesQueryHandler } from '../../application/queries/recipes/RecipeQueryHandlers.js';
+import { GetRecipesQuery } from '../../application/queries/recipes/RecipeQueries.js';
 
 export interface Container {
   prisma: PrismaClient;
@@ -45,6 +47,7 @@ export function createContainer(): Container {
   const jwtService = new JwtService();
   const fileStorageService = new MinioFileStorageService();
   const emailService = new NodemailerEmailService();
+  commandBus.registerQueryHandler('GetRecipesQuery', new GetRecipesQueryHandler(recipeRepository));
 
   container = {
     prisma,

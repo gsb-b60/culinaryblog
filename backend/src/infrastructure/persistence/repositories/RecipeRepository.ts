@@ -264,6 +264,18 @@ export class RecipeRepository implements IRecipeRepository {
         { description: { contains: filters.searchQuery, mode: 'insensitive' } },
       ];
     }
+    if (filters.visibility) {
+      if (filters.visibility.role === 'ADMIN') {
+        // Administrators can see every non-deleted recipe.
+      } else if (filters.visibility.role === 'AUTHOR' && filters.visibility.userId) {
+        where.OR = [
+          { status: RecipeStatus.PUBLISHED },
+          { status: { in: [RecipeStatus.DRAFT, RecipeStatus.ARCHIVED] }, authorId: filters.visibility.userId },
+        ];
+      } else {
+        where.status = RecipeStatus.PUBLISHED;
+      }
+    }
 
     return where;
   }

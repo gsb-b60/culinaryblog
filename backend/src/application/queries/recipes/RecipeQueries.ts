@@ -1,5 +1,6 @@
 import { RecipeFilters, RecipeSortOptions } from '../../../domain/repositories/IRecipeRepository.js';
 import { Query } from '../../command-bus.js';
+import { UserRole } from '../../../domain/enums/UserRole.js';
 
 export class GetRecipesQuery extends Query<import('../../dtos/PagedResult.js').PagedResult<import('../../dtos/RecipeDto.js').RecipeSummaryDto>> {
   readonly type = 'GetRecipesQuery';
@@ -8,7 +9,9 @@ export class GetRecipesQuery extends Query<import('../../dtos/PagedResult.js').P
     public readonly filters: RecipeFilters,
     public readonly sort: RecipeSortOptions,
     public readonly page: number,
-    public readonly pageSize: number
+    public readonly pageSize: number,
+    public readonly userId?: string,
+    public readonly userRole: UserRole = UserRole.GUEST
   ) {
     super();
   }
