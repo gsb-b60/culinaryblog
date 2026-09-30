@@ -7,8 +7,8 @@ import { IRecipeRepository } from '../../../domain/repositories/IRecipeRepositor
 export class GetRecipesQueryHandler implements IQueryHandler<GetRecipesQuery, PagedResult<RecipeSummaryDto>> {
   constructor(private readonly recipeRepository: IRecipeRepository) {}
 
-  execute(query: GetRecipesQuery): Promise<PagedResult<RecipeSummaryDto>> {
-    return this.recipeRepository.findMany(
+  async execute(query: GetRecipesQuery): Promise<PagedResult<RecipeSummaryDto>> {
+    const result = await this.recipeRepository.findMany(
       {
         ...query.filters,
         visibility: { role: query.userRole, userId: query.userId },
@@ -16,6 +16,27 @@ export class GetRecipesQueryHandler implements IQueryHandler<GetRecipesQuery, Pa
       query.sort,
       query.page,
       query.pageSize,
-    ) as Promise<PagedResult<RecipeSummaryDto>>;
+    );
+
+    return {
+      ...result,
+      items: result.items.map(recipe => ({
+        id: recipe.id,
+        title: recipe.title,
+        slug: recipe.slug.getValue(),
+        description: recipe.description,
+        prepTime: recipe.prepTime,
+        cookTime: recipe.cookTime,
+        servings: recipe.servings,
+        difficulty: recipe.difficulty,
+        status: recipe.status,
+        categoryId: recipe.categoryId,
+        categoryName: (recipe as any)._categoryName ?? recipe.categoryId,
+        authorId: recipe.authorId,
+        authorName: (recipe as any)._authorName ?? recipe.authorId,
+        publishedAt: recipe.publishedAt,
+        createdAt: recipe.createdAt,
+      })),
+    };
   }
 }

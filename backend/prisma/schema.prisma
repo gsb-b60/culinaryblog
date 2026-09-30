@@ -66,6 +66,7 @@ model RefreshToken {
   userId               String   @map("user_id")
   userAgent            String?  @db.VarChar(500) @map("user_agent")
   expiresAt            DateTime @map("expires_at")
+  isRevoked            Boolean  @default(false) @map("is_revoked")
   revokedAt            DateTime? @map("revoked_at")
   replacedByTokenHash  String?  @db.VarChar(64) @map("replaced_by_token_hash")
   createdAt            DateTime @default(now()) @map("created_at")

@@ -1,5 +1,5 @@
 import cors from 'cors';
-import express from 'express';
+import express, { Express } from 'express';
 import helmet from 'helmet';
 import passport from 'passport';
 import { pinoHttp } from 'pino-http';
@@ -26,7 +26,7 @@ import recipeRoutes from './presentation/routes/recipeRoutes.js';
 
 initTracing();
 
-const app = express();
+const app: Express = express();
 
 // Configure Passport
 configureJwtStrategy(passport);

@@ -2,22 +2,22 @@ import { PrismaClient } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
 
 import { commandBus } from '../../application/command-bus.js';
+import { RefreshTokenCommandHandler } from '../../application/commands/auth/RefreshTokenCommandHandler.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
+import { GetRecipesQueryHandler } from '../../application/queries/recipes/RecipeQueryHandlers.js';
 import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository.js';
 import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.js';
 import { IUserRepository } from '../../domain/repositories/IUserRepository.js';
 import { JwtService } from '../../infrastructure/auth/JwtService.js';
+import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
+import { NodemailerEmailService } from '../../infrastructure/email/NodemailerEmailService.js';
+import { MinioFileStorageService } from '../../infrastructure/file-storage/MinioFileStorageService.js';
+import { healthCheckService } from '../../infrastructure/health/HealthCheckService.js';
 import { CategoryRepository } from '../../infrastructure/persistence/repositories/CategoryRepository.js';
 import { RecipeRepository } from '../../infrastructure/persistence/repositories/RecipeRepository.js';
 import { UserRepository } from '../../infrastructure/persistence/repositories/UserRepository.js';
-import { MinioFileStorageService } from '../../infrastructure/file-storage/MinioFileStorageService.js';
-import { NodemailerEmailService } from '../../infrastructure/email/NodemailerEmailService.js';
-import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
-import { healthCheckService } from '../../infrastructure/health/HealthCheckService.js';
-import { GetRecipesQueryHandler } from '../../application/queries/recipes/RecipeQueryHandlers.js';
-import { GetRecipesQuery } from '../../application/queries/recipes/RecipeQueries.js';
 
 export interface Container {
   prisma: PrismaClient;
@@ -47,6 +47,10 @@ export function createContainer(): Container {
   const jwtService = new JwtService();
   const fileStorageService = new MinioFileStorageService();
   const emailService = new NodemailerEmailService();
+  commandBus.registerCommandHandler(
+    'RefreshTokenCommand',
+    new RefreshTokenCommandHandler(prisma, jwtService),
+  );
   commandBus.registerQueryHandler('GetRecipesQuery', new GetRecipesQueryHandler(recipeRepository));
 
   container = {
@@ -80,11 +84,7 @@ export async function destroyContainer(): Promise<void> {
   }
 }
 
-export function containerMiddleware(
-  req: Request,
-  _res: Response,
-  next: NextFunction
-): void {
-  (req as any).container = getContainer();
+export function containerMiddleware(req: Request, _res: Response, next: NextFunction): void {
+  (req as Request & { container: Container }).container = getContainer();
   next();
 }

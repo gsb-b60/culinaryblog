@@ -174,7 +174,7 @@ User is logged in (or auto-registered) and receives AuthResponseDto.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-auth.md` §FR-AUTH-004 |
 | Endpoint | `POST /api/v1/auth/refresh` |
-| Status | ⬜ Open |
+| Status | ✅ Implemented; focused automated tests pass |
 
 **Description:**
 
@@ -204,12 +204,14 @@ Old refresh token invalidated. New access token (15 min) and new refresh token (
 
 **Acceptance Criteria:**
 
-- [ ] Valid refresh token returns 200 with new token pair
-- [ ] Old refresh token is marked `isRevoked = true` after rotation
-- [ ] Expired refresh token returns 401
-- [ ] Revoked refresh token reuse triggers 401 + security log
-- [ ] Reuse attack revokes entire token family for the user
-- [ ] SHA-256 hash stored (never raw token)
+- [x] Valid refresh token returns 200 with new token pair
+- [x] Old refresh token is marked `isRevoked = true` after rotation
+- [x] Expired refresh token returns 401
+- [x] Revoked refresh token reuse triggers 401 + security log
+- [x] Reuse attack revokes all active refresh tokens for the user
+- [x] SHA-256 hash stored (never raw token)
+
+Automated tests in `backend/tests/RefreshTokenCommandHandler.test.ts` pass. Prisma Client generation and schema validation also pass; database push and live API verification remain pending because no database URL/service is configured in the current environment.
 
 ---
 

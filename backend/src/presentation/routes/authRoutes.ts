@@ -19,7 +19,7 @@ import {
 import { authenticateJwt, AuthenticatedRequest } from '../middleware/AuthMiddleware.js';
 import { authRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
-const router = Router();
+const router: Router = Router();
 
 router.post('/register', authRateLimiter, async (req, res, next) => {
   try {

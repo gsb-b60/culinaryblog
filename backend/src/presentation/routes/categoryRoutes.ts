@@ -21,7 +21,7 @@ import { UserRole } from '../../domain/enums/UserRole.js';
 import { authenticateJwt, AuthenticatedRequest, authorize } from '../middleware/AuthMiddleware.js';
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
-const router = Router();
+const router: Router = Router();
 
 // Public routes
 router.get('/', generalRateLimiter, async (req, res, next) => {

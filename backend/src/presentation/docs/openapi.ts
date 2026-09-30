@@ -4,11 +4,11 @@ import { createContainer } from '../di/container.js';
 
 export function setupRoutes(app: Router): void {
   const container = createContainer();
-  
+
   // Health checks (no container needed)
   app.get('/health', async (_req, res) => {
     const result = await container.healthCheckService.checkAll();
-    const statusCode = result.status === 'healthy' ? 200 : result.status === 'degraded' ? 200 : 503;
+    const statusCode = result.status === 'Healthy' ? 200 : result.status === 'Degraded' ? 200 : 503;
     res.status(statusCode).json(result);
   });
 
@@ -19,7 +19,7 @@ export function setupRoutes(app: Router): void {
 
   app.get('/health/ready', async (_req, res) => {
     const result = await container.healthCheckService.checkReadiness();
-    const statusCode = result.status === 'healthy' ? 200 : 503;
+    const statusCode = result.status === 'Healthy' ? 200 : 503;
     res.status(statusCode).json(result);
   });
 
