@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import passport from 'passport';
-import { JwtService } from '../../../infrastructure/auth/JwtService.js';
-import { UserRole } from '../../../domain/enums/UserRole.js';
+import { JwtService } from '../../infrastructure/auth/JwtService.js';
+import { UserRole } from '../../domain/enums/UserRole.js';
 
 const jwtService = new JwtService();
 

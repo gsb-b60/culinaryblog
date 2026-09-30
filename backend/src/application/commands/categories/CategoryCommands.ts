@@ -1,5 +1,5 @@
-import { Command } from '../command-bus.js';
-import { CreateCategoryInput, UpdateCategoryInput } from '../dtos/CategoryDto.js';
+import { Command } from '../../command-bus.js';
+import { CreateCategoryInput, UpdateCategoryInput } from '../../dtos/CategoryDto.js';
 
 export class CreateCategoryCommand extends Command<string> {
   readonly type = 'CreateCategoryCommand';

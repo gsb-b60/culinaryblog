@@ -3,6 +3,8 @@ import { PrismaClient } from '@prisma/client';
 import { RecipeRepository } from '../../infrastructure/persistence/repositories/RecipeRepository.js';
 import { CategoryRepository } from '../../infrastructure/persistence/repositories/CategoryRepository.js';
 import { UserRepository } from '../../infrastructure/persistence/repositories/UserRepository.js';
+import { PrismaUnitOfWork } from '../../infrastructure/persistence/PrismaUnitOfWork.js';
+import { PrismaTransactionClient } from '../../config-middleware/shared/database/client.js';
 import { JwtService } from '../../infrastructure/auth/JwtService.js';
 import { MinioFileStorageService } from '../../infrastructure/file-storage/MinioFileStorageService.js';
 import { NodemailerEmailService } from '../../infrastructure/email/NodemailerEmailService.js';
@@ -12,6 +14,7 @@ import { commandBus } from '../../application/command-bus.js';
 import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.js';
 import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository.js';
 import { IUserRepository } from '../../domain/repositories/IUserRepository.js';
+import { IUnitOfWork } from '../../domain/repositories/IUnitOfWork.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
@@ -21,6 +24,7 @@ export interface Container {
   recipeRepository: IRecipeRepository;
   categoryRepository: ICategoryRepository;
   userRepository: IUserRepository;
+  unitOfWork: IUnitOfWork<PrismaTransactionClient>;
   jwtService: IJwtService;
   fileStorageService: IFileStorageService;
   emailService: IEmailService;
@@ -41,6 +45,7 @@ export function createContainer(): Container {
   const recipeRepository = new RecipeRepository(prisma);
   const categoryRepository = new CategoryRepository(prisma);
   const userRepository = new UserRepository(prisma);
+  const unitOfWork = new PrismaUnitOfWork(prisma);
   const jwtService = new JwtService();
   const fileStorageService = new MinioFileStorageService();
   const emailService = new NodemailerEmailService();
@@ -50,6 +55,7 @@ export function createContainer(): Container {
     recipeRepository,
     categoryRepository,
     userRepository,
+    unitOfWork,
     jwtService,
     fileStorageService,
     emailService,

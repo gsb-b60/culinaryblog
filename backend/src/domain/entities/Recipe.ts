@@ -1,6 +1,7 @@
 import { RecipeStatus } from '../enums/RecipeStatus.js';
 import { RecipeDifficulty } from '../enums/RecipeDifficulty.js';
 import { Slug } from '../value-objects/Slug.js';
+import { InvalidStateTransitionException } from '../exceptions/DomainException.js';
 
 export interface RecipeNutrition {
   calories?: number;
@@ -88,7 +89,7 @@ export class Recipe {
   publish(): void {
     if (this.props.status === RecipeStatus.PUBLISHED) return;
     if (!this.canPublish()) {
-      throw new Error('Recipe cannot be published in current state');
+      throw new InvalidStateTransitionException('Recipe cannot be published in its current state');
     }
     this.props.status = RecipeStatus.PUBLISHED;
     this.props.publishedAt = new Date();

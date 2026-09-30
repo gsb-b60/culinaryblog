@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
 import { commandBus } from '../../application/command-bus.js';
 import { 
   CreateCategoryCommand, 
@@ -13,38 +13,34 @@ import { authenticateJwt, AuthenticatedRequest, authorize } from '../middleware/
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 import { 
   createCategorySchema, 
-  updateCategorySchema,
-  categoryFiltersSchema,
-  categoryPaginationSchema 
+  updateCategorySchema
 } from '../../application/validators/categoryValidators.js';
 import { UserRole } from '../../domain/enums/UserRole.js';
+import { EntityNotFoundException } from '../../domain/exceptions/DomainException.js';
 import { z } from 'zod';
 
 const router = Router();
+export const categoryListRoutes = Router();
 
-// Public routes
-router.get('/', generalRateLimiter, async (req, res, next) => {
+const getCategories = async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const filters = categoryFiltersSchema.parse(req.query);
-    const pagination = categoryPaginationSchema.parse(req.query);
-
-    const query = new GetCategoriesQuery(
-      filters,
-      pagination.page,
-      pagination.pageSize
-    );
+    const query = new GetCategoriesQuery();
     const result = await commandBus.executeQuery(query);
     res.json(result);
   } catch (error) {
     next(error);
   }
-});
+};
 
-router.get('/:slug', generalRateLimiter, async (req, res, next) => {
+// Public routes
+router.get('/', generalRateLimiter, getCategories);
+categoryListRoutes.get('/', generalRateLimiter, getCategories);
+
+const getCategoryBySlug = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const paginationSchema = z.object({
-      page: z.number().int().positive().default(1),
-      pageSize: z.number().int().positive().max(50).default(12),
+      page: z.coerce.number().int().positive().default(1),
+      pageSize: z.coerce.number().int().positive().max(50).default(12),
     });
     
     const pagination = paginationSchema.parse(req.query);
@@ -59,20 +55,17 @@ router.get('/:slug', generalRateLimiter, async (req, res, next) => {
     const result = await commandBus.executeQuery(query);
     
     if (!result) {
-      res.status(404).json({
-        type: 'https://tools.ietf.org/html/rfc7807#section-3.1',
-        title: 'Not Found',
-        status: 404,
-        detail: 'Category not found',
-      });
-      return;
+      throw new EntityNotFoundException('Category', req.params.slug);
     }
 
     res.json(result);
   } catch (error) {
     next(error);
   }
-});
+};
+
+router.get('/:slug', generalRateLimiter, getCategoryBySlug);
+categoryListRoutes.get('/:slug', generalRateLimiter, getCategoryBySlug);
 
 // Admin routes
 router.post('/', authenticateJwt, authorize(UserRole.ADMIN), async (req, res, next) => {

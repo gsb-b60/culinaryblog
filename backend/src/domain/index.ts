@@ -1,4 +1,5 @@
 export * from './entities/index.js';
+export * from './exceptions/DomainException.js';
 export * from './value-objects/index.js';
 export * from './enums/index.js';
 export * from './repositories/index.js';

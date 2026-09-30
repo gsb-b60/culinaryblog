@@ -1,4 +1,4 @@
-import { logger } from '../../config-middleware/config/logger.js';
+import { logger } from '../config-middleware/config/logger.js';
 
 export abstract class Command<TResponse = void> {
   abstract readonly type: string;

@@ -1,4 +1,4 @@
-import { Query } from '../command-bus.js';
+import { Query } from '../../command-bus.js';
 import { CategoryDto } from '../../dtos/CategoryDto.js';
 
 export class GetCategoriesQuery extends Query<CategoryDto[]> {
@@ -6,6 +6,14 @@ export class GetCategoriesQuery extends Query<CategoryDto[]> {
 
   constructor() {
     super();
+  }
+
+  getCacheKey(): string {
+    return 'categories:all';
+  }
+
+  getCacheTtl(): number {
+    return 60 * 60;
   }
 }
 

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import pinoHttp from 'pino-http';
+import NodeCache from 'node-cache';
 
 import { env } from './config-middleware/config/env.js';
 import { logger } from './config-middleware/config/logger.js';
@@ -9,8 +10,21 @@ import { prisma, disconnectPrisma } from './config-middleware/shared/database/cl
 import { errorHandler } from './config-middleware/middleware/errorHandler.js';
 import { notFoundHandler } from './config-middleware/middleware/notFoundHandler.js';
 import { initTracing } from './config-middleware/shared/tracing/index.js';
+import { commandBus } from './application/command-bus.js';
+import { GetCategoriesQueryHandler } from './application/queries/categories/GetCategoriesQueryHandler.js';
+import { GetCategoryBySlugQueryHandler } from './application/queries/categories/GetCategoryBySlugQueryHandler.js';
+import { categoryListRoutes } from './presentation/routes/categoryRoutes.js';
 
 initTracing();
+
+commandBus.registerQueryHandler(
+  'GetCategoriesQuery',
+  new GetCategoriesQueryHandler(prisma, new NodeCache())
+);
+commandBus.registerQueryHandler(
+  'GetCategoryBySlugQuery',
+  new GetCategoryBySlugQueryHandler(prisma)
+);
 
 const app = express();
 
@@ -36,6 +50,8 @@ app.get('/health/ready', async (_req, res) => {
     res.status(503).json({ status: 'not ready', database: 'disconnected' });
   }
 });
+
+app.use('/api/v1/categories', categoryListRoutes);
 
 app.use(errorHandler);
 app.use(notFoundHandler);
