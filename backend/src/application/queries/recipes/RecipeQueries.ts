@@ -1,5 +1,6 @@
-import { RecipeFilters, RecipeSortOptions } from '../../../domain/repositories/IRecipeRepository.js';
+import type { RecipeFilters, RecipeSortOptions } from '../../../domain/repositories/IRecipeRepository.js';
 import { Query } from '../../command-bus.js';
+import type { RecipeIngredientDto } from '../../dtos/RecipeDto.js';
 
 export class GetRecipesQuery extends Query<import('../../dtos/PagedResult.js').PagedResult<import('../../dtos/RecipeDto.js').RecipeSummaryDto>> {
   readonly type = 'GetRecipesQuery';
@@ -35,6 +36,29 @@ export class SearchRecipesQuery extends Query<import('../../dtos/PagedResult.js'
     public readonly sort: RecipeSortOptions,
     public readonly page: number,
     public readonly pageSize: number
+  ) {
+    super();
+  }
+}
+
+export class GetRecipeIngredientsQuery extends Query<RecipeIngredientDto[]> {
+  readonly type = 'GetRecipeIngredientsQuery';
+
+  constructor(public readonly recipeId: string) {
+    super();
+  }
+}
+
+export class GetManageableRecipesQuery
+  extends Query<import('../../dtos/PagedResult.js').PagedResult<import('../../dtos/RecipeDto.js').RecipeSummaryDto>>
+{
+  readonly type = 'GetManageableRecipesQuery';
+
+  constructor(
+    public readonly userId: string,
+    public readonly isAdmin: boolean,
+    public readonly page: number,
+    public readonly pageSize: number,
   ) {
     super();
   }

@@ -1,4 +1,5 @@
 import { PagedResult } from '../../application/dtos/PagedResult.js';
+import { RecipeSummaryDto } from '../../application/dtos/RecipeDto.js';
 import { Recipe, RecipeProps } from '../entities/Recipe.js';
 
 export interface RecipeFilters {
@@ -26,20 +27,20 @@ export interface IRecipeRepository {
     sort: RecipeSortOptions,
     page: number,
     pageSize: number
-  ): Promise<PagedResult<Recipe>>;
+  ): Promise<PagedResult<RecipeSummaryDto>>;
   findPublishedByCategory(
     categoryId: string,
     page: number,
     pageSize: number,
     sort?: RecipeSortOptions
-  ): Promise<PagedResult<Recipe>>;
+  ): Promise<PagedResult<RecipeSummaryDto>>;
   search(
     query: string,
     filters: RecipeFilters,
     sort: RecipeSortOptions,
     page: number,
     pageSize: number
-  ): Promise<PagedResult<Recipe>>;
+  ): Promise<PagedResult<RecipeSummaryDto>>;
   save(recipe: Recipe): Promise<Recipe>;
   delete(id: string): Promise<void>;
   existsBySlug(slug: string): Promise<boolean>;

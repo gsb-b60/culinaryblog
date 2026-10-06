@@ -1,6 +1,7 @@
 import { PrismaClient, Recipe as PrismaRecipe, Prisma } from '@prisma/client';
 
 import { PagedResult, createPagedResult } from '../../../application/dtos/PagedResult.js';
+import { RecipeSummaryDto } from '../../../application/dtos/RecipeDto.js';
 import { Recipe, RecipeProps } from '../../../domain/entities/Recipe.js';
 import { RecipeDifficulty } from '../../../domain/enums/RecipeDifficulty.js';
 import { RecipeStatus } from '../../../domain/enums/RecipeStatus.js';
@@ -99,7 +100,7 @@ export class RecipeRepository implements IRecipeRepository {
     sort: RecipeSortOptions,
     page: number,
     pageSize: number
-  ): Promise<PagedResult<Recipe>> {
+  ): Promise<PagedResult<RecipeSummaryDto>> {
     const where = this.buildWhereClause(filters);
     const orderBy = this.buildOrderBy(sort);
 
@@ -120,7 +121,7 @@ export class RecipeRepository implements IRecipeRepository {
     const recipes = items.map(r => this.toDomain(r));
     const summaries = recipes.map(r => this.toSummaryDto(r, (r as any)._categoryName || r.categoryId, (r as any)._authorName || r.authorId));
     
-    return createPagedResult(summaries as any, page, pageSize, totalCount);
+    return createPagedResult(summaries, page, pageSize, totalCount);
   }
 
   async findPublishedByCategory(
@@ -128,7 +129,7 @@ export class RecipeRepository implements IRecipeRepository {
     page: number,
     pageSize: number,
     sort?: RecipeSortOptions
-  ): Promise<PagedResult<Recipe>> {
+  ): Promise<PagedResult<RecipeSummaryDto>> {
     const where: Prisma.RecipeWhereInput = {
       categoryId,
       status: 'PUBLISHED',
@@ -154,7 +155,7 @@ export class RecipeRepository implements IRecipeRepository {
     const recipes = items.map(r => this.toDomain(r));
     const summaries = recipes.map(r => this.toSummaryDto(r, (r as any)._categoryName || r.categoryId, (r as any)._authorName || r.authorId));
     
-    return createPagedResult(summaries as any, page, pageSize, totalCount);
+    return createPagedResult(summaries, page, pageSize, totalCount);
   }
 
   async search(
@@ -163,7 +164,7 @@ export class RecipeRepository implements IRecipeRepository {
     sort: RecipeSortOptions,
     page: number,
     pageSize: number
-  ): Promise<PagedResult<Recipe>> {
+  ): Promise<PagedResult<RecipeSummaryDto>> {
     const where = this.buildWhereClause({ ...filters, searchQuery: query });
     const orderBy = this.buildOrderBy(sort);
 
@@ -184,7 +185,7 @@ export class RecipeRepository implements IRecipeRepository {
     const recipes = items.map(r => this.toDomain(r));
     const summaries = recipes.map(r => this.toSummaryDto(r, (r as any)._categoryName || r.categoryId, (r as any)._authorName || r.authorId));
     
-    return createPagedResult(summaries as any, page, pageSize, totalCount);
+    return createPagedResult(summaries, page, pageSize, totalCount);
   }
 
   async save(recipe: Recipe): Promise<Recipe> {

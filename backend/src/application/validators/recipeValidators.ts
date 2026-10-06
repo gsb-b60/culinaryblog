@@ -77,8 +77,8 @@ export const recipeSortSchema = z.object({
 });
 
 export const paginationSchema = z.object({
-  page: z.number().int().positive().default(1),
-  pageSize: z.number().int().positive().max(50).default(12),
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().max(50).default(12),
 });
 
 export type CreateRecipeInput = z.infer<typeof createRecipeSchema>;

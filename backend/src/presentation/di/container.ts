@@ -32,6 +32,11 @@ import {
   DeleteRecipeIngredientCommandHandler,
   UpdateRecipeIngredientCommandHandler,
 } from '../../application/handlers/RecipeIngredientCommandHandlers.js';
+import {
+  GetManageableRecipesQueryHandler,
+  GetRecipeIngredientsQueryHandler,
+  GetRecipesQueryHandler,
+} from '../../application/handlers/RecipeQueryHandlers.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
@@ -96,6 +101,18 @@ export function createContainer(): Container {
   commandBus.registerQueryHandler(
     'GetCurrentUserQuery',
     new GetCurrentUserQueryHandler(prisma),
+  );
+  commandBus.registerQueryHandler(
+    'GetRecipesQuery',
+    new GetRecipesQueryHandler(recipeRepository),
+  );
+  commandBus.registerQueryHandler(
+    'GetRecipeIngredientsQuery',
+    new GetRecipeIngredientsQueryHandler(prisma),
+  );
+  commandBus.registerQueryHandler(
+    'GetManageableRecipesQuery',
+    new GetManageableRecipesQueryHandler(prisma),
   );
 
   commandBus.registerCommandHandler(
