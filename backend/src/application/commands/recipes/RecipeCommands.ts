@@ -1,12 +1,17 @@
-import { Command } from '../../command-bus.js';
-import { CreateRecipeInput, RecipeIngredientDto, UpdateRecipeInput } from '../../dtos/RecipeDto.js';
+﻿import { Command } from '../../command-bus.js';
+import {
+  CreateRecipeInput,
+  RecipeIngredientDto,
+  RecipeStepDto,
+  UpdateRecipeInput,
+} from '../../dtos/RecipeDto.js';
 
 export class CreateRecipeCommand extends Command<string> {
   readonly type = 'CreateRecipeCommand';
 
   constructor(
     public readonly authorId: string,
-    public readonly input: CreateRecipeInput
+    public readonly input: CreateRecipeInput,
   ) {
     super();
   }
@@ -19,7 +24,7 @@ export class UpdateRecipeCommand extends Command<void> {
     public readonly recipeId: string,
     public readonly authorId: string,
     public readonly input: UpdateRecipeInput,
-    public readonly expectedVersion: number
+    public readonly expectedVersion: number,
   ) {
     super();
   }
@@ -30,7 +35,7 @@ export class PublishRecipeCommand extends Command<void> {
 
   constructor(
     public readonly recipeId: string,
-    public readonly authorId: string
+    public readonly authorId: string,
   ) {
     super();
   }
@@ -41,7 +46,7 @@ export class UnpublishRecipeCommand extends Command<void> {
 
   constructor(
     public readonly recipeId: string,
-    public readonly authorId: string
+    public readonly authorId: string,
   ) {
     super();
   }
@@ -52,7 +57,7 @@ export class ArchiveRecipeCommand extends Command<void> {
 
   constructor(
     public readonly recipeId: string,
-    public readonly authorId: string
+    public readonly authorId: string,
   ) {
     super();
   }
@@ -63,13 +68,13 @@ export class DeleteRecipeCommand extends Command<void> {
 
   constructor(
     public readonly recipeId: string,
-    public readonly authorId: string
+    public readonly authorId: string,
   ) {
     super();
   }
 }
 
-export class AddRecipeStepCommand extends Command<string> {
+export class AddRecipeStepCommand extends Command<RecipeStepDto> {
   readonly type = 'AddRecipeStepCommand';
 
   constructor(
@@ -78,24 +83,25 @@ export class AddRecipeStepCommand extends Command<string> {
     public readonly title: string,
     public readonly description: string,
     public readonly timerMinutes?: number,
-    public readonly imageUrl?: string
+    public readonly imageUrl?: string,
+    public readonly isAdmin = false,
   ) {
     super();
   }
 }
 
-export class UpdateRecipeStepCommand extends Command<void> {
+export class UpdateRecipeStepCommand extends Command<RecipeStepDto> {
   readonly type = 'UpdateRecipeStepCommand';
 
   constructor(
     public readonly recipeId: string,
     public readonly authorId: string,
     public readonly stepId: string,
-    public readonly stepNumber?: number,
-    public readonly title?: string,
-    public readonly description?: string,
+    public readonly title: string,
+    public readonly description: string,
     public readonly timerMinutes?: number,
-    public readonly imageUrl?: string
+    public readonly imageUrl?: string,
+    public readonly isAdmin = false,
   ) {
     super();
   }
@@ -107,12 +113,12 @@ export class DeleteRecipeStepCommand extends Command<void> {
   constructor(
     public readonly recipeId: string,
     public readonly authorId: string,
-    public readonly stepId: string
+    public readonly stepId: string,
+    public readonly isAdmin = false,
   ) {
     super();
   }
 }
-
 export class AddRecipeIngredientCommand extends Command<RecipeIngredientDto> {
   readonly type = 'AddRecipeIngredientCommand';
 
@@ -124,7 +130,7 @@ export class AddRecipeIngredientCommand extends Command<RecipeIngredientDto> {
     public readonly unit?: string,
     public readonly notes?: string,
     public readonly orderIndex: number = 0,
-    public readonly isAdmin = false
+    public readonly isAdmin = false,
   ) {
     super();
   }
@@ -142,7 +148,7 @@ export class UpdateRecipeIngredientCommand extends Command<RecipeIngredientDto> 
     public readonly unit?: string,
     public readonly notes?: string,
     public readonly orderIndex?: number,
-    public readonly isAdmin = false
+    public readonly isAdmin = false,
   ) {
     super();
   }
@@ -155,7 +161,7 @@ export class DeleteRecipeIngredientCommand extends Command<void> {
     public readonly recipeId: string,
     public readonly authorId: string,
     public readonly ingredientId: string,
-    public readonly isAdmin = false
+    public readonly isAdmin = false,
   ) {
     super();
   }
