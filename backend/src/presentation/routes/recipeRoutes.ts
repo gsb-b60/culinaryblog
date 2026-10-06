@@ -17,6 +17,10 @@ import {
   DeleteRecipeIngredientCommand,
 } from '../../application/commands/recipes/RecipeCommands.js';
 import {
+  GetManagedRecipesQuery,
+  GetRecipeStepsQuery,
+} from '../../application/handlers/RecipeStepQueryHandlers.js';
+import {
   GetRecipesQuery,
   GetRecipeBySlugQuery,
   SearchRecipesQuery,
@@ -30,6 +34,7 @@ import {
   paginationSchema,
 } from '../../application/validators/recipeValidators.js';
 import { UserRole } from '../../domain/index.js';
+import { getContainer } from '../di/container.js';
 import {
   authenticateJwt,
   AuthenticatedRequest,
@@ -39,6 +44,14 @@ import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
 const router: RouterType = Router();
+
+async function getRecipeOwnerId(req: AuthenticatedRequest): Promise<string | null> {
+  const recipe = await getContainer().prisma.recipe.findFirst({
+    where: { id: req.params.id, isDeleted: false },
+    select: { authorId: true },
+  });
+  return recipe?.authorId ?? null;
+}
 
 // Public routes
 router.get('/', generalRateLimiter, async (req, res, next) => {
@@ -79,6 +92,31 @@ router.get('/search', generalRateLimiter, async (req, res, next) => {
   }
 });
 
+// Read endpoints for the step management screen; reserved before /:slug.
+router.get('/managed', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const result = await commandBus.executeQuery(
+      new GetManagedRecipesQuery(req.user!.id, req.user!.roles.includes(UserRole.ADMIN)),
+    );
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+router.get('/:id/steps', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const result = await commandBus.executeQuery(
+      new GetRecipeStepsQuery(
+        req.params.id!,
+        req.user!.id,
+        req.user!.roles.includes(UserRole.ADMIN),
+      ),
+    );
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
 router.get('/:slug', generalRateLimiter, async (req, res, next) => {
   try {
     const query = new GetRecipeBySlugQuery(
@@ -136,10 +174,14 @@ router.put(
 router.patch(
   '/:id/publish',
   authenticateJwt,
-  authorizeOwnerOrAdmin(async (req) => req.params.id!),
+  authorizeOwnerOrAdmin(getRecipeOwnerId),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const command = new PublishRecipeCommand(req.params.id!, req.user!.id);
+      const command = new PublishRecipeCommand(
+        req.params.id!,
+        req.user!.id,
+        req.user!.roles.includes(UserRole.ADMIN),
+      );
       await commandBus.executeCommand(command);
       res.json({ message: 'Recipe published successfully' });
     } catch (error) {
@@ -151,10 +193,14 @@ router.patch(
 router.patch(
   '/:id/unpublish',
   authenticateJwt,
-  authorizeOwnerOrAdmin(async (req) => req.params.id!),
+  authorizeOwnerOrAdmin(getRecipeOwnerId),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const command = new UnpublishRecipeCommand(req.params.id!, req.user!.id);
+      const command = new UnpublishRecipeCommand(
+        req.params.id!,
+        req.user!.id,
+        req.user!.roles.includes(UserRole.ADMIN),
+      );
       await commandBus.executeCommand(command);
       res.json({ message: 'Recipe unpublished successfully' });
     } catch (error) {

@@ -36,10 +36,20 @@ import {
   UpdateRecipeIngredientCommandHandler,
 } from '../../application/handlers/RecipeIngredientCommandHandlers.js';
 import {
+  PublishRecipeCommandHandler,
+  UnpublishRecipeCommandHandler,
+} from '../../application/handlers/RecipePublicationCommandHandlers.js';
+import {
   AddRecipeStepCommandHandler,
   UpdateRecipeStepCommandHandler,
   DeleteRecipeStepCommandHandler,
 } from '../../application/handlers/RecipeStepCommandHandlers.js';
+import {
+  GetManagedRecipesQuery,
+  GetManagedRecipesQueryHandler,
+  GetRecipeStepsQuery,
+  GetRecipeStepsQueryHandler,
+} from '../../application/handlers/RecipeStepQueryHandlers.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
@@ -100,6 +110,14 @@ export function createContainer(): Container {
     DeleteRecipeIngredientCommand.name,
     new DeleteRecipeIngredientCommandHandler(prisma),
   );
+  commandBus.registerCommandHandler(
+    'PublishRecipeCommand',
+    new PublishRecipeCommandHandler(prisma),
+  );
+  commandBus.registerCommandHandler(
+    'UnpublishRecipeCommand',
+    new UnpublishRecipeCommandHandler(prisma),
+  );
 
   commandBus.registerCommandHandler(
     AddRecipeStepCommand.name,
@@ -113,6 +131,11 @@ export function createContainer(): Container {
     DeleteRecipeStepCommand.name,
     new DeleteRecipeStepCommandHandler(prisma),
   );
+  commandBus.registerQueryHandler(
+    GetManagedRecipesQuery.name,
+    new GetManagedRecipesQueryHandler(prisma),
+  );
+  commandBus.registerQueryHandler(GetRecipeStepsQuery.name, new GetRecipeStepsQueryHandler(prisma));
   commandBus.registerQueryHandler('GetCurrentUserQuery', new GetCurrentUserQueryHandler(prisma));
 
   commandBus.registerCommandHandler(

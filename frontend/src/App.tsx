@@ -1,3 +1,4 @@
+import RecipeStepsPage from './pages/RecipeStepsPage'
 import { Link, Route, Routes } from 'react-router-dom'
 
 import AuthCallbackPage from './pages/AuthCallbackPage'
@@ -26,6 +27,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/dashboard/recipe-steps" element={<RecipeStepsPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/auth/register" element={<RegisterPage />} />
       <Route path="/auth/login" element={<LoginPage />} />

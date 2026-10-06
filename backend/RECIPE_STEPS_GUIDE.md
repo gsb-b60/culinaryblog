@@ -1,4 +1,4 @@
-﻿# FR-RCP-010: Quản lý các bước nấu
+# FR-RCP-010: Quản lý các bước nấu
 
 Đã bổ sung ba API quản lý bước nấu theo kiến trúc Route → Command Bus → Handler → Prisma của dự án. Không cần migration vì bảng RecipeStep đã có đủ các trường.
 
@@ -95,4 +95,37 @@ Kết quả: 168/168 test backend thành công, gồm 52 test mới cho bước 
 
 Test mới kiểm tra status, owner/Admin, validation, max+1, xóa đầu/giữa/cuối, xóa bước duy nhất, thêm sau xóa, bước sai công thức và rollback khi renumber lỗi. JWT và persistence được mô phỏng; chưa kiểm thử khóa dòng, rollback và request đồng thời trên PostgreSQL thật.
 
-Phạm vi triển khai là ba API quản lý bước. Route GET chi tiết công thức của dự án vẫn cần query handler riêng để cung cấp danh sách bước cho giao diện; chức năng đó chưa được bổ sung trong thay đổi này.
+Giao diện quản lý bước đã được kết nối qua hai API đọc riêng bên dưới; không phụ thuộc route GET chi tiết công thức theo slug.
+
+## 7. Sử dụng trên frontend
+
+1. Khởi động backend và frontend bằng `npm run dev` trong từng thư mục.
+2. Đăng nhập bằng tài khoản Author hoặc Admin.
+3. Trong dashboard, chọn **Bước nấu** hoặc **Quản lý bước nấu**. Địa chỉ trang: `/dashboard/recipe-steps`.
+4. Chọn công thức. Author thấy công thức của mình; Admin thấy tất cả công thức chưa xóa.
+5. Danh sách hiển thị số bước, tiêu đề, mô tả, thời gian và ảnh nếu có. Form bên cạnh cho phép thêm bước.
+6. Chọn **Sửa**, thay đổi dữ liệu rồi **Lưu thay đổi**; **Hủy sửa** để quay lại form thêm.
+7. Chọn **Xóa** rồi **Xác nhận xóa**. Giao diện đọc lại dữ liệu từ server để nhận số thứ tự mới.
+
+Nếu chưa có công thức, trang hiển thị trạng thái trống. Cần có công thức tồn tại trong database để quản lý bước; thay đổi này không bổ sung form tạo công thức.
+
+API đọc được bổ sung:
+
+- `GET /api/v1/recipes/managed`: danh sách công thức mà tài khoản được quản lý, gồm id, title, authorId, status.
+- `GET /api/v1/recipes/{id}/steps`: trả về `{ recipe, steps }`, các bước chưa xóa được sắp xếp theo stepNumber. Chỉ chủ công thức/Admin được đọc qua endpoint quản lý này.
+
+Frontend sử dụng API client hiện có nên request kèm Bearer token, hỗ trợ cơ chế refresh token của dự án. Trong lúc tải/lưu, các nút thao tác bị khóa để tránh gửi lặp. Khi lỗi, dữ liệu form được giữ lại và trang hiển thị thông báo; có nút tải lại danh sách.
+
+File frontend:
+
+- `frontend/src/pages/RecipeStepsPage.tsx`: giao diện chọn công thức, danh sách bước, form và xác nhận xóa.
+- `frontend/src/lib/api.ts`: các hàm đọc/thêm/sửa/xóa qua API.
+- `frontend/src/types/recipe.ts`: kiểu dữ liệu công thức, bước và payload.
+- `frontend/src/App.tsx`: route trang quản lý bước.
+- `frontend/src/pages/DashboardPage.tsx`: liên kết mở trang.
+- `frontend/src/test/RecipeStepsPage.test.tsx`: kiểm thử tải dữ liệu, thêm/sửa/xóa, đổi công thức, lỗi và trạng thái trống.
+- `backend/src/application/handlers/RecipeStepQueryHandlers.ts`: query và handler cho hai API đọc.
+
+Kết quả kiểm tra sau khi kết nối frontend: 101/101 test frontend thành công, build production thành công; 183/183 test backend đã thành công. Sau chỉnh sửa kiểu status, chạy lại 58 test liên quan bước nấu thành công và kiểm tra TypeScript backend thành công. Lint backend các file liên quan không có lỗi, còn hai cảnh báo any có sẵn tại containerMiddleware.
+
+Kiểm thử giao diện dùng API mô phỏng và kiểm thử backend dùng persistence mô phỏng. Chưa chạy kiểm thử trình duyệt với backend/PostgreSQL thật.

@@ -36,6 +36,7 @@ export class PublishRecipeCommand extends Command<void> {
   constructor(
     public readonly recipeId: string,
     public readonly authorId: string,
+    public readonly isAdmin = false,
   ) {
     super();
   }
@@ -47,6 +48,7 @@ export class UnpublishRecipeCommand extends Command<void> {
   constructor(
     public readonly recipeId: string,
     public readonly authorId: string,
+    public readonly isAdmin = false,
   ) {
     super();
   }
