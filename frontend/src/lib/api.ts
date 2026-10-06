@@ -1,5 +1,13 @@
+import type { ManagedRecipe, RecipeStep, RecipeSteps, StepPayload } from '../types/recipe'
 import { loadSession, saveSession, clearSession } from './tokenStorage'
-import type { AuthResponse, LoginPayload, ProblemDetails, RegisterPayload, UpdateProfilePayload, UserProfile } from '../types/auth'
+import type {
+  AuthResponse,
+  LoginPayload,
+  ProblemDetails,
+  RegisterPayload,
+  UpdateProfilePayload,
+  UserProfile,
+} from '../types/auth'
 
 const API_BASE: string = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api/v1'
 
@@ -96,7 +104,10 @@ export function getCurrentUser(accessToken: string): Promise<UserProfile> {
   })
 }
 
-export function updateProfile(accessToken: string, payload: UpdateProfilePayload): Promise<UserProfile> {
+export function updateProfile(
+  accessToken: string,
+  payload: UpdateProfilePayload,
+): Promise<UserProfile> {
   return request<UserProfile>('/auth/me', {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -109,5 +120,64 @@ export function logout(accessToken: string, refreshToken: string): Promise<null>
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify({ refreshToken }),
+  })
+}
+
+export function getManagedRecipes(accessToken: string): Promise<ManagedRecipe[]> {
+  return request('/recipes/managed', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+}
+export function publishRecipe(accessToken: string, recipeId: string): Promise<{ message: string }> {
+  return request(`/recipes/${encodeURIComponent(recipeId)}/publish`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+}
+export function unpublishRecipe(
+  accessToken: string,
+  recipeId: string,
+): Promise<{ message: string }> {
+  return request(`/recipes/${encodeURIComponent(recipeId)}/unpublish`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+}
+export function getRecipeSteps(accessToken: string, recipeId: string): Promise<RecipeSteps> {
+  return request(`/recipes/${encodeURIComponent(recipeId)}/steps`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+}
+export function addRecipeStep(
+  accessToken: string,
+  recipeId: string,
+  payload: StepPayload,
+): Promise<RecipeStep> {
+  return request(`/recipes/${encodeURIComponent(recipeId)}/steps`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(payload),
+  })
+}
+export function updateRecipeStep(
+  accessToken: string,
+  recipeId: string,
+  stepId: string,
+  payload: StepPayload,
+): Promise<RecipeStep> {
+  return request(`/recipes/${encodeURIComponent(recipeId)}/steps/${encodeURIComponent(stepId)}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(payload),
+  })
+}
+export function deleteRecipeStep(
+  accessToken: string,
+  recipeId: string,
+  stepId: string,
+): Promise<null> {
+  return request(`/recipes/${encodeURIComponent(recipeId)}/steps/${encodeURIComponent(stepId)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
   })
 }

@@ -1,8 +1,16 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 
 import { RecipeDifficulty } from '../../domain/enums/RecipeDifficulty.js';
 import { RecipeStatus } from '../../domain/enums/RecipeStatus.js';
 
+export const recipeStepSchema = z
+  .object({
+    title: z.string().trim().min(1).max(200),
+    description: z.string().trim().min(1),
+    timerMinutes: z.number().int().nonnegative().max(2147483647).optional(),
+    imageUrl: z.string().url().max(500).optional(),
+  })
+  .strict();
 export const createRecipeStepSchema = z.object({
   stepNumber: z.number().int().positive(),
   title: z.string().min(1).max(200),
@@ -28,14 +36,16 @@ export const createRecipeSchema = z.object({
   servings: z.number().int().positive(),
   difficulty: z.nativeEnum(RecipeDifficulty).default(RecipeDifficulty.EASY),
   instructions: z.string().max(10000).optional(),
-  nutrition: z.object({
-    calories: z.number().positive().max(999999.99).optional(),
-    protein: z.number().positive().max(999999.99).optional(),
-    carbohydrates: z.number().positive().max(999999.99).optional(),
-    fat: z.number().positive().max(999999.99).optional(),
-    fiber: z.number().positive().max(999999.99).optional(),
-    sodium: z.number().positive().max(999999.99).optional(),
-  }).optional(),
+  nutrition: z
+    .object({
+      calories: z.number().positive().max(999999.99).optional(),
+      protein: z.number().positive().max(999999.99).optional(),
+      carbohydrates: z.number().positive().max(999999.99).optional(),
+      fat: z.number().positive().max(999999.99).optional(),
+      fiber: z.number().positive().max(999999.99).optional(),
+      sodium: z.number().positive().max(999999.99).optional(),
+    })
+    .optional(),
   steps: z.array(createRecipeStepSchema).min(1).optional(),
   ingredients: z.array(createRecipeIngredientSchema).min(1).optional(),
 });
@@ -49,14 +59,16 @@ export const updateRecipeSchema = z.object({
   servings: z.number().int().positive().optional(),
   difficulty: z.nativeEnum(RecipeDifficulty).optional(),
   instructions: z.string().max(10000).optional(),
-  nutrition: z.object({
-    calories: z.number().positive().max(999999.99).optional(),
-    protein: z.number().positive().max(999999.99).optional(),
-    carbohydrates: z.number().positive().max(999999.99).optional(),
-    fat: z.number().positive().max(999999.99).optional(),
-    fiber: z.number().positive().max(999999.99).optional(),
-    sodium: z.number().positive().max(999999.99).optional(),
-  }).optional(),
+  nutrition: z
+    .object({
+      calories: z.number().positive().max(999999.99).optional(),
+      protein: z.number().positive().max(999999.99).optional(),
+      carbohydrates: z.number().positive().max(999999.99).optional(),
+      fat: z.number().positive().max(999999.99).optional(),
+      fiber: z.number().positive().max(999999.99).optional(),
+      sodium: z.number().positive().max(999999.99).optional(),
+    })
+    .optional(),
 });
 
 export const recipeFiltersSchema = z.object({

@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+﻿import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiError, login, register } from '../lib/api'
+import { ApiError, login, publishRecipe, register, unpublishRecipe } from '../lib/api'
 
 const AUTH_RESPONSE = {
   accessToken: 'access-token',
@@ -37,7 +37,10 @@ describe('login', () => {
   it('POSTs the credentials to /auth/login and returns the parsed body', async () => {
     fetchMock.mockResolvedValue(jsonResponse(AUTH_RESPONSE))
 
-    const result = await login({ email: 'an@example.com', password: 'Secret1!' })
+    const result = await login({
+      email: 'an@example.com',
+      password: 'Secret1!',
+    })
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
@@ -60,9 +63,10 @@ describe('login', () => {
     }
     fetchMock.mockResolvedValue(jsonResponse(problem, 401))
 
-    const error = await login({ email: 'an@example.com', password: 'nope' }).catch(
-      (e: unknown) => e,
-    )
+    const error = await login({
+      email: 'an@example.com',
+      password: 'nope',
+    }).catch((e: unknown) => e)
 
     expect(error).toBeInstanceOf(ApiError)
     const apiError = error as ApiError
@@ -74,14 +78,20 @@ describe('login', () => {
   it('surfaces the 403 account-locked problem type', async () => {
     fetchMock.mockResolvedValue(
       jsonResponse(
-        { type: 'AUTH_ACCOUNT_LOCKED', title: 'Forbidden', status: 403, detail: 'Too many attempts' },
+        {
+          type: 'AUTH_ACCOUNT_LOCKED',
+          title: 'Forbidden',
+          status: 403,
+          detail: 'Too many attempts',
+        },
         403,
       ),
     )
 
-    const error = (await login({ email: 'an@example.com', password: 'x' }).catch(
-      (e: unknown) => e,
-    )) as ApiError
+    const error = (await login({
+      email: 'an@example.com',
+      password: 'x',
+    }).catch((e: unknown) => e)) as ApiError
 
     expect(error.status).toBe(403)
     expect(error.problem?.type).toBe('AUTH_ACCOUNT_LOCKED')
@@ -97,9 +107,7 @@ describe('login', () => {
     }
     fetchMock.mockResolvedValue(jsonResponse(problem, 422))
 
-    const error = (await login({ email: 'bad', password: '' }).catch(
-      (e: unknown) => e,
-    )) as ApiError
+    const error = (await login({ email: 'bad', password: '' }).catch((e: unknown) => e)) as ApiError
 
     expect(error.status).toBe(422)
     expect(error.problem?.errors?.email).toEqual(['Invalid email address'])
@@ -108,9 +116,10 @@ describe('login', () => {
   it('reports status 0 with a friendly message when the network fails', async () => {
     fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
 
-    const error = (await login({ email: 'an@example.com', password: 'x' }).catch(
-      (e: unknown) => e,
-    )) as ApiError
+    const error = (await login({
+      email: 'an@example.com',
+      password: 'x',
+    }).catch((e: unknown) => e)) as ApiError
 
     expect(error).toBeInstanceOf(ApiError)
     expect(error.status).toBe(0)
@@ -121,9 +130,10 @@ describe('login', () => {
   it('falls back to a generic detail when the body is not JSON', async () => {
     fetchMock.mockResolvedValue(new Response('upstream exploded', { status: 502 }))
 
-    const error = (await login({ email: 'an@example.com', password: 'x' }).catch(
-      (e: unknown) => e,
-    )) as ApiError
+    const error = (await login({
+      email: 'an@example.com',
+      password: 'x',
+    }).catch((e: unknown) => e)) as ApiError
 
     expect(error.status).toBe(502)
     expect(error.message).toContain('502')
@@ -144,5 +154,25 @@ describe('register', () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(url).toContain('/auth/register')
     expect(init.method).toBe('POST')
+  })
+})
+
+describe('recipe publication', () => {
+  it('PATCHes publish and unpublish requests with authentication', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ message: 'Recipe published successfully' }))
+    await publishRecipe('access-token', 'recipe/1')
+
+    let [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/recipes/recipe%2F1/publish')
+    expect(init.method).toBe('PATCH')
+    expect(init.headers).toMatchObject({ Authorization: 'Bearer access-token' })
+
+    fetchMock.mockResolvedValue(jsonResponse({ message: 'Recipe unpublished successfully' }))
+    await unpublishRecipe('access-token', 'recipe-1')
+
+    ;[url, init] = fetchMock.mock.calls[1] as [string, RequestInit]
+    expect(url).toContain('/recipes/recipe-1/unpublish')
+    expect(init.method).toBe('PATCH')
+    expect(init.headers).toMatchObject({ Authorization: 'Bearer access-token' })
   })
 })

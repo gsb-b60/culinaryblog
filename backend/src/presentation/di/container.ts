@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+﻿import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { Request, Response, NextFunction } from 'express';
 import { OAuth2Client } from 'google-auth-library';
@@ -13,6 +13,9 @@ import {
   UpdateProfileCommand,
 } from '../../application/commands/auth/AuthCommands.js';
 import {
+  AddRecipeStepCommand,
+  UpdateRecipeStepCommand,
+  DeleteRecipeStepCommand,
   AddRecipeIngredientCommand,
   DeleteRecipeIngredientCommand,
   UpdateRecipeIngredientCommand,
@@ -32,6 +35,21 @@ import {
   DeleteRecipeIngredientCommandHandler,
   UpdateRecipeIngredientCommandHandler,
 } from '../../application/handlers/RecipeIngredientCommandHandlers.js';
+import {
+  PublishRecipeCommandHandler,
+  UnpublishRecipeCommandHandler,
+} from '../../application/handlers/RecipePublicationCommandHandlers.js';
+import {
+  AddRecipeStepCommandHandler,
+  UpdateRecipeStepCommandHandler,
+  DeleteRecipeStepCommandHandler,
+} from '../../application/handlers/RecipeStepCommandHandlers.js';
+import {
+  GetManagedRecipesQuery,
+  GetManagedRecipesQueryHandler,
+  GetRecipeStepsQuery,
+  GetRecipeStepsQueryHandler,
+} from '../../application/handlers/RecipeStepQueryHandlers.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
@@ -92,11 +110,33 @@ export function createContainer(): Container {
     DeleteRecipeIngredientCommand.name,
     new DeleteRecipeIngredientCommandHandler(prisma),
   );
-
-  commandBus.registerQueryHandler(
-    'GetCurrentUserQuery',
-    new GetCurrentUserQueryHandler(prisma),
+  commandBus.registerCommandHandler(
+    'PublishRecipeCommand',
+    new PublishRecipeCommandHandler(prisma),
   );
+  commandBus.registerCommandHandler(
+    'UnpublishRecipeCommand',
+    new UnpublishRecipeCommandHandler(prisma),
+  );
+
+  commandBus.registerCommandHandler(
+    AddRecipeStepCommand.name,
+    new AddRecipeStepCommandHandler(prisma),
+  );
+  commandBus.registerCommandHandler(
+    UpdateRecipeStepCommand.name,
+    new UpdateRecipeStepCommandHandler(prisma),
+  );
+  commandBus.registerCommandHandler(
+    DeleteRecipeStepCommand.name,
+    new DeleteRecipeStepCommandHandler(prisma),
+  );
+  commandBus.registerQueryHandler(
+    GetManagedRecipesQuery.name,
+    new GetManagedRecipesQueryHandler(prisma),
+  );
+  commandBus.registerQueryHandler(GetRecipeStepsQuery.name, new GetRecipeStepsQueryHandler(prisma));
+  commandBus.registerQueryHandler('GetCurrentUserQuery', new GetCurrentUserQueryHandler(prisma));
 
   commandBus.registerCommandHandler(
     UpdateProfileCommand.name,
@@ -138,10 +178,7 @@ export function createContainer(): Container {
     }),
   );
 
-  commandBus.registerCommandHandler(
-    LogoutCommand.name,
-    new LogoutCommandHandler({ prisma }),
-  );
+  commandBus.registerCommandHandler(LogoutCommand.name, new LogoutCommandHandler({ prisma }));
 
   const googleAuthClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
