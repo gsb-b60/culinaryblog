@@ -1,7 +1,47 @@
 import { loadSession, saveSession, clearSession } from './tokenStorage'
 import type { AuthResponse, LoginPayload, ProblemDetails, RegisterPayload, UpdateProfilePayload, UserProfile } from '../types/auth'
 
-const API_BASE: string = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api/v1'
+const API_BASE: string = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api/v1'
+
+export interface RecipeSummary {
+  id: string
+  title: string
+  slug: string
+  description: string
+  status: string
+  createdAt: string
+  categoryName?: string
+  authorName?: string
+}
+
+export interface RecipeIngredient {
+  id: string
+  name: string
+  quantity?: number
+  unit?: string
+  notes?: string
+  orderIndex: number
+}
+
+export interface RecipeIngredientInput {
+  name: string
+  quantity?: number
+  unit?: string
+  notes?: string
+  orderIndex?: number
+}
+
+export interface PagedResult<T> {
+  items: T[]
+  meta: {
+    page: number
+    pageSize: number
+    totalCount: number
+    totalPages: number
+    hasNextPage: boolean
+    hasPreviousPage: boolean
+  }
+}
 
 export class ApiError extends Error {
   readonly status: number
@@ -74,6 +114,80 @@ export function login(payload: LoginPayload): Promise<AuthResponse> {
     method: 'POST',
     body: JSON.stringify(payload),
   })
+}
+
+export function getRecipes(page = 1, pageSize = 5): Promise<PagedResult<RecipeSummary>> {
+  const query = new URLSearchParams({
+    status: 'PUBLISHED',
+    page: String(page),
+    pageSize: String(pageSize),
+  })
+  return request<PagedResult<RecipeSummary>>(`/recipes?${query.toString()}`)
+}
+
+export function getManageableRecipes(
+  accessToken: string,
+  page = 1,
+  pageSize = 50,
+): Promise<PagedResult<RecipeSummary>> {
+  const query = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  })
+  return request<PagedResult<RecipeSummary>>(`/recipes/manageable?${query.toString()}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+}
+
+export function getRecipeIngredients(
+  accessToken: string,
+  recipeId: string,
+): Promise<RecipeIngredient[]> {
+  return request<RecipeIngredient[]>(`/recipes/${encodeURIComponent(recipeId)}/ingredients`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+}
+
+export function addRecipeIngredient(
+  accessToken: string,
+  recipeId: string,
+  input: RecipeIngredientInput,
+): Promise<RecipeIngredient> {
+  return request<RecipeIngredient>(`/recipes/${encodeURIComponent(recipeId)}/ingredients`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(input),
+  })
+}
+
+export function updateRecipeIngredient(
+  accessToken: string,
+  recipeId: string,
+  ingredientId: string,
+  input: RecipeIngredientInput,
+): Promise<RecipeIngredient> {
+  return request<RecipeIngredient>(
+    `/recipes/${encodeURIComponent(recipeId)}/ingredients/${encodeURIComponent(ingredientId)}`,
+    {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify(input),
+    },
+  )
+}
+
+export function deleteRecipeIngredient(
+  accessToken: string,
+  recipeId: string,
+  ingredientId: string,
+): Promise<null> {
+  return request<null>(
+    `/recipes/${encodeURIComponent(recipeId)}/ingredients/${encodeURIComponent(ingredientId)}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  )
 }
 
 export function googleLogin(idToken: string): Promise<AuthResponse> {

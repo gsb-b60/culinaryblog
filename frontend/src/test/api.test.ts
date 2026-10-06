@@ -1,6 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiError, login, register } from '../lib/api'
+import {
+  addRecipeIngredient,
+  ApiError,
+  deleteRecipeIngredient,
+  getManageableRecipes,
+  getRecipeIngredients,
+  getRecipes,
+  login,
+  register,
+  updateRecipeIngredient,
+} from '../lib/api'
 
 const AUTH_RESPONSE = {
   accessToken: 'access-token',
@@ -144,5 +154,58 @@ describe('register', () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(url).toContain('/auth/register')
     expect(init.method).toBe('POST')
+  })
+})
+
+describe('getRecipes', () => {
+  it('requests published recipes with page parameters', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ items: [], meta: { totalCount: 0 } }))
+
+    await getRecipes(2, 5)
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/recipes?')
+    expect(url).toContain('status=PUBLISHED')
+    expect(url).toContain('page=2')
+    expect(url).toContain('pageSize=5')
+    expect(init.method).toBeUndefined()
+  })
+})
+
+describe('recipe ingredient API', () => {
+  it('loads the authenticated user’s manageable recipes', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ items: [], meta: {} }))
+
+    await getManageableRecipes('access-token', 2)
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/recipes/manageable?page=2&pageSize=50')
+    expect(init.headers).toMatchObject({ Authorization: 'Bearer access-token' })
+  })
+
+  it('lists, adds, updates, and deletes ingredients through the protected endpoints', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse({ id: 'ingredient-1', name: 'Salt', orderIndex: 0 }, 201))
+      .mockResolvedValueOnce(jsonResponse({ id: 'ingredient-1', name: 'Sea salt', orderIndex: 0 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+    await getRecipeIngredients('access-token', 'recipe-1')
+    await addRecipeIngredient('access-token', 'recipe-1', { name: 'Salt', quantity: 1 })
+    await updateRecipeIngredient('access-token', 'recipe-1', 'ingredient-1', { name: 'Sea salt' })
+    await deleteRecipeIngredient('access-token', 'recipe-1', 'ingredient-1')
+
+    expect(fetchMock.mock.calls.map(([url, init]) => [
+      url,
+      (init as RequestInit).method ?? 'GET',
+    ])).toEqual([
+      ['http://localhost:3000/api/v1/recipes/recipe-1/ingredients', 'GET'],
+      ['http://localhost:3000/api/v1/recipes/recipe-1/ingredients', 'POST'],
+      ['http://localhost:3000/api/v1/recipes/recipe-1/ingredients/ingredient-1', 'PUT'],
+      ['http://localhost:3000/api/v1/recipes/recipe-1/ingredients/ingredient-1', 'DELETE'],
+    ])
+    for (const [, init] of fetchMock.mock.calls) {
+      expect((init as RequestInit).headers).toMatchObject({ Authorization: 'Bearer access-token' })
+    }
   })
 })

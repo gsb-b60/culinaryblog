@@ -19,7 +19,9 @@ import {
 import { 
   GetRecipesQuery, 
   GetRecipeBySlugQuery, 
-  SearchRecipesQuery 
+  SearchRecipesQuery,
+  GetRecipeIngredientsQuery,
+  GetManageableRecipesQuery,
 } from '../../application/queries/recipes/RecipeQueries.js';
 import { 
   createRecipeSchema, 
@@ -29,11 +31,20 @@ import {
   paginationSchema 
 } from '../../application/validators/recipeValidators.js';
 import { UserRole } from '../../domain/index.js';
+import { getContainer } from '../di/container.js';
 import { authenticateJwt, AuthenticatedRequest, authorizeOwnerOrAdmin } from '../middleware/AuthMiddleware.js';
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
 const router: RouterType = Router();
+
+async function getRecipeOwnerId(req: AuthenticatedRequest): Promise<string | null> {
+  const recipe = await getContainer().prisma.recipe.findFirst({
+    where: { id: req.params.id, isDeleted: false },
+    select: { authorId: true },
+  });
+  return recipe?.authorId ?? null;
+}
 
 // Public routes
 router.get('/', generalRateLimiter, async (req, res, next) => {
@@ -50,6 +61,21 @@ router.get('/', generalRateLimiter, async (req, res, next) => {
     );
     const result = await commandBus.executeQuery(query);
     res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/manageable', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const pagination = paginationSchema.parse(req.query);
+    const query = new GetManageableRecipesQuery(
+      req.user!.id,
+      req.user!.roles.includes(UserRole.ADMIN),
+      pagination.page,
+      pagination.pageSize,
+    );
+    res.json(await commandBus.executeQuery(query));
   } catch (error) {
     next(error);
   }
@@ -118,7 +144,7 @@ router.post('/', authenticateJwt, async (req: AuthenticatedRequest, res, next) =
   }
 });
 
-router.put('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.put('/:id', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const input = updateRecipeSchema.parse(req.body);
     const expectedVersion = parseInt(req.headers['if-match'] as string || '0');
@@ -130,7 +156,7 @@ router.put('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.par
   }
 });
 
-router.patch('/:id/publish', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/publish', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const command = new PublishRecipeCommand(req.params.id!, req.user!.id);
     await commandBus.executeCommand(command);
@@ -140,7 +166,7 @@ router.patch('/:id/publish', authenticateJwt, authorizeOwnerOrAdmin(async (req) 
   }
 });
 
-router.patch('/:id/unpublish', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/unpublish', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const command = new UnpublishRecipeCommand(req.params.id!, req.user!.id);
     await commandBus.executeCommand(command);
@@ -150,7 +176,7 @@ router.patch('/:id/unpublish', authenticateJwt, authorizeOwnerOrAdmin(async (req
   }
 });
 
-router.patch('/:id/archive', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/archive', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const command = new ArchiveRecipeCommand(req.params.id!, req.user!.id);
     await commandBus.executeCommand(command);
@@ -160,7 +186,7 @@ router.patch('/:id/archive', authenticateJwt, authorizeOwnerOrAdmin(async (req) 
   }
 });
 
-router.delete('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.delete('/:id', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const command = new DeleteRecipeCommand(req.params.id!, req.user!.id);
     await commandBus.executeCommand(command);
@@ -171,7 +197,7 @@ router.delete('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.
 });
 
 // Recipe Steps
-router.post('/:id/steps', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.post('/:id/steps', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const stepSchema = z.object({
       title: z.string().min(1).max(200),
@@ -196,7 +222,7 @@ router.post('/:id/steps', authenticateJwt, authorizeOwnerOrAdmin(async (req) => 
   }
 });
 
-router.put('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.put('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const stepSchema = z.object({
       stepNumber: z.number().int().positive().optional(),
@@ -224,7 +250,7 @@ router.put('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async (r
   }
 });
 
-router.delete('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.delete('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const command = new DeleteRecipeStepCommand(req.params.id!, req.user!.id, req.params.stepId!);
     await commandBus.executeCommand(command);
@@ -235,7 +261,18 @@ router.delete('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async
 });
 
 // Recipe Ingredients
-router.post('/:id/ingredients', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.get('/:id/ingredients', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const result = await commandBus.executeQuery(
+      new GetRecipeIngredientsQuery(req.params.id!),
+    );
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/:id/ingredients', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const ingredientSchema = z.object({
       name: z.string().min(1).max(200),
@@ -263,7 +300,7 @@ router.post('/:id/ingredients', authenticateJwt, authorizeOwnerOrAdmin(async (re
   }
 });
 
-router.put('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.put('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const ingredientSchema = z.object({
       name: z.string().min(1).max(200).optional(),
@@ -292,7 +329,7 @@ router.put('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAd
   }
 });
 
-router.delete('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.delete('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const command = new DeleteRecipeIngredientCommand(
       req.params.id!,
