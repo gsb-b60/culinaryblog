@@ -64,10 +64,10 @@ export const recipeFiltersSchema = z.object({
   difficulty: z.nativeEnum(RecipeDifficulty).optional(),
   status: z.nativeEnum(RecipeStatus).optional(),
   authorId: z.string().uuid().optional(),
-  minPrepTime: z.number().int().nonnegative().optional(),
-  maxPrepTime: z.number().int().nonnegative().optional(),
-  minCookTime: z.number().int().nonnegative().optional(),
-  maxCookTime: z.number().int().nonnegative().optional(),
+  minPrepTime: z.coerce.number().int().nonnegative().optional(),
+  maxPrepTime: z.coerce.number().int().nonnegative().optional(),
+  minCookTime: z.coerce.number().int().nonnegative().optional(),
+  maxCookTime: z.coerce.number().int().nonnegative().optional(),
   searchQuery: z.string().min(2).optional(),
 });
 
@@ -77,8 +77,8 @@ export const recipeSortSchema = z.object({
 });
 
 export const paginationSchema = z.object({
-  page: z.number().int().positive().default(1),
-  pageSize: z.number().int().positive().max(50).default(12),
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().max(50).default(12),
 });
 
 export type CreateRecipeInput = z.infer<typeof createRecipeSchema>;
