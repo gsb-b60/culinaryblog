@@ -19,6 +19,7 @@ export default function HomePage() {
       <h1 className="text-3xl font-extrabold text-surface-900">Culinary Blog</h1>
       <p className="text-surface-500 mt-2">Nền tảng chia sẻ công thức nấu ăn Việt Nam</p>
       <div className="flex flex-wrap gap-3 mt-6 justify-center">
+        <Link to="/recipes" className="px-6 py-3 text-brand-600 font-medium">Khám phá công thức</Link>
         <Link
           to="/auth/register"
           className="px-6 py-3 bg-brand-500 text-white rounded-lg font-bold hover:bg-brand-600 justify-center"

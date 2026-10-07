@@ -52,7 +52,8 @@ export class ArchiveRecipeCommand extends Command<void> {
 
   constructor(
     public readonly recipeId: string,
-    public readonly authorId: string
+    public readonly authorId: string,
+    public readonly isAdmin = false
   ) {
     super();
   }
