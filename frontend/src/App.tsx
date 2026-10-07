@@ -1,5 +1,7 @@
 import { Link, Route, Routes } from 'react-router-dom'
 
+import DashboardLayout from './components/DashboardLayout'
+
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import RecipeManagementPage from './pages/RecipeManagementPage'
 import DashboardPage from './pages/DashboardPage'
@@ -26,8 +28,10 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/dashboard/recipes" element={<RecipeManagementPage />} />
+      <Route path="/dashboard" element={<DashboardLayout />}>
+        <Route index element={<DashboardPage />} />
+        <Route path="recipes" element={<RecipeManagementPage />} />
+      </Route>
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/auth/register" element={<RegisterPage />} />
       <Route path="/auth/login" element={<LoginPage />} />

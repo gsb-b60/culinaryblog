@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 
 import { ApiError, deleteRecipe, getManageableRecipes } from '../lib/api'
 import type { ManagedRecipe } from '../lib/api'
@@ -76,10 +76,9 @@ export default function RecipeManagementPage() {
   }
 
   return (
-    <main className="min-h-screen bg-surface-50 p-5 sm:p-8">
-      <div className="mx-auto max-w-4xl">
-        <Link to="/dashboard" className="text-brand-600">← Dashboard</Link>
-        <h1 className="mt-5 text-2xl font-bold text-surface-900">Quản lý công thức</h1>
+    <main className="p-5 sm:p-8">
+      <div className="w-full">
+        <h1 className="text-2xl font-bold text-surface-900">Quản lý công thức</h1>
         <p className="mt-2 text-surface-600">Xóa vĩnh viễn công thức cùng nguyên liệu, bước nấu và ảnh liên quan.</p>
         {success && <p role="status" className="mt-4 rounded-lg bg-green-50 p-3 text-green-800">{success}</p>}
         {error && !deleting && <p role="alert" className="mt-4 text-red-700">{error}</p>}
@@ -101,7 +100,7 @@ export default function RecipeManagementPage() {
           <button disabled={page >= totalPages || busy || loading} onClick={() => { setLoading(true); setError(''); setPage(page + 1) }}>Trang sau</button>
         </nav>}
       </div>
-      {deleting && <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-5">
+      {deleting && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-5">
         <div role="dialog" aria-modal="true" aria-labelledby="delete-title" aria-describedby="delete-description" className="w-full max-w-md rounded-xl bg-white p-6"
           onKeyDown={(event) => {
             if (event.key === 'Escape' && !busy) setDeleting(null)
