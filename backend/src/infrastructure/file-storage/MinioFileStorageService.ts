@@ -45,12 +45,8 @@ export class MinioFileStorageService implements IFileStorageService {
       Key: key,
     });
 
-    try {
-      await this.client.send(command);
-    } catch (error) {
-      // Ignore if file doesn't exist (idempotent)
-      console.warn(`Failed to delete file ${key}:`, error);
-    }
+    // S3 deletion is idempotent for missing objects. Other errors must reach BullMQ.
+    await this.client.send(command);
   }
 
   getFileUrl(key: string): string {

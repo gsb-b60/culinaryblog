@@ -111,3 +111,30 @@ export function logout(accessToken: string, refreshToken: string): Promise<null>
     body: JSON.stringify({ refreshToken }),
   })
 }
+
+export interface ManagedRecipe {
+  id: string
+  title: string
+  slug: string
+  status: string
+  authorId: string
+  authorName: string
+}
+
+export interface ManagedRecipesResult {
+  items: ManagedRecipe[]
+  meta: { page: number; totalCount: number; totalPages: number }
+}
+
+export function getManageableRecipes(accessToken: string, page = 1): Promise<ManagedRecipesResult> {
+  return request<ManagedRecipesResult>(`/recipes/manageable?page=${page}&pageSize=12`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+}
+
+export function deleteRecipe(accessToken: string, recipeId: string): Promise<null> {
+  return request<null>(`/recipes/${encodeURIComponent(recipeId)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+}

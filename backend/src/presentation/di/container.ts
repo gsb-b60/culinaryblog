@@ -13,6 +13,7 @@ import {
   UpdateProfileCommand,
 } from '../../application/commands/auth/AuthCommands.js';
 import {
+  DeleteRecipeCommand,
   AddRecipeIngredientCommand,
   DeleteRecipeIngredientCommand,
   UpdateRecipeIngredientCommand,
@@ -27,6 +28,8 @@ import {
   type GoogleProfile,
 } from '../../application/handlers/AuthCommandHandlers.js';
 import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
+import { DeleteRecipeCommandHandler } from '../../application/handlers/DeleteRecipeCommandHandler.js';
+import { GetManageableRecipesQuery, GetManageableRecipesQueryHandler } from '../../application/handlers/ManageableRecipeQueryHandler.js';
 import {
   AddRecipeIngredientCommandHandler,
   DeleteRecipeIngredientCommandHandler,
@@ -79,6 +82,16 @@ export function createContainer(): Container {
   const jwtService = new JwtService();
   const fileStorageService = new MinioFileStorageService();
   const emailService = new NodemailerEmailService();
+
+  commandBus.registerCommandHandler(
+    DeleteRecipeCommand.name,
+    new DeleteRecipeCommandHandler(prisma, async () => {
+      await Promise.all([cacheService.deletePattern('recipe*'), cacheService.deletePattern('categor*')]);
+    }),
+  );
+  commandBus.registerQueryHandler(
+    GetManageableRecipesQuery.name, new GetManageableRecipesQueryHandler(prisma),
+  );
 
   commandBus.registerCommandHandler(
     AddRecipeIngredientCommand.name,
