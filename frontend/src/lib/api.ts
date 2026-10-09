@@ -1,4 +1,5 @@
 import { loadSession, saveSession, clearSession } from './tokenStorage'
+import type { Recipe, RecipePage } from '../types/recipe'
 import type { AuthResponse, LoginPayload, ProblemDetails, RegisterPayload, UpdateProfilePayload, UserProfile } from '../types/auth'
 
 const API_BASE: string = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api/v1'
@@ -49,10 +50,12 @@ async function request<T>(path: string, init?: RequestInit, retried = false): Pr
           const rotated = await refresh(session.refreshToken)
           saveSession(rotated)
           headers.Authorization = `Bearer ${rotated.accessToken}`
-          return request<T>(path, { ...init, headers }, true)
         } catch {
           clearSession()
+          throw new ApiError(res.status, detail, problem)
         }
+        // A business error from the retried request must not clear a refreshed session.
+        return request<T>(path, { ...init, headers }, true)
       }
     }
 
@@ -101,6 +104,24 @@ export function updateProfile(accessToken: string, payload: UpdateProfilePayload
     method: 'PATCH',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(payload),
+  })
+}
+
+export function getManagedRecipes(accessToken: string, page = 1, signal?: AbortSignal): Promise<RecipePage> {
+  return request<RecipePage>('/recipes/manage?page=' + page + '&pageSize=12', {
+    headers: { Authorization: 'Bearer ' + accessToken }, signal,
+  })
+}
+
+export function publishRecipe(accessToken: string, id: string): Promise<Recipe> {
+  return request<Recipe>('/recipes/' + encodeURIComponent(id) + '/publish', {
+    method: 'PATCH', headers: { Authorization: 'Bearer ' + accessToken },
+  })
+}
+
+export function unpublishRecipe(accessToken: string, id: string): Promise<Recipe> {
+  return request<Recipe>('/recipes/' + encodeURIComponent(id) + '/unpublish', {
+    method: 'PATCH', headers: { Authorization: 'Bearer ' + accessToken },
   })
 }
 
