@@ -28,12 +28,29 @@ import {
   recipeSortSchema,
   paginationSchema 
 } from '../../application/validators/recipeValidators.js';
+import { GetManagedRecipesQuery } from '../../application/queries/recipes/GetManagedRecipesQuery.js';
 import { UserRole } from '../../domain/index.js';
 import { authenticateJwt, AuthenticatedRequest, authorizeOwnerOrAdmin } from '../middleware/AuthMiddleware.js';
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
 const router: RouterType = Router();
+
+// Protected management list must precede the public /:slug route.
+router.get('/manage', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const input = z.object({
+      page: z.coerce.number().int().positive().default(1),
+      pageSize: z.coerce.number().int().positive().max(50).default(12),
+    }).parse(req.query);
+    const query = new GetManagedRecipesQuery(
+      req.user!.id, req.user!.roles.includes(UserRole.ADMIN), input.page, input.pageSize,
+    );
+    res.json(await commandBus.executeQuery(query));
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Public routes
 router.get('/', generalRateLimiter, async (req, res, next) => {
@@ -130,21 +147,25 @@ router.put('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.par
   }
 });
 
-router.patch('/:id/publish', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/publish', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const command = new PublishRecipeCommand(req.params.id!, req.user!.id);
-    await commandBus.executeCommand(command);
-    res.json({ message: 'Recipe published successfully' });
+    const command = new PublishRecipeCommand(
+      req.params.id!, req.user!.id, req.user!.roles.includes(UserRole.ADMIN),
+    );
+    const recipe = await commandBus.executeCommand(command);
+    res.status(200).json(recipe);
   } catch (error) {
     next(error);
   }
 });
 
-router.patch('/:id/unpublish', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/unpublish', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const command = new UnpublishRecipeCommand(req.params.id!, req.user!.id);
-    await commandBus.executeCommand(command);
-    res.json({ message: 'Recipe unpublished successfully' });
+    const command = new UnpublishRecipeCommand(
+      req.params.id!, req.user!.id, req.user!.roles.includes(UserRole.ADMIN),
+    );
+    const recipe = await commandBus.executeCommand(command);
+    res.status(200).json(recipe);
   } catch (error) {
     next(error);
   }
