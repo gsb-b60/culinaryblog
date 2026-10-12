@@ -1,7 +1,8 @@
 import { PrismaClient } from '@prisma/client';
-import { UserRole } from '../../domain/enums/UserRole.js';
-import { RecipeStatus } from '../../domain/enums/RecipeStatus.js';
+
 import { RecipeDifficulty } from '../../domain/enums/RecipeDifficulty.js';
+import { RecipeStatus } from '../../domain/enums/RecipeStatus.js';
+import { UserRole } from '../../domain/enums/UserRole.js';
 import { RecipeRepository } from '../../infrastructure/persistence/repositories/RecipeRepository.js';
 import { IQueryHandler } from '../command-bus.js';
 import { PagedResult } from '../dtos/PagedResult.js';
@@ -13,6 +14,7 @@ import {
 // Repository currently returns summary objects with a domain-entity return type.
 export class GetRecipesQueryHandler implements IQueryHandler<GetRecipesQuery, PagedResult<RecipeSummaryDto>> {
   constructor(private readonly repository: RecipeRepository) {}
+
   async execute(query: GetRecipesQuery): Promise<PagedResult<RecipeSummaryDto>> {
     return await this.repository.findMany(
       { ...query.filters, status: RecipeStatus.PUBLISHED }, query.sort, query.page, query.pageSize,
@@ -22,6 +24,7 @@ export class GetRecipesQueryHandler implements IQueryHandler<GetRecipesQuery, Pa
 
 export class SearchRecipesQueryHandler implements IQueryHandler<SearchRecipesQuery, PagedResult<RecipeSummaryDto>> {
   constructor(private readonly repository: RecipeRepository) {}
+
   async execute(query: SearchRecipesQuery): Promise<PagedResult<RecipeSummaryDto>> {
     return await this.repository.search(
       query.query, { ...query.filters, status: RecipeStatus.PUBLISHED }, query.sort, query.page, query.pageSize,
@@ -31,6 +34,7 @@ export class SearchRecipesQueryHandler implements IQueryHandler<SearchRecipesQue
 
 export class GetManageableRecipesQueryHandler implements IQueryHandler<GetManageableRecipesQuery, PagedResult<RecipeSummaryDto>> {
   constructor(private readonly repository: RecipeRepository) {}
+
   async execute(query: GetManageableRecipesQuery): Promise<PagedResult<RecipeSummaryDto>> {
     const filters = query.isAdmin ? query.filters : { ...query.filters, authorId: query.userId };
     return await this.repository.findMany(
@@ -41,6 +45,7 @@ export class GetManageableRecipesQueryHandler implements IQueryHandler<GetManage
 
 export class GetRecipeBySlugQueryHandler implements IQueryHandler<GetRecipeBySlugQuery, RecipeDetailDto | null> {
   constructor(private readonly prisma: PrismaClient) {}
+
   async execute(query: GetRecipeBySlugQuery): Promise<RecipeDetailDto | null> {
     const recipe = await this.prisma.recipe.findUnique({
       where: { slug: query.slug, isDeleted: false },

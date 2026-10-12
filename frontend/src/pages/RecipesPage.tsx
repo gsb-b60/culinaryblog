@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
+import DashboardLayout from '../components/DashboardLayout'
 import { archiveRecipe, getManageableRecipes, getPublicRecipes } from '../lib/api'
 import { loadSession } from '../lib/tokenStorage'
 import type { RecipePage, RecipeStatus, RecipeSummary } from '../types/recipe'
@@ -13,32 +14,37 @@ export default function RecipesPage({ management = false }: { management?: boole
   const [status, setStatus] = useState<RecipeStatus | ''>('')
   const [page, setPage] = useState(1)
   const [data, setData] = useState<RecipePage | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [completedRequestKey, setCompletedRequestKey] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [selected, setSelected] = useState<RecipeSummary | null>(null)
   const [archiving, setArchiving] = useState(false)
   const [revision, setRevision] = useState(0)
   const archiveInFlight = useRef(false)
+  const requestKey = JSON.stringify([management, session?.accessToken, page, status, revision])
+  const loading = completedRequestKey !== requestKey
 
   useEffect(() => {
     if (management && !session) return
     let active = true
-    setLoading(true)
-    setError('')
     const request = management
       ? getManageableRecipes(session!.accessToken, page, status || undefined)
       : getPublicRecipes(page)
-    request.then(result => { if (active) setData(result) })
+    request.then(result => {
+      if (active) {
+        setData(result)
+        setError('')
+      }
+    })
       .catch(reason => {
         if (active) {
           setData(null)
           setError(reason instanceof Error ? reason.message : 'Không thể tải công thức.')
         }
       })
-      .finally(() => { if (active) setLoading(false) })
+      .finally(() => { if (active) setCompletedRequestKey(requestKey) })
     return () => { active = false }
-  }, [management, session, page, status, revision])
+  }, [management, session, page, status, revision, requestKey])
 
   if (management && !session) return <Navigate to="/auth/login" replace />
 
@@ -69,15 +75,15 @@ export default function RecipesPage({ management = false }: { management?: boole
     }
   }
 
-  return (
-    <main className="min-h-screen bg-surface-50 p-5 sm:p-8">
-      <div className="mx-auto max-w-5xl">
-        <nav className="mb-6 flex gap-4">
+  const content = (
+    <section className={management ? "" : "min-h-screen bg-surface-50 p-5 sm:p-8"}>
+      <div className={management ? "" : "mx-auto max-w-5xl"}>
+        {!management && <nav className="mb-6 flex gap-4">
           <Link to="/" className="text-brand-600">Trang chủ</Link>
           <Link to="/recipes" className="text-brand-600">Công thức công khai</Link>
           {session && <Link to="/dashboard/recipes" className="text-brand-600">Quản lý công thức</Link>}
           {session && <Link to="/dashboard" className="text-brand-600">Dashboard</Link>}
-        </nav>
+        </nav>}
         <h1 className="text-2xl font-bold text-surface-900">
           {management ? 'Quản lý công thức' : 'Công thức công khai'}
         </h1>
@@ -98,7 +104,7 @@ export default function RecipesPage({ management = false }: { management?: boole
           </select>
         </label>}
         {message && <p role="status" className="mt-4 rounded-lg bg-green-50 p-3 text-green-800">{message}</p>}
-        {error && <div role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-red-700">
+        {error && !loading && <div role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-red-700">
           {error}
           {!selected && <button type="button" onClick={() => setRevision(value => value + 1)} className="ml-3 underline">Thử lại</button>}
         </div>}
@@ -126,7 +132,7 @@ export default function RecipesPage({ management = false }: { management?: boole
             <button type="button" disabled={!data.meta.hasNextPage || archiving} onClick={() => setPage(page + 1)} className="rounded border p-2 disabled:opacity-40">Trang sau</button>
           </nav>}
         </>}
-        {selected && <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4">
+        {selected && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <section role="dialog" aria-modal="true" aria-labelledby="archive-title" className="w-full max-w-md rounded-xl bg-white p-6">
             <h2 id="archive-title" className="text-xl font-bold">Lưu trữ công thức?</h2>
             <p className="mt-3">“{selected.title}” sẽ ẩn khỏi danh sách công khai. Nội dung, nguyên liệu và bước nấu vẫn được giữ trong hệ thống.</p>
@@ -143,6 +149,7 @@ export default function RecipesPage({ management = false }: { management?: boole
           </section>
         </div>}
       </div>
-    </main>
+    </section>
   )
+  return management ? <DashboardLayout>{content}</DashboardLayout> : content
 }

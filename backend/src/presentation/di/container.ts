@@ -18,6 +18,7 @@ import {
   DeleteRecipeIngredientCommand,
   UpdateRecipeIngredientCommand,
 } from '../../application/commands/recipes/RecipeCommands.js';
+import { ArchiveRecipeCommandHandler } from '../../application/handlers/ArchiveRecipeCommandHandler.js';
 import {
   GoogleAuthCommandHandler,
   LoginCommandHandler,
@@ -27,16 +28,15 @@ import {
   UpdateProfileCommandHandler,
   type GoogleProfile,
 } from '../../application/handlers/AuthCommandHandlers.js';
-import { ArchiveRecipeCommandHandler } from '../../application/handlers/ArchiveRecipeCommandHandler.js';
-import {
-  GetRecipesQueryHandler, SearchRecipesQueryHandler, GetManageableRecipesQueryHandler, GetRecipeBySlugQueryHandler,
-} from '../../application/handlers/RecipeQueryHandlers.js';
 import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
 import {
   AddRecipeIngredientCommandHandler,
   DeleteRecipeIngredientCommandHandler,
   UpdateRecipeIngredientCommandHandler,
 } from '../../application/handlers/RecipeIngredientCommandHandlers.js';
+import {
+  GetRecipesQueryHandler, SearchRecipesQueryHandler, GetManageableRecipesQueryHandler, GetRecipeBySlugQueryHandler,
+} from '../../application/handlers/RecipeQueryHandlers.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
