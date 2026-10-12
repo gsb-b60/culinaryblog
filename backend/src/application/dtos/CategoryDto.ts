@@ -4,9 +4,9 @@ export interface CategoryDto {
   slug: string;
   description?: string;
   imageUrl?: string;
-  orderIndex: number;
+  orderIndex?: number;
   recipeCount?: number;
-  createdAt: Date;
+  createdAt?: Date;
 }
 
 export interface CategoryDetailDto extends CategoryDto {

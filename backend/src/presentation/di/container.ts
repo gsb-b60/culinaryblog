@@ -27,6 +27,8 @@ import {
   type GoogleProfile,
 } from '../../application/handlers/AuthCommandHandlers.js';
 import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
+import { GetCategoriesQueryHandler } from '../../application/queries/categories/GetCategoriesQueryHandler.js';
+import { categoryCache } from '../../infrastructure/cache/CategoryCache.js';
 import {
   AddRecipeIngredientCommandHandler,
   DeleteRecipeIngredientCommandHandler,
@@ -96,6 +98,11 @@ export function createContainer(): Container {
   commandBus.registerQueryHandler(
     'GetCurrentUserQuery',
     new GetCurrentUserQueryHandler(prisma),
+  );
+
+  commandBus.registerQueryHandler(
+    'GetCategoriesQuery',
+    new GetCategoriesQueryHandler(prisma, categoryCache),
   );
 
   commandBus.registerCommandHandler(

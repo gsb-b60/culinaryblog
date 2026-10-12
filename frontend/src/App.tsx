@@ -1,4 +1,4 @@
-import { Link, Route, Routes } from 'react-router-dom'
+import { Link, Navigate, Route, Routes } from 'react-router-dom'
 
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import DashboardPage from './pages/DashboardPage'
@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage'
 import ProfilePage from './pages/ProfilePage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
+import CategoriesPage from './pages/CategoriesPage'
 
 function NotFoundPage() {
   return (
@@ -30,6 +31,8 @@ export default function App() {
       <Route path="/auth/register" element={<RegisterPage />} />
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      <Route path="/categories" element={<CategoriesPage />} />
+      <Route path="/recipes" element={<Navigate to="/categories" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

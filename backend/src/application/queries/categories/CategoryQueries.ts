@@ -1,19 +1,23 @@
-import { CategoryFilters } from '../../../domain/repositories/ICategoryRepository.js';
 import { Query } from '../../command-bus.js';
+import { CategoryDto, CategoryDetailDto } from '../../dtos/CategoryDto.js';
 
-export class GetCategoriesQuery extends Query<import('../../dtos/PagedResult.js').PagedResult<import('../../dtos/CategoryDto.js').CategoryDto>> {
+export class GetCategoriesQuery extends Query<CategoryDto[]> {
   readonly type = 'GetCategoriesQuery';
 
-  constructor(
-    public readonly filters: CategoryFilters,
-    public readonly page: number,
-    public readonly pageSize: number
-  ) {
+  constructor() {
     super();
+  }
+
+  getCacheKey(): string {
+    return 'categories:all';
+  }
+
+  getCacheTtl(): number {
+    return 60 * 60; // 60 minutes = 3600 seconds
   }
 }
 
-export class GetCategoryBySlugQuery extends Query<import('../../dtos/CategoryDto.js').CategoryDetailDto | null> {
+export class GetCategoryBySlugQuery extends Query<CategoryDetailDto | null> {
   readonly type = 'GetCategoryBySlugQuery';
 
   constructor(
