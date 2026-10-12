@@ -61,21 +61,34 @@ export default function CategoriesPage() {
     }
   }
 
-  const fetchCategories = async () => {
+  const handleRetry = () => {
     setLoading(true)
     setError(null)
-    try {
-      const data = await getCategories()
-      setCategories(data)
-    } catch {
-      setError('Không thể tải danh sách danh mục. Vui lòng thử lại.')
-    } finally {
-      setLoading(false)
-    }
+    getCategories()
+      .then((data) => setCategories(data))
+      .catch(() => setError('Không thể tải danh sách danh mục. Vui lòng thử lại.'))
+      .finally(() => setLoading(false))
   }
 
   useEffect(() => {
-    void fetchCategories()
+    let active = true
+
+    getCategories()
+      .then((data) => {
+        if (!active) return
+        setCategories(data)
+      })
+      .catch(() => {
+        if (!active) return
+        setError('Không thể tải danh sách danh mục. Vui lòng thử lại.')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
   }, [])
 
   return (
@@ -138,7 +151,7 @@ export default function CategoriesPage() {
           <div className="p-8 text-center bg-white rounded-xl border border-rose-200 my-6">
             <p className="text-rose-600 text-sm mb-4">{error}</p>
             <button
-              onClick={() => void fetchCategories()}
+              onClick={handleRetry}
               className="px-4 py-2 bg-brand-500 text-white text-sm font-medium rounded-lg hover:bg-brand-600"
             >
               Thử lại

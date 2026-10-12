@@ -4,10 +4,6 @@ import { CategoryDto, CategoryDetailDto } from '../../dtos/CategoryDto.js';
 export class GetCategoriesQuery extends Query<CategoryDto[]> {
   readonly type = 'GetCategoriesQuery';
 
-  constructor() {
-    super();
-  }
-
   getCacheKey(): string {
     return 'categories:all';
   }
