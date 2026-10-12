@@ -50,7 +50,7 @@ This chapter lists all API endpoints of the Culinary Blog system. Base URL: /api
 | PATCH  | /recipes/{id}/publish   | Publish recipe (Draft → Published)                                  | Bearer (Owner/Admin)       | —                                                                                                              |
 | PATCH  | /recipes/{id}/unpublish | Unpublish recipe (Published → Draft)                                | Bearer (Owner/Admin)       | —                                                                                                              |
 | PATCH  | /recipes/{id}/archive   | Archive recipe                                                      | Bearer (Owner/Admin)       | —                                                                                                              |
-| DELETE | /recipes/{id}           | Delete recipe (soft delete)                                         | Bearer (Owner/Admin)       | —                                                                                                              |
+| DELETE | /recipes/{id}           | Delete recipe (hard delete)                                         | Bearer (Owner/Admin)       | —                                                                                                              |
 
 ## 8.4. Recipe Images (/recipes/{id}/images)
 

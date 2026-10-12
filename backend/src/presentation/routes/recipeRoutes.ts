@@ -16,6 +16,7 @@ import {
   UpdateRecipeIngredientCommand,
   DeleteRecipeIngredientCommand,
 } from '../../application/commands/recipes/RecipeCommands.js';
+import { GetManageableRecipesQuery } from '../../application/handlers/ManageableRecipeQueryHandler.js';
 import { 
   GetRecipesQuery, 
   GetRecipeBySlugQuery, 
@@ -34,6 +35,15 @@ import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
 const router: RouterType = Router();
+
+router.get('/manageable', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const pagination = z.object({ page: z.coerce.number().int().positive().default(1), pageSize: z.coerce.number().int().positive().max(50).default(12) }).parse(req.query);
+    res.json(await commandBus.executeQuery(new GetManageableRecipesQuery(
+      req.user!.id, req.user!.roles.includes(UserRole.ADMIN), pagination.page, pagination.pageSize,
+    )));
+  } catch (error) { next(error); }
+});
 
 // Public routes
 router.get('/', generalRateLimiter, async (req, res, next) => {
@@ -160,9 +170,9 @@ router.patch('/:id/archive', authenticateJwt, authorizeOwnerOrAdmin(async (req) 
   }
 });
 
-router.delete('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.delete('/:id', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const command = new DeleteRecipeCommand(req.params.id!, req.user!.id);
+    const command = new DeleteRecipeCommand(req.params.id!, req.user!.id, req.user!.roles.includes(UserRole.ADMIN));
     await commandBus.executeCommand(command);
     res.status(204).send();
   } catch (error) {

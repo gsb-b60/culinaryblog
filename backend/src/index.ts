@@ -13,6 +13,7 @@ import { configureJwtStrategy } from './infrastructure/auth/strategies/JwtStrate
 import { configureLocalStrategy } from './infrastructure/auth/strategies/LocalStrategy.js';
 import { cacheService } from './infrastructure/cache/RedisCacheService.js';
 import { scheduleSitemapJob } from './infrastructure/jobs/queues/sitemapQueue.js';
+import { startFileCleanupWorker } from './infrastructure/jobs/workers/fileCleanupWorker.js';
 import { imageResizeWorker } from './infrastructure/jobs/workers/imageResizeWorker.js';
 import { sitemapWorker } from './infrastructure/jobs/workers/sitemapWorker.js';
 import { welcomeEmailWorker } from './infrastructure/jobs/workers/welcomeEmailWorker.js';
@@ -86,11 +87,14 @@ app.use((_req, res) => {
 // Global error handler
 app.use(globalErrorHandler);
 
+let cleanupWorker: ReturnType<typeof startFileCleanupWorker> | undefined;
+
 const server = app.listen(env.PORT, () => {
   logger.info(`Server running on port ${env.PORT} [${env.NODE_ENV}]`);
   
   // Initialize background job workers
   if (env.NODE_ENV !== 'test') {
+    cleanupWorker = startFileCleanupWorker();
     cacheService.connect().catch(err => logger.error({ err }, 'Failed to connect to Redis'));
     scheduleSitemapJob().catch(err => logger.error({ err }, 'Failed to schedule sitemap job'));
   }
@@ -101,6 +105,7 @@ async function shutdown(signal: string): Promise<void> {
   
   // Close workers
   await Promise.all([
+    cleanupWorker?.close(),
     welcomeEmailWorker.close(),
     imageResizeWorker.close(),
     sitemapWorker.close(),

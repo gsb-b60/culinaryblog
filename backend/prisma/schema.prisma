@@ -200,3 +200,12 @@ model RecipeImage {
   @@index([recipeId])
   @@map("recipe_images")
 }
+model FileCleanupTask {
+  id        String   @id @default(uuid())
+  recipeId  String   @map("recipe_id")
+  url       String   @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt, id])
+  @@map("file_cleanup_tasks")
+}
