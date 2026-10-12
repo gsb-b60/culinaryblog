@@ -17,6 +17,7 @@ import {
   DeleteRecipeIngredientCommand,
 } from '../../application/commands/recipes/RecipeCommands.js';
 import { 
+  GetManageableRecipesQuery,
   GetRecipesQuery, 
   GetRecipeBySlugQuery, 
   SearchRecipesQuery 
@@ -29,7 +30,7 @@ import {
   paginationSchema 
 } from '../../application/validators/recipeValidators.js';
 import { UserRole } from '../../domain/index.js';
-import { authenticateJwt, AuthenticatedRequest, authorizeOwnerOrAdmin } from '../middleware/AuthMiddleware.js';
+import { authenticateJwt, optionalAuth, AuthenticatedRequest, authorizeOwnerOrAdmin } from '../middleware/AuthMiddleware.js';
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
@@ -81,12 +82,28 @@ router.get('/search', generalRateLimiter, async (req, res, next) => {
   }
 });
 
-router.get('/:slug', generalRateLimiter, async (req, res, next) => {
+// Management route must precede /:slug. Author scope comes from the JWT, never from query parameters.
+router.get('/manageable', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const filters = recipeFiltersSchema.parse(req.query);
+    const sort = recipeSortSchema.parse(req.query);
+    const pagination = paginationSchema.parse(req.query);
+    const result = await commandBus.executeQuery(new GetManageableRecipesQuery(
+      filters, sort, pagination.page, pagination.pageSize,
+      req.user!.id, req.user!.roles.includes(UserRole.ADMIN),
+    ));
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/:slug', generalRateLimiter, optionalAuth, async (req, res, next) => {
   try {
     const query = new GetRecipeBySlugQuery(
       req.params.slug!,
       (req as AuthenticatedRequest).user?.id,
-      (req as AuthenticatedRequest).user?.roles[0]
+      (req as AuthenticatedRequest).user?.roles.includes(UserRole.ADMIN) ? UserRole.ADMIN : (req as AuthenticatedRequest).user?.roles[0]
     );
     const recipe = await commandBus.executeQuery(query);
     
@@ -150,11 +167,12 @@ router.patch('/:id/unpublish', authenticateJwt, authorizeOwnerOrAdmin(async (req
   }
 });
 
-router.patch('/:id/archive', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/archive', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const command = new ArchiveRecipeCommand(req.params.id!, req.user!.id);
+    const recipeId = z.string().uuid().parse(req.params.id);
+    const command = new ArchiveRecipeCommand(recipeId, req.user!.id, req.user!.roles.includes(UserRole.ADMIN));
     await commandBus.executeCommand(command);
-    res.json({ message: 'Recipe archived successfully' });
+    res.status(200).json({ id: recipeId, status: 'ARCHIVED', message: 'Recipe archived successfully' });
   } catch (error) {
     next(error);
   }

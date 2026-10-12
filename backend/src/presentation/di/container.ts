@@ -13,10 +13,12 @@ import {
   UpdateProfileCommand,
 } from '../../application/commands/auth/AuthCommands.js';
 import {
+  ArchiveRecipeCommand,
   AddRecipeIngredientCommand,
   DeleteRecipeIngredientCommand,
   UpdateRecipeIngredientCommand,
 } from '../../application/commands/recipes/RecipeCommands.js';
+import { ArchiveRecipeCommandHandler } from '../../application/handlers/ArchiveRecipeCommandHandler.js';
 import {
   GoogleAuthCommandHandler,
   LoginCommandHandler,
@@ -32,6 +34,9 @@ import {
   DeleteRecipeIngredientCommandHandler,
   UpdateRecipeIngredientCommandHandler,
 } from '../../application/handlers/RecipeIngredientCommandHandlers.js';
+import {
+  GetRecipesQueryHandler, SearchRecipesQueryHandler, GetManageableRecipesQueryHandler, GetRecipeBySlugQueryHandler,
+} from '../../application/handlers/RecipeQueryHandlers.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
@@ -74,6 +79,11 @@ export function createContainer(): Container {
   });
 
   const recipeRepository = new RecipeRepository(prisma);
+  commandBus.registerCommandHandler(ArchiveRecipeCommand.name, new ArchiveRecipeCommandHandler(prisma));
+  commandBus.registerQueryHandler('GetRecipesQuery', new GetRecipesQueryHandler(recipeRepository));
+  commandBus.registerQueryHandler('SearchRecipesQuery', new SearchRecipesQueryHandler(recipeRepository));
+  commandBus.registerQueryHandler('GetManageableRecipesQuery', new GetManageableRecipesQueryHandler(recipeRepository));
+  commandBus.registerQueryHandler('GetRecipeBySlugQuery', new GetRecipeBySlugQueryHandler(prisma));
   const categoryRepository = new CategoryRepository(prisma);
   const userRepository = new UserRepository(prisma);
   const jwtService = new JwtService();

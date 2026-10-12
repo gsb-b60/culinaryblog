@@ -1,3 +1,4 @@
+import type { RecipePage, RecipeStatus } from '../types/recipe'
 import { loadSession, saveSession, clearSession } from './tokenStorage'
 import type { AuthResponse, LoginPayload, ProblemDetails, RegisterPayload, UpdateProfilePayload, UserProfile } from '../types/auth'
 
@@ -109,5 +110,24 @@ export function logout(accessToken: string, refreshToken: string): Promise<null>
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify({ refreshToken }),
+  })
+}
+
+export function getPublicRecipes(page = 1): Promise<RecipePage> {
+  return request<RecipePage>(`/recipes?page=${page}`)
+}
+
+export function getManageableRecipes(accessToken: string, page = 1, status?: RecipeStatus): Promise<RecipePage> {
+  const query = new URLSearchParams({ page: String(page) })
+  if (status) query.set('status', status)
+  return request<RecipePage>(`/recipes/manageable?${query}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+}
+
+export function archiveRecipe(accessToken: string, id: string): Promise<{ id: string; status: 'ARCHIVED'; message: string }> {
+  return request(`/recipes/${encodeURIComponent(id)}/archive`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${accessToken}` },
   })
 }

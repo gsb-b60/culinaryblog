@@ -2,7 +2,7 @@ import { RecipeFilters, RecipeSortOptions } from '../../../domain/repositories/I
 import { Query } from '../../command-bus.js';
 
 export class GetRecipesQuery extends Query<import('../../dtos/PagedResult.js').PagedResult<import('../../dtos/RecipeDto.js').RecipeSummaryDto>> {
-  readonly type = 'GetRecipesQuery';
+  readonly type: string = 'GetRecipesQuery';
 
   constructor(
     public readonly filters: RecipeFilters,
@@ -37,5 +37,19 @@ export class SearchRecipesQuery extends Query<import('../../dtos/PagedResult.js'
     public readonly pageSize: number
   ) {
     super();
+  }
+}
+export class GetManageableRecipesQuery extends GetRecipesQuery {
+  readonly type = 'GetManageableRecipesQuery';
+
+  constructor(
+    filters: RecipeFilters,
+    sort: RecipeSortOptions,
+    page: number,
+    pageSize: number,
+    public readonly userId: string,
+    public readonly isAdmin = false,
+  ) {
+    super(filters, sort, page, pageSize);
   }
 }
