@@ -1,7 +1,8 @@
 import { loadSession, saveSession, clearSession } from './tokenStorage'
 import type { AuthResponse, LoginPayload, ProblemDetails, RegisterPayload, UpdateProfilePayload, UserProfile } from '../types/auth'
+import type { CategoryDto } from '../types/category'
 
-const API_BASE: string = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api/v1'
+const API_BASE: string = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api/v1'
 
 export class ApiError extends Error {
   readonly status: number
@@ -109,5 +110,11 @@ export function logout(accessToken: string, refreshToken: string): Promise<null>
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify({ refreshToken }),
+  })
+}
+
+export function getCategories(): Promise<CategoryDto[]> {
+  return request<CategoryDto[]>('/categories', {
+    method: 'GET',
   })
 }

@@ -31,6 +31,12 @@ export default function HomePage() {
         >
           Đăng nhập
         </Link>
+        <Link
+          to="/categories"
+          className="px-6 py-3 bg-brand-50 text-brand-700 border border-brand-200 rounded-lg font-medium hover:bg-brand-100 justify-center"
+        >
+          Khám phá danh mục
+        </Link>
       </div>
     </main>
   )

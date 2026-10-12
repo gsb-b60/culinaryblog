@@ -35,12 +35,14 @@ import {
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
+import { GetCategoriesQueryHandler } from '../../application/queries/categories/GetCategoriesQueryHandler.js';
 import { env } from '../../config-middleware/config/env.js';
 import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository.js';
 import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.js';
 import { IUserRepository } from '../../domain/repositories/IUserRepository.js';
 import { JwtService } from '../../infrastructure/auth/JwtService.js';
 import { PasswordService } from '../../infrastructure/auth/PasswordService.js';
+import { categoryCache } from '../../infrastructure/cache/CategoryCache.js';
 import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
 import { NodemailerEmailService } from '../../infrastructure/email/NodemailerEmailService.js';
 import { MinioFileStorageService } from '../../infrastructure/file-storage/MinioFileStorageService.js';
@@ -96,6 +98,11 @@ export function createContainer(): Container {
   commandBus.registerQueryHandler(
     'GetCurrentUserQuery',
     new GetCurrentUserQueryHandler(prisma),
+  );
+
+  commandBus.registerQueryHandler(
+    'GetCategoriesQuery',
+    new GetCategoriesQueryHandler(prisma, categoryCache),
   );
 
   commandBus.registerCommandHandler(

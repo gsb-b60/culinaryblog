@@ -13,9 +13,7 @@ import {
 } from '../../application/queries/categories/CategoryQueries.js';
 import { 
   createCategorySchema, 
-  updateCategorySchema,
-  categoryFiltersSchema,
-  categoryPaginationSchema 
+  updateCategorySchema
 } from '../../application/validators/categoryValidators.js';
 import { UserRole } from '../../domain/enums/UserRole.js';
 import { authenticateJwt, AuthenticatedRequest, authorize } from '../middleware/AuthMiddleware.js';
@@ -23,18 +21,12 @@ import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
 const router: RouterType = Router();
+export const categoryListRoutes: RouterType = router;
 
 // Public routes
-router.get('/', generalRateLimiter, async (req, res, next) => {
+router.get('/', generalRateLimiter, async (_req, res, next) => {
   try {
-    const filters = categoryFiltersSchema.parse(req.query);
-    const pagination = categoryPaginationSchema.parse(req.query);
-
-    const query = new GetCategoriesQuery(
-      filters,
-      pagination.page,
-      pagination.pageSize
-    );
+    const query = new GetCategoriesQuery();
     const result = await commandBus.executeQuery(query);
     res.json(result);
   } catch (error) {
