@@ -16,6 +16,7 @@ import {
   UpdateRecipeIngredientCommand,
   DeleteRecipeIngredientCommand,
 } from '../../application/commands/recipes/RecipeCommands.js';
+import { GetManagedRecipesQuery } from '../../application/queries/recipes/GetManagedRecipesQuery.js';
 import { 
   GetRecipesQuery, 
   GetRecipeBySlugQuery, 
@@ -28,7 +29,6 @@ import {
   recipeSortSchema,
   paginationSchema 
 } from '../../application/validators/recipeValidators.js';
-import { GetManagedRecipesQuery } from '../../application/queries/recipes/GetManagedRecipesQuery.js';
 import { UserRole } from '../../domain/index.js';
 import { authenticateJwt, AuthenticatedRequest, authorizeOwnerOrAdmin } from '../middleware/AuthMiddleware.js';
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
