@@ -17,6 +17,7 @@ import { imageResizeWorker } from './infrastructure/jobs/workers/imageResizeWork
 import { sitemapWorker } from './infrastructure/jobs/workers/sitemapWorker.js';
 import { welcomeEmailWorker } from './infrastructure/jobs/workers/welcomeEmailWorker.js';
 import { containerMiddleware, createContainer, destroyContainer } from './presentation/di/container.js';
+import { setupOpenAPI } from './presentation/docs/openapi.js';
 import { correlationIdMiddleware } from './presentation/middleware/CorrelationIdMiddleware.js';
 import { globalErrorHandler } from './presentation/middleware/GlobalErrorHandler.js';
 import { generalRateLimiter } from './presentation/middleware/RateLimitMiddleware.js';
@@ -39,9 +40,36 @@ if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) {
 app.use(passport.initialize());
 
 // Global middleware
-app.use(helmet());
-app.use(cors({ origin: env.CORS_ORIGINS.split(',') }));
-app.use(express.json());
+const allowedOrigins = env.CORS_ORIGINS.split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
+    },
+    hsts: { maxAge: 31536000, includeSubDomains: true },
+    referrerPolicy: { policy: 'no-referrer' },
+  }),
+);
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('CORS blocked: origin not allowed'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'If-Match'],
+  }),
+);
+app.use(express.json({ limit: '1mb' }));
 app.use(pinoHttp({ logger }));
 app.use(correlationIdMiddleware);
 app.use(containerMiddleware);
@@ -69,6 +97,7 @@ app.get('/health/ready', async (_req, res) => {
 });
 
 // API routes
+setupOpenAPI(app);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/recipes', recipeRoutes);
 app.use('/api/v1/categories', categoryRoutes);
