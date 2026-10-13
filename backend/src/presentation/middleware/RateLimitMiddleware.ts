@@ -1,6 +1,11 @@
 import rateLimit from 'express-rate-limit';
 
 import { env } from '../../config-middleware/config/env.js';
+import type { AuthenticatedRequest } from './AuthMiddleware.js';
+
+function keyByUserOrIp(req: AuthenticatedRequest): string {
+  return req.user?.id ?? req.ip ?? 'unknown';
+}
 
 export const generalRateLimiter = rateLimit({
   windowMs: env.RATE_LIMIT_WINDOW_MS,
@@ -13,7 +18,7 @@ export const generalRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip || 'unknown',
+  keyGenerator: (req) => keyByUserOrIp(req as AuthenticatedRequest),
 });
 
 export const authRateLimiter = rateLimit({
@@ -27,7 +32,21 @@ export const authRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip || 'unknown',
+  keyGenerator: (req) => keyByUserOrIp(req as AuthenticatedRequest),
+});
+
+export const passwordResetRateLimiter = rateLimit({
+  windowMs: env.RATE_LIMIT_WINDOW_MS,
+  max: env.RATE_LIMIT_PASSWORD_RESET,
+  message: {
+    type: 'https://tools.ietf.org/html/rfc7807#section-3.1',
+    title: 'Too Many Requests',
+    status: 429,
+    detail: 'Too many password reset attempts. Please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => keyByUserOrIp(req as AuthenticatedRequest),
 });
 
 export const uploadRateLimiter = rateLimit({
@@ -41,5 +60,5 @@ export const uploadRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip || 'unknown',
+  keyGenerator: (req) => keyByUserOrIp(req as AuthenticatedRequest),
 });

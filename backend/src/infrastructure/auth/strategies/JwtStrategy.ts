@@ -12,6 +12,9 @@ export function configureJwtStrategy(passport: PassportStatic): void {
   const options: StrategyOptions = {
     jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
     secretOrKey: process.env.JWT_ACCESS_SECRET!,
+    algorithms: ['HS256'],
+    issuer: 'lethimcook',
+    audience: 'lethimcook-web',
   };
 
   passport.use(

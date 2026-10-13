@@ -6,10 +6,15 @@ import { IJwtService, JwtPayload } from '../../application/interfaces/IJwtServic
 import { env } from '../../config-middleware/config/env.js';
 
 export class JwtService implements IJwtService {
+  private readonly issuer = 'lethimcook';
+  private readonly audience = 'lethimcook-web';
+
   generateAccessToken(payload: JwtPayload): string {
     return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
       expiresIn: env.JWT_ACCESS_EXPIRES_IN as jwt.SignOptions['expiresIn'],
       algorithm: 'HS256',
+      issuer: this.issuer,
+      audience: this.audience,
     });
   }
 
@@ -23,7 +28,12 @@ export class JwtService implements IJwtService {
 
   verifyAccessToken(token: string): JwtPayload | null {
     try {
-      return jwt.verify(token, env.JWT_ACCESS_SECRET) as JwtPayload;
+      return jwt.verify(token, env.JWT_ACCESS_SECRET, {
+        algorithms: ['HS256'],
+        issuer: this.issuer,
+        audience: this.audience,
+        clockTolerance: 5,
+      }) as JwtPayload;
     } catch {
       return null;
     }
