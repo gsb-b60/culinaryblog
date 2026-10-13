@@ -13,8 +13,10 @@ describe('frontend environment', () => {
 
 describe('cn utility', () => {
   it('merges conflicting tailwind classes', () => {
+    const activeClass = (active: boolean): string => cn('text-red-500', active && 'font-bold')
     expect(cn('px-2 px-4')).toBe('px-4')
-    expect(cn('text-red-500', true && 'font-bold')).toContain('font-bold')
+    expect(activeClass(true)).toContain('font-bold')
+    expect(activeClass(false)).not.toContain('font-bold')
   })
 })
 

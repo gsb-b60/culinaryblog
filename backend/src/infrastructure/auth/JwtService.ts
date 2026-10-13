@@ -7,6 +7,7 @@ import { env } from '../../config-middleware/config/env.js';
 
 export class JwtService implements IJwtService {
   private readonly issuer = 'lethimcook';
+
   private readonly audience = 'lethimcook-web';
 
   generateAccessToken(payload: JwtPayload): string {

@@ -1,6 +1,7 @@
 import rateLimit from 'express-rate-limit';
 
 import { env } from '../../config-middleware/config/env.js';
+
 import type { AuthenticatedRequest } from './AuthMiddleware.js';
 
 function keyByUserOrIp(req: AuthenticatedRequest): string {
