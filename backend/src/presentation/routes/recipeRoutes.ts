@@ -29,7 +29,13 @@ import {
   paginationSchema 
 } from '../../application/validators/recipeValidators.js';
 import { UserRole } from '../../domain/index.js';
-import { authenticateJwt, AuthenticatedRequest, authorizeOwnerOrAdmin } from '../middleware/AuthMiddleware.js';
+import {
+  authenticateJwt,
+  AuthenticatedRequest,
+  authorize,
+  authorizeOwnerOrAdmin,
+  optionalAuth,
+} from '../middleware/AuthMiddleware.js';
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
@@ -81,7 +87,7 @@ router.get('/search', generalRateLimiter, async (req, res, next) => {
   }
 });
 
-router.get('/:slug', generalRateLimiter, async (req, res, next) => {
+router.get('/:slug', generalRateLimiter, optionalAuth, async (req, res, next) => {
   try {
     const query = new GetRecipeBySlugQuery(
       req.params.slug!,
@@ -107,7 +113,11 @@ router.get('/:slug', generalRateLimiter, async (req, res, next) => {
 });
 
 // Protected routes
-router.post('/', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+router.post(
+  '/',
+  authenticateJwt,
+  authorize(UserRole.AUTHOR, UserRole.ADMIN),
+  async (req: AuthenticatedRequest, res, next) => {
   try {
     const input = createRecipeSchema.parse(req.body);
     const command = new CreateRecipeCommand(req.user!.id, input);
