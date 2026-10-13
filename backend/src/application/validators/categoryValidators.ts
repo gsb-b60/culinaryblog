@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { queryIntegerSchema } from './queryParameterValidators.js';
+
 export const createCategorySchema = z.object({
   name: z.string().min(2).max(100),
   description: z.string().max(2000).optional(),
@@ -19,8 +21,8 @@ export const categoryFiltersSchema = z.object({
 });
 
 export const categoryPaginationSchema = z.object({
-  page: z.number().int().positive().default(1),
-  pageSize: z.number().int().positive().max(50).default(20),
+  page: queryIntegerSchema.pipe(z.number().positive()).default(1),
+  pageSize: queryIntegerSchema.pipe(z.number().positive().max(50)).default(20),
 });
 
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;

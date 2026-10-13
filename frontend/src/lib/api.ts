@@ -62,6 +62,8 @@ async function request<T>(path: string, init?: RequestInit, retried = false): Pr
   return body as T
 }
 
+export { request as apiRequest }
+
 export function register(payload: RegisterPayload): Promise<AuthResponse> {
   return request<AuthResponse>('/auth/register', {
     method: 'POST',

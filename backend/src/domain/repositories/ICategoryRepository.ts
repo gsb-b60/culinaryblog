@@ -1,3 +1,4 @@
+import { CategoryDto } from '../../application/dtos/CategoryDto.js';
 import { PagedResult } from '../../application/dtos/PagedResult.js';
 import { Category } from '../entities/Category.js';
 
@@ -12,7 +13,7 @@ export interface ICategoryRepository {
     filters: CategoryFilters,
     page: number,
     pageSize: number
-  ): Promise<PagedResult<Category>>;
+  ): Promise<PagedResult<CategoryDto>>;
   findAll(): Promise<Category[]>;
   save(category: Category): Promise<Category>;
   delete(id: string): Promise<void>;

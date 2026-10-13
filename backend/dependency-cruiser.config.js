@@ -1,5 +1,5 @@
 /** @type {import('dependency-cruiser').IConfiguration} */
-module.exports = {
+export default {
   forbidden: [
     {
       name: 'no-circular',
@@ -19,19 +19,11 @@ module.exports = {
         path: '^[.][.][/]((?!node_modules).)*$',
       },
     },
-    {
-      name: 'not-to-empty-folder',
-      severity: 'warn',
-      comment: 'Do not import from empty folders.',
-      from: {},
-      to: {
-        folderExists: false,
-      },
-    },
+
     {
       name: 'not-to-unresolvable',
       severity: 'error',
-      comment: 'Imports must resolve.',
+      comment: 'Imports must resolve, including imports of missing or empty folders.',
       from: {},
       to: {
         couldNotResolve: true,

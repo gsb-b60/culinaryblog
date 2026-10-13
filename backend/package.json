@@ -21,7 +21,7 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
     "db:push": "prisma db push",
-    "deps:check": "dependency-cruiser src --exit-code",
+    "deps:check": "dependency-cruiser src --config dependency-cruiser.config.js",
     "migrate": "node-pg-migrate"
   },
   "keywords": [],

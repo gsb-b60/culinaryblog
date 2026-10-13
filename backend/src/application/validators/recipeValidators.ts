@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { RecipeDifficulty } from '../../domain/enums/RecipeDifficulty.js';
 import { RecipeStatus } from '../../domain/enums/RecipeStatus.js';
 
+import { queryIntegerSchema } from './queryParameterValidators.js';
+
 export const createRecipeStepSchema = z.object({
   stepNumber: z.number().int().positive(),
   title: z.string().min(1).max(200),
@@ -59,15 +61,21 @@ export const updateRecipeSchema = z.object({
   }).optional(),
 });
 
+
+const queryDifficultySchema = z.string()
+  .transform(value => value.toUpperCase())
+  .pipe(z.nativeEnum(RecipeDifficulty));
+
 export const recipeFiltersSchema = z.object({
   categoryId: z.string().uuid().optional(),
-  difficulty: z.nativeEnum(RecipeDifficulty).optional(),
+  difficulty: queryDifficultySchema.optional(),
   status: z.nativeEnum(RecipeStatus).optional(),
   authorId: z.string().uuid().optional(),
-  minPrepTime: z.number().int().nonnegative().optional(),
-  maxPrepTime: z.number().int().nonnegative().optional(),
-  minCookTime: z.number().int().nonnegative().optional(),
-  maxCookTime: z.number().int().nonnegative().optional(),
+  minPrepTime: queryIntegerSchema.optional(),
+  maxPrepTime: queryIntegerSchema.optional(),
+  minCookTime: queryIntegerSchema.optional(),
+  maxCookTime: queryIntegerSchema.optional(),
+  minServings: queryIntegerSchema.pipe(z.number().positive()).optional(),
   searchQuery: z.string().min(2).optional(),
 });
 
@@ -77,8 +85,8 @@ export const recipeSortSchema = z.object({
 });
 
 export const paginationSchema = z.object({
-  page: z.number().int().positive().default(1),
-  pageSize: z.number().int().positive().max(50).default(12),
+  page: queryIntegerSchema.pipe(z.number().positive()).default(1),
+  pageSize: queryIntegerSchema.pipe(z.number().positive().max(50)).default(12),
 });
 
 export type CreateRecipeInput = z.infer<typeof createRecipeSchema>;
