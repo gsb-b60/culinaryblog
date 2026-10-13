@@ -48,7 +48,12 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
+        // Scalar API reference UI (/scalar) loads its bundle from jsDelivr.
+        scriptSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+        connectSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https:'],
         imgSrc: ["'self'", 'data:', 'https:'],
+        fontSrc: ["'self'", 'https:', 'data:'],
       },
     },
     hsts: { maxAge: 31536000, includeSubDomains: true },

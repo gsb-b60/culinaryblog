@@ -177,7 +177,13 @@ describe('security headers and body limits', () => {
     const app = express();
     app.use(
       helmet({
-        contentSecurityPolicy: { directives: { defaultSrc: ["'self'"] } },
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+            connectSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+          },
+        },
         hsts: { maxAge: 31536000, includeSubDomains: true },
         referrerPolicy: { policy: 'no-referrer' },
       }),
@@ -203,6 +209,9 @@ describe('security headers and body limits', () => {
     expect(res.status).toBe(200);
     expect(res.headers['x-content-type-options']).toBe('nosniff');
     expect(res.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    // Scalar docs UI (/scalar) must stay usable: its jsDelivr bundle has to
+    // survive our CSP.
+    expect(res.headers['content-security-policy']).toContain('https://cdn.jsdelivr.net');
 
     const blocked = await request(app)
       .post('/echo')
