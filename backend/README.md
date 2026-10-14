@@ -195,6 +195,25 @@ Base URL: `/api/v1`
 | PATCH | `/recipes/:id/archive` | Owner/Admin | Archive recipe |
 | DELETE | `/recipes/:id` | Owner/Admin | Delete recipe |
 
+### Recipe Filtering
+
+`GET /api/v1/recipes` accepts optional filters:
+
+| Parameter | Accepted value | Condition |
+|-----------|----------------|-----------|
+| `categoryId` | Category UUID | Exact category match |
+| `difficulty` | Easy / Medium / Hard / Expert (uppercase also accepted) | Exact difficulty match |
+| `maxCookTime` | Nonnegative integer, in minutes | `cookTime <= maxCookTime` |
+| `minServings` | Positive integer | `servings >= minServings` |
+
+All supplied filters combine with AND and apply before pagination.
+`meta.totalCount` counts matching recipes across all pages. Public listings
+return only published, non-deleted recipes. Invalid filter values return HTTP 422.
+
+Example: `GET /api/v1/recipes?difficulty=Easy&maxCookTime=30&minServings=2&page=1&pageSize=12`
+
+[Frontend integration and implementation analysis](../docs/recipe-filtering-e2e.md).
+
 ### Categories
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|

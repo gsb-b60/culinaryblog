@@ -1,11 +1,14 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import { ConfirmLogoutModal } from '../components/ConfirmLogoutModal'
 import { logout } from '../lib/api'
 import { clearSession, loadSession } from '../lib/tokenStorage'
 
-function Sidebar({ onLogout }: { onLogout: () => void }) {
+import RecipesPage from './RecipesPage'
+
+function Sidebar({ onLogout, recipes }: { onLogout: () => void; recipes: boolean }) {
+  const menuClass = (active: boolean) => "flex items-center gap-2 rounded-lg px-3 py-2 text-sm " + (active ? "bg-brand-500 font-medium text-white" : "hover:bg-surface-700")
   return (
     <aside className="hidden min-h-screen w-56 shrink-0 bg-surface-800 p-4 text-surface-300 md:block">
       <div className="mb-6 flex items-center gap-2 px-2">
@@ -13,8 +16,8 @@ function Sidebar({ onLogout }: { onLogout: () => void }) {
         <span className="text-sm font-bold text-white">Dashboard</span>
       </div>
       <nav className="space-y-1" aria-label="Dashboard menu">
-        <Link to="/dashboard" className="flex items-center gap-2 rounded-lg bg-brand-500 px-3 py-2 text-sm font-medium text-white">Tổng quan</Link>
-        <Link to="/dashboard" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface-700">Công thức</Link>
+        <Link to="/dashboard" aria-current={!recipes ? "page" : undefined} className={menuClass(!recipes)}>Tổng quan</Link>
+        <Link to="/dashboard/recipes" aria-current={recipes ? "page" : undefined} className={menuClass(recipes)}>Công thức</Link>
         <Link to="/dashboard" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface-700">Danh mục</Link>
         <Link to="/profile" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface-700">Hồ sơ</Link>
       </nav>
@@ -23,7 +26,7 @@ function Sidebar({ onLogout }: { onLogout: () => void }) {
   )
 }
 
-export default function DashboardPage() {
+export default function DashboardPage({ recipes = false }: { recipes?: boolean }) {
   const navigate = useNavigate()
   const session = loadSession()
   const [showLogoutModal, setShowLogoutModal] = useState(false)
@@ -35,14 +38,14 @@ export default function DashboardPage() {
   }
 
   if (!session) {
-    navigate('/auth/login')
-    return null
+    return <Navigate to="/auth/login" replace />
   }
 
   return (
     <div className="min-h-screen bg-surface-50 md:flex">
-      <Sidebar onLogout={() => setShowLogoutModal(true)} />
-      <main className="min-w-0 flex-1 p-5 sm:p-8">
+      <Sidebar recipes={recipes} onLogout={() => setShowLogoutModal(true)} />
+      <main className="min-w-0 flex-1 p-5 pb-20 sm:p-8 md:pb-8">
+        {recipes ? <RecipesPage embedded /> : <>
         <div className="mb-6 flex items-center justify-between">
           <div>
             <p className="text-sm text-surface-500">Tổng quan</p>
@@ -59,7 +62,8 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between border-b border-surface-200 p-4 sm:p-5"><h2 className="font-bold text-surface-900">Công thức gần đây</h2><span className="text-sm text-surface-400">Chưa có dữ liệu</span></div>
           <div className="p-8 text-center text-sm text-surface-400">Danh sách công thức sẽ được kết nối ở issue quản lý công thức.</div>
         </section>
-        <nav className="fixed bottom-0 left-0 right-0 flex border-t border-surface-200 bg-white p-2 md:hidden" aria-label="Mobile navigation"><Link to="/dashboard" className="flex-1 text-center text-xs font-medium text-brand-600">Tổng quan</Link><Link to="/dashboard" className="flex-1 text-center text-xs text-surface-400">Công thức</Link><Link to="/profile" className="flex-1 text-center text-xs text-surface-400">Cá nhân</Link></nav>
+        </>}
+        <nav className="fixed bottom-0 left-0 right-0 z-10 flex border-t border-surface-200 bg-white p-2 md:hidden" aria-label="Mobile navigation"><Link to="/dashboard" aria-current={!recipes ? "page" : undefined} className={"flex-1 text-center text-xs " + (!recipes ? "font-medium text-brand-600" : "text-surface-400")}>Tổng quan</Link><Link to="/dashboard/recipes" aria-current={recipes ? "page" : undefined} className={"flex-1 text-center text-xs " + (recipes ? "font-medium text-brand-600" : "text-surface-400")}>Công thức</Link><Link to="/profile" className="flex-1 text-center text-xs text-surface-400">Cá nhân</Link></nav>
       </main>
       {showLogoutModal && <ConfirmLogoutModal onCancel={() => setShowLogoutModal(false)} onConfirm={handleLogout} />}
     </div>

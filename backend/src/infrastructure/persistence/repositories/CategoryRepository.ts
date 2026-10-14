@@ -1,5 +1,6 @@
 import { PrismaClient, Category as PrismaCategory } from '@prisma/client';
 
+import { CategoryDto } from '../../../application/dtos/CategoryDto.js';
 import { PagedResult, createPagedResult } from '../../../application/dtos/PagedResult.js';
 import { Category, CategoryProps } from '../../../domain/entities/Category.js';
 import { ICategoryRepository, CategoryFilters } from '../../../domain/repositories/ICategoryRepository.js';
@@ -55,7 +56,7 @@ export class CategoryRepository implements ICategoryRepository {
     filters: CategoryFilters,
     page: number,
     pageSize: number
-  ): Promise<PagedResult<Category>> {
+  ): Promise<PagedResult<CategoryDto>> {
     const where: any = { isDeleted: false };
 
     if (filters.searchQuery) {
@@ -83,7 +84,7 @@ export class CategoryRepository implements ICategoryRepository {
     const categories = items.map(c => this.toDomain(c));
     const dtos = categories.map((c, i) => this.toDto(c, items[i]!._count?.recipes ?? 0));
     
-    return createPagedResult(dtos as any, page, pageSize, totalCount);
+    return createPagedResult(dtos, page, pageSize, totalCount);
   }
 
   async findAll(): Promise<Category[]> {

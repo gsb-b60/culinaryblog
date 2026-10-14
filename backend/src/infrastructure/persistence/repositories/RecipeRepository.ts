@@ -1,6 +1,7 @@
 import { PrismaClient, Recipe as PrismaRecipe, Prisma } from '@prisma/client';
 
 import { PagedResult, createPagedResult } from '../../../application/dtos/PagedResult.js';
+import { RecipeSummaryDto } from '../../../application/dtos/RecipeDto.js';
 import { Recipe, RecipeProps } from '../../../domain/entities/Recipe.js';
 import { RecipeDifficulty } from '../../../domain/enums/RecipeDifficulty.js';
 import { RecipeStatus } from '../../../domain/enums/RecipeStatus.js';
@@ -99,7 +100,7 @@ export class RecipeRepository implements IRecipeRepository {
     sort: RecipeSortOptions,
     page: number,
     pageSize: number
-  ): Promise<PagedResult<Recipe>> {
+  ): Promise<PagedResult<RecipeSummaryDto>> {
     const where = this.buildWhereClause(filters);
     const orderBy = this.buildOrderBy(sort);
 
@@ -120,7 +121,7 @@ export class RecipeRepository implements IRecipeRepository {
     const recipes = items.map(r => this.toDomain(r));
     const summaries = recipes.map(r => this.toSummaryDto(r, (r as any)._categoryName || r.categoryId, (r as any)._authorName || r.authorId));
     
-    return createPagedResult(summaries as any, page, pageSize, totalCount);
+    return createPagedResult(summaries, page, pageSize, totalCount);
   }
 
   async findPublishedByCategory(
@@ -258,6 +259,7 @@ export class RecipeRepository implements IRecipeRepository {
       if (filters.minCookTime !== undefined) where.cookTime.gte = filters.minCookTime;
       if (filters.maxCookTime !== undefined) where.cookTime.lte = filters.maxCookTime;
     }
+    if (filters.minServings !== undefined) where.servings = { gte: filters.minServings };
     if (filters.searchQuery) {
       where.OR = [
         { title: { contains: filters.searchQuery, mode: 'insensitive' } },
@@ -268,7 +270,7 @@ export class RecipeRepository implements IRecipeRepository {
     return where;
   }
 
-  private buildOrderBy(sort: RecipeSortOptions): Prisma.RecipeOrderByWithRelationInput {
+  private buildOrderBy(sort: RecipeSortOptions): Prisma.RecipeOrderByWithRelationInput[] {
     const { field, order } = sort;
     const fieldMap: Record<string, string> = {
       createdAt: 'createdAt',
@@ -277,6 +279,9 @@ export class RecipeRepository implements IRecipeRepository {
       cookTime: 'cookTime',
       publishedAt: 'publishedAt',
     };
-    return { [fieldMap[field] || 'createdAt']: order };
+    return [
+      { [fieldMap[field] || 'createdAt']: order },
+      { id: 'asc' },
+    ];
   }
 }

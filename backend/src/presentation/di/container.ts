@@ -27,14 +27,18 @@ import {
   type GoogleProfile,
 } from '../../application/handlers/AuthCommandHandlers.js';
 import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
+import { GetCategoriesQueryHandler } from '../../application/handlers/CategoryQueryHandlers.js';
 import {
   AddRecipeIngredientCommandHandler,
   DeleteRecipeIngredientCommandHandler,
   UpdateRecipeIngredientCommandHandler,
 } from '../../application/handlers/RecipeIngredientCommandHandlers.js';
+import { GetRecipesQueryHandler } from '../../application/handlers/RecipeQueryHandlers.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
+import { GetCategoriesQuery } from '../../application/queries/categories/CategoryQueries.js';
+import { GetRecipesQuery } from '../../application/queries/recipes/RecipeQueries.js';
 import { env } from '../../config-middleware/config/env.js';
 import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository.js';
 import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.js';
@@ -74,7 +78,15 @@ export function createContainer(): Container {
   });
 
   const recipeRepository = new RecipeRepository(prisma);
+  commandBus.registerQueryHandler(
+    GetRecipesQuery.name,
+    new GetRecipesQueryHandler(recipeRepository),
+  );
   const categoryRepository = new CategoryRepository(prisma);
+  commandBus.registerQueryHandler(
+    GetCategoriesQuery.name,
+    new GetCategoriesQueryHandler(categoryRepository),
+  );
   const userRepository = new UserRepository(prisma);
   const jwtService = new JwtService();
   const fileStorageService = new MinioFileStorageService();
