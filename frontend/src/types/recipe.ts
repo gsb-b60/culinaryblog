@@ -66,6 +66,22 @@ export interface RecipeDetail extends RecipeSummary {
   images: RecipeImage[]
 }
 
+/** Recipe management DTO (used by /dashboard/recipes) */
+export interface Recipe {
+  id: string
+  title: string
+  description: string
+  slug: string
+  status: RecipeStatus
+  authorId: string
+  authorName?: string
+  categoryName?: string
+  updatedAt: string
+  publishedAt?: string
+  version: number
+  steps: { id: string; stepNumber: number; title: string; description: string }[]
+}
+
 export interface RecipeFilters {
   categoryId?: string
   difficulty?: RecipeDifficulty
@@ -79,6 +95,19 @@ export interface RecipeFilters {
 export type RecipeListQuery = PaginationParams & SortParams & RecipeFilters
 
 export type PagedRecipes = PagedResult<RecipeSummary>
+
+/** Paginated response for recipe management list */
+export interface RecipePage {
+  items: Recipe[]
+  meta: {
+    page: number
+    pageSize: number
+    totalCount: number
+    totalPages: number
+    hasNextPage: boolean
+    hasPreviousPage: boolean
+  }
+}
 
 export interface CreateRecipePayload {
   title: string
