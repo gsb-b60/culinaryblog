@@ -5,7 +5,7 @@ import DashboardSidebar from '../components/DashboardSidebar'
 import { ConfirmLogoutModal } from '../components/ConfirmLogoutModal'
 
 import { ApiError, logout, getManagedRecipes, publishRecipe, unpublishRecipe } from '../lib/api'
-import { clearSession, loadSession } from '../lib/tokenStorage'
+import { useAuthStore } from '../store'
 import type { Recipe, RecipePage } from '../types/recipe'
 
 const labels = { DRAFT: 'Bản nháp', PUBLISHED: 'Đã xuất bản', ARCHIVED: 'Đã lưu trữ' }
@@ -26,7 +26,12 @@ function errorMessage(reason: unknown): string {
 
 export default function RecipesPage() {
   const navigate = useNavigate()
-  const [session] = useState(() => loadSession())
+  const session = useAuthStore((state) => state.session)
+  const isAuthenticated = useAuthStore((state) => state.session !== null)
+  const signOut = useAuthStore((state) => state.signOut)
+  // See DashboardPage: anonymous deep links are redirected, a sign-out leaves
+  // the navigation to the handler that performed it.
+  const [enteredSignedIn] = useState(() => useAuthStore.getState().session !== null)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [page, setPage] = useState(1)
   const [revision, setRevision] = useState(0)
@@ -44,25 +49,34 @@ export default function RecipesPage() {
   }, [])
 
   useEffect(() => {
-    if (!session) return
+    if (!isAuthenticated) return
+    // Read the token at call time: the API client may rotate it mid-flight
+    // and a new object identity must not re-run this effect.
+    const token = useAuthStore.getState().session?.accessToken
+    if (!token) return
     let active = true
     const controller = new AbortController()
-    getManagedRecipes(loadSession()?.accessToken ?? session.accessToken, page, controller.signal)
+    getManagedRecipes(token, page, controller.signal)
       .then(result => { if (active) setData(result) })
       .catch((reason: unknown) => {
-        if (!active) return
         if (reason instanceof ApiError && reason.status === 401) {
-          clearSession()
-          navigate('/auth/login', { replace: true })
-        } else {
-          setError(errorMessage(reason))
+          // Losing the session re-runs this effect (isAuthenticated flips to
+          // false) and deactivates it, so this branch must not wait on
+          // `active` — otherwise the redirect never happens.
+          if (mounted.current) {
+            signOut()
+            navigate('/auth/login', { replace: true })
+          }
+          return
         }
+        if (!active) return
+        setError(errorMessage(reason))
       })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false; controller.abort() }
-  }, [session, page, revision, navigate])
+  }, [isAuthenticated, page, revision, navigate, signOut])
 
-  if (!session) return <Navigate to="/auth/login" replace />
+  if (!session) return enteredSignedIn ? null : <Navigate to="/auth/login" replace />
 
   const reload = () => {
     setLoading(true)
@@ -85,7 +99,7 @@ export default function RecipesPage() {
     setError('')
     setSuccess('')
     try {
-      const token = loadSession()?.accessToken ?? session.accessToken
+      const token = useAuthStore.getState().session?.accessToken ?? session.accessToken
       const updated = await (recipe.status === 'DRAFT' ? publishRecipe : unpublishRecipe)(token, recipe.id)
       if (!mounted.current) return
       setData(current => current ? {
@@ -95,7 +109,7 @@ export default function RecipesPage() {
     } catch (reason) {
       if (!mounted.current) return
       if (reason instanceof ApiError && reason.status === 401) {
-        clearSession()
+        signOut()
         navigate('/auth/login', { replace: true })
       } else {
         setError(errorMessage(reason))
@@ -107,9 +121,9 @@ export default function RecipesPage() {
   }
 
   const handleLogout = () => {
-    const currentSession = loadSession() ?? session
+    const currentSession = useAuthStore.getState().session ?? session
     void logout(currentSession.accessToken, currentSession.refreshToken).catch(() => undefined)
-    clearSession()
+    signOut()
     navigate('/')
   }
 

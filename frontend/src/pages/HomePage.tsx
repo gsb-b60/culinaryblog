@@ -1,14 +1,12 @@
-import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 
-import { loadSession } from '../lib/tokenStorage'
-import type { AuthResponse } from '../types/auth'
+import { useAuthStore } from '../store'
 
 /**
  * Public landing page. Authenticated users continue from the dashboard.
  */
 export default function HomePage() {
-  const [session] = useState<AuthResponse | null>(() => loadSession())
+  const session = useAuthStore((state) => state.session)
 
   if (session) {
     return <Navigate to="/dashboard" replace />

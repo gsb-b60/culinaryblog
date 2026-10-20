@@ -1,25 +1,30 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import DashboardSidebar from '../components/DashboardSidebar'
 import { ConfirmLogoutModal } from '../components/ConfirmLogoutModal'
 import { logout } from '../lib/api'
-import { clearSession, loadSession } from '../lib/tokenStorage'
+import { useAuthStore } from '../store'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const session = loadSession()
+  const session = useAuthStore((state) => state.session)
+  const signOut = useAuthStore((state) => state.signOut)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
+  // Guards visitors who deep-linked here without a session. When the session
+  // disappears after the user pressed "Đăng xuất" this renders nothing and
+  // the handler's own navigation decides where to go — otherwise the guard
+  // would race it and land on the login page.
+  const [enteredSignedIn] = useState(() => useAuthStore.getState().session !== null)
 
   const handleLogout = () => {
     if (session) void logout(session.accessToken, session.refreshToken).catch(() => undefined)
-    clearSession()
+    signOut()
     navigate('/')
   }
 
   if (!session) {
-    navigate('/auth/login')
-    return null
+    return enteredSignedIn ? null : <Navigate to="/auth/login" replace />
   }
 
   return (

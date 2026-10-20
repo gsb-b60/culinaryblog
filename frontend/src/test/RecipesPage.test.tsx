@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from '../App'
-import { loadSession, saveSession } from '../lib/tokenStorage'
+import { clearSession, loadSession, saveSession } from '../lib/tokenStorage'
 import type { Recipe, RecipePage } from '../types/recipe'
 
 const session = {
@@ -123,7 +123,7 @@ describe('Recipe management through UI and API client', () => {
   })
 
   it('redirects signed-out visitors without requesting private data', () => {
-    localStorage.clear()
+    clearSession()
     openPage()
     expect(screen.getByRole('heading', { name: /Đăng nhập/ })).toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalled()

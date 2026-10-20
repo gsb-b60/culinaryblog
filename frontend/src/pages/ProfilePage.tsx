@@ -1,14 +1,18 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import { ConfirmLogoutModal } from '../components/ConfirmLogoutModal'
 import { ApiError, getCurrentUser, logout, updateProfile } from '../lib/api'
-import { clearSession, loadSession } from '../lib/tokenStorage'
+import { useAuthStore } from '../store'
 import type { UserProfile } from '../types/auth'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const session = loadSession()
+  const session = useAuthStore((state) => state.session)
+  const signOut = useAuthStore((state) => state.signOut)
+  // See DashboardPage: only anonymous deep links are redirected; a sign-out
+  // leaves the navigation to the handler that performed it.
+  const [enteredSignedIn] = useState(() => useAuthStore.getState().session !== null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [bio, setBio] = useState('')
@@ -19,6 +23,11 @@ export default function ProfilePage() {
   const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   const accessToken = session?.accessToken
+  const mounted = useRef(true)
+
+  useEffect(() => () => {
+    mounted.current = false
+  }, [])
 
   useEffect(() => {
     if (!accessToken) return
@@ -32,12 +41,16 @@ export default function ProfilePage() {
         setBio(user.bio ?? '')
       })
       .catch((reason: unknown) => {
-        if (!active) return
         if (reason instanceof ApiError && reason.status === 401) {
-          clearSession()
-          navigate('/auth/login', { replace: true })
+          // Clearing the session re-runs this effect and deactivates it, so
+          // the redirect must not depend on `active`.
+          if (mounted.current) {
+            signOut()
+            navigate('/auth/login', { replace: true })
+          }
           return
         }
+        if (!active) return
         setError(reason instanceof Error ? reason.message : 'Không thể tải hồ sơ.')
       })
       .finally(() => {
@@ -47,16 +60,15 @@ export default function ProfilePage() {
     return () => {
       active = false
     }
-  }, [accessToken, navigate])
+  }, [accessToken, navigate, signOut])
 
   if (!session) {
-    navigate('/auth/login', { replace: true })
-    return null
+    return enteredSignedIn ? null : <Navigate to="/auth/login" replace />
   }
 
   const handleLogout = () => {
     void logout(session.accessToken, session.refreshToken).catch(() => undefined)
-    clearSession()
+    signOut()
     navigate('/')
   }
 
