@@ -4,6 +4,8 @@ import AppLayout from './components/layout/AppLayout'
 import DashboardLayout from './components/layout/DashboardLayout'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import RecipesPage from './pages/RecipesPage'
+import RecipesBrowsePage from './pages/RecipesBrowsePage'
+import RecipeDetailPage from './pages/RecipeDetailPage'
 import DashboardPage from './pages/DashboardPage'
 import HomePage from './pages/HomePage'
 import ProfilePage from './pages/ProfilePage'
@@ -30,6 +32,8 @@ export default function App() {
       {/* Public blog shell: header, content, footer. */}
       <Route element={<AppLayout />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/recipes" element={<RecipesBrowsePage />} />
+        <Route path="/recipes/:slug" element={<RecipeDetailPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 
