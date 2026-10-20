@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-type Section = 'overview' | 'recipes'
+type Section = 'overview' | 'recipes' | 'profile'
 
 export default function DashboardSidebar({ onLogout, active = 'overview' }: {
   onLogout: () => void
@@ -20,14 +20,14 @@ export default function DashboardSidebar({ onLogout, active = 'overview' }: {
           <Link to="/dashboard" aria-current={active === 'overview' ? 'page' : undefined} className={itemClass(active === 'overview')}>Tổng quan</Link>
           <Link to="/dashboard/recipes" aria-current={active === 'recipes' ? 'page' : undefined} className={itemClass(active === 'recipes')}>Công thức</Link>
           <Link to="/dashboard" className={itemClass(false)}>Danh mục</Link>
-          <Link to="/profile" className={itemClass(false)}>Hồ sơ</Link>
+          <Link to="/profile" aria-current={active === 'profile' ? 'page' : undefined} className={itemClass(active === 'profile')}>Hồ sơ</Link>
         </nav>
         <button type="button" onClick={onLogout} className="mt-8 w-full rounded-lg px-3 py-2 text-left text-sm text-surface-300 hover:bg-surface-700 hover:text-white">Đăng xuất</button>
       </aside>
       <nav className="fixed bottom-0 left-0 right-0 z-10 flex border-t border-surface-200 bg-white p-3 md:hidden" aria-label="Mobile navigation">
         <Link to="/dashboard" aria-current={active === 'overview' ? 'page' : undefined} className={'flex-1 text-center text-xs ' + (active === 'overview' ? 'font-medium text-brand-600' : 'text-surface-400')}>Tổng quan</Link>
         <Link to="/dashboard/recipes" aria-current={active === 'recipes' ? 'page' : undefined} className={'flex-1 text-center text-xs ' + (active === 'recipes' ? 'font-medium text-brand-600' : 'text-surface-400')}>Công thức</Link>
-        <Link to="/profile" className="flex-1 text-center text-xs text-surface-400">Cá nhân</Link>
+        <Link to="/profile" aria-current={active === 'profile' ? 'page' : undefined} className={'flex-1 text-center text-xs ' + (active === 'profile' ? 'font-medium text-brand-600' : 'text-surface-400')}>Cá nhân</Link>
       </nav>
     </>
   )

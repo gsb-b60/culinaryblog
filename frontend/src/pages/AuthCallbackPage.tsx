@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Banner } from '../components/auth/Banner'
 import { BookIcon } from '../components/auth/BookIcon'
 import { decodeSessionFragment } from '../lib/oauthFragment'
-import { loadSession, saveSession } from '../lib/tokenStorage'
+import { useAuthStore } from '../store'
 import type { AuthResponse } from '../types/auth'
 
 /**
@@ -14,21 +14,22 @@ import type { AuthResponse } from '../types/auth'
  */
 export default function AuthCallbackPage() {
   const navigate = useNavigate()
+  const setSession = useAuthStore((state) => state.setSession)
   // Derived during render rather than in an effect: the fragment is fixed for
   // the life of this page, so there is nothing to synchronise.
   const [session] = useState<AuthResponse | null>(
-    () => decodeSessionFragment(window.location.hash) ?? loadSession(),
+    () => decodeSessionFragment(window.location.hash) ?? useAuthStore.getState().session,
   )
 
   useEffect(() => {
     if (!session) {
       return
     }
-    saveSession(session)
+    setSession(session)
     // Strip the fragment so the tokens are not kept in browser history.
     window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`)
     navigate('/', { replace: true })
-  }, [session, navigate])
+  }, [session, navigate, setSession])
 
   if (!session) {
     return (
@@ -47,7 +48,7 @@ export default function AuthCallbackPage() {
             <button
               type="button"
               onClick={() => {
-                if (loadSession()) {
+                if (useAuthStore.getState().session) {
                   navigate('/', { replace: true })
                   return
                 }
