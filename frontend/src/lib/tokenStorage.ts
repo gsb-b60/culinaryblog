@@ -20,6 +20,18 @@ function notifySessionChanged(): void {
   for (const listener of [...listeners]) listener()
 }
 
+// Writes made by another tab never reach the in-memory listeners above: the
+// `storage` event only fires in the *other* documents, and only for
+// localStorage (where remembered sessions live). Without this, a tab that was
+// signed out elsewhere would keep its stale session and bounce the user from
+// `/auth/login` straight back to the dashboard.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    // `key === null` means the whole storage area was cleared.
+    if (event.key === null || event.key === SESSION_KEY) notifySessionChanged()
+  })
+}
+
 /**
  * "Ghi nhớ đăng nhập" (M7). Remembered sessions survive a browser restart in
  * localStorage; un-remembered ones live in sessionStorage and disappear when

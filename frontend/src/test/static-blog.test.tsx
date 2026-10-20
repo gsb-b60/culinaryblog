@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { Link, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
 import HomePage from '../pages/HomePage'
@@ -15,9 +15,17 @@ function renderHomePage() {
   )
 }
 
-function renderBrowsePage() {
+function LocationProbe() {
+  const location = useLocation()
+  return <p data-testid="location">{location.pathname + location.search}</p>
+}
+
+function renderBrowsePage(path = '/recipes') {
   return render(
-    <MemoryRouter initialEntries={['/recipes']}>
+    <MemoryRouter initialEntries={[path]}>
+      <LocationProbe />
+      {/* Stands in for the shared header's link back to the list. */}
+      <Link to="/recipes">Đi tới danh sách</Link>
       <Routes>
         <Route path="/recipes" element={<RecipesBrowsePage />} />
       </Routes>
@@ -115,6 +123,38 @@ describe('RecipesBrowsePage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Xóa bộ lọc' }))
 
     expect(await screen.findByRole('heading', { name: 'Phở bò tái nạm' })).toBeInTheDocument()
+  })
+
+  it('reads the category from the URL and writes chip selections back to it', async () => {
+    renderBrowsePage('/recipes?category=M%C3%B3n%20n%C6%B0%E1%BB%9Bng')
+
+    expect(await screen.findByRole('heading', { name: 'Gà nướng mật ong' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Phở bò tái nạm' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Món nướng' })).toHaveAttribute('aria-pressed', 'true')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Món khai vị' }))
+
+    const search = (screen.getByTestId('location').textContent ?? '').split('?')[1] ?? ''
+    expect(new URLSearchParams(search).get('category')).toBe('Món khai vị')
+    expect(await screen.findByRole('heading', { name: 'Gỏi cuốn tôm thịt' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Tất cả' }))
+
+    expect(await screen.findByRole('heading', { name: 'Phở bò tái nạm' })).toBeInTheDocument()
+    expect(screen.getByTestId('location').textContent).toBe('/recipes')
+    expect(screen.getByRole('button', { name: 'Tất cả' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('drops the category when the list is opened again while still mounted', async () => {
+    renderBrowsePage('/recipes?category=M%C3%B3n%20n%C6%B0%E1%BB%9Bng')
+
+    expect(await screen.findByRole('heading', { name: 'Gà nướng mật ong' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('link', { name: 'Đi tới danh sách' }))
+
+    expect(await screen.findByRole('heading', { name: 'Phở bò tái nạm' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tất cả' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('location').textContent).toBe('/recipes')
   })
 })
 

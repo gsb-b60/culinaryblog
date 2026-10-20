@@ -32,12 +32,15 @@ function chipClasses(active: boolean): string {
  * the real API (issue #20) only means replacing `listStaticRecipes`.
  */
 export default function RecipesBrowsePage() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
-  const [category, setCategory] = useState<string | null>(() => searchParams.get('category'))
   const [page, setPage] = useState(1)
   const [revision, setRevision] = useState(0)
   const [response, setResponse] = useState<QueryState | null>(null)
+  // The category lives in the URL so links into this page (home page
+  // categories, the shared header, reload, back/forward) and the chips always
+  // agree on the same filter even though the route stays mounted.
+  const category = searchParams.get('category')
 
   const queryKey = [search, category, page, revision].join('|')
 
@@ -67,14 +70,23 @@ export default function RecipesBrowsePage() {
   }
 
   const applyCategory = (value: string | null) => {
-    setCategory(value)
     setPage(1)
+    setSearchParams((params) => {
+      const next = new URLSearchParams(params)
+      if (value) next.set('category', value)
+      else next.delete('category')
+      return next
+    })
   }
 
   const clearFilters = () => {
     setSearch('')
-    setCategory(null)
     setPage(1)
+    setSearchParams((params) => {
+      const next = new URLSearchParams(params)
+      next.delete('category')
+      return next
+    })
   }
 
   return (

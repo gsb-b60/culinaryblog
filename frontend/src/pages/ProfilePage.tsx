@@ -24,8 +24,13 @@ export default function ProfilePage() {
   const accessToken = session?.accessToken
   const mounted = useRef(true)
 
-  useEffect(() => () => {
-    mounted.current = false
+  useEffect(() => {
+    // Strict Mode replays effects (setup → cleanup → setup), so the ref must
+    // be claimed on every setup or the 401 branch below would see `false`.
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
   }, [])
 
   useEffect(() => {
@@ -76,6 +81,14 @@ export default function ProfilePage() {
       setBio(updated.bio ?? '')
       setSuccess('Đã cập nhật hồ sơ.')
     } catch (reason) {
+      if (reason instanceof ApiError && reason.status === 401) {
+        // The refresh failed and the API cleared the session; DashboardLayout
+        // keeps waiting for whoever dropped it to pick the destination, so
+        // leave for the login page instead of hiding the form behind an error.
+        signOut()
+        navigate('/auth/login', { replace: true })
+        return
+      }
       setError(reason instanceof Error ? reason.message : 'Không thể cập nhật hồ sơ.')
     } finally {
       setSaving(false)

@@ -83,4 +83,33 @@ describe('auth store', () => {
     expect(seen).toEqual(['access-token'])
     expect(loadSession()).toEqual(AUTH)
   })
+
+  it('follows a sign-out another tab performed', () => {
+    useAuthStore.getState().setSession(AUTH)
+
+    // The other tab cleared localStorage; this tab only receives the storage
+    // event, never the in-memory notification.
+    localStorage.removeItem('culinary_session')
+    window.dispatchEvent(new StorageEvent('storage', { key: 'culinary_session' }))
+
+    expect(useAuthStore.getState().session).toBeNull()
+  })
+
+  it('follows a sign-in another tab performed', () => {
+    localStorage.setItem('culinary_session', JSON.stringify(AUTH))
+    window.dispatchEvent(new StorageEvent('storage', { key: 'culinary_session' }))
+
+    expect(useAuthStore.getState().session).toEqual(AUTH)
+  })
+
+  it('ignores storage events for unrelated keys', () => {
+    useAuthStore.getState().setSession(AUTH)
+    const seen: (string | null)[] = []
+    const unsubscribe = useAuthStore.subscribe((state) => seen.push(state.session?.accessToken ?? null))
+
+    window.dispatchEvent(new StorageEvent('storage', { key: 'some-other-key' }))
+    unsubscribe()
+
+    expect(seen).toEqual([])
+  })
 })

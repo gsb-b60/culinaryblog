@@ -257,6 +257,29 @@ describe('DashboardLayout', () => {
     expect(screen.getByRole('navigation', { name: 'Dashboard menu' })).toBeInTheDocument()
   })
 
+  it('marks the profile section, not the overview, as current on /profile', async () => {
+    saveSession(AUTH)
+    render(
+      <MemoryRouter initialEntries={['/profile']}>
+        <Routes>
+          <Route path="/" element={<p>trang chủ</p>} />
+          <Route path="/auth/login" element={<p>trang đăng nhập</p>} />
+          <Route element={<DashboardLayout />}>
+            <Route path="/profile" element={<p>trang hồ sơ</p>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('trang hồ sơ')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Hồ sơ' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Cá nhân' })).toHaveAttribute('aria-current', 'page')
+    // Both the desktop and the mobile navigation render "Tổng quan".
+    for (const link of screen.getAllByRole('link', { name: 'Tổng quan' })) {
+      expect(link).not.toHaveAttribute('aria-current')
+    }
+  })
+
   it('signs out from the sidebar dialog and returns home', async () => {
     vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('offline'))))
     saveSession(AUTH)
