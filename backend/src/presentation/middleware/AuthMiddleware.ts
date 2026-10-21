@@ -102,14 +102,9 @@ export function authorizeOwnerOrAdmin(
       return;
     }
 
-    try {
-      const ownerId = await getResourceOwnerId(req);
-      if (ownerId && ownerId === req.user.id) {
-        next();
-        return;
-      }
-    } catch (error) {
-      next(error);
+    const ownerId = await getResourceOwnerId(req);
+    if (ownerId && ownerId === req.user.id) {
+      next();
       return;
     }
 

@@ -19,4 +19,13 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // shadcn/ui generators export the component together with its variant
+    // helper (buttonVariants, badgeVariants) from the same file, which the
+    // fast-refresh rule flags. Keep generated files untouched.
+    files: ['src/components/ui/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

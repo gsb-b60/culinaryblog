@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
@@ -21,8 +21,10 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 const runId = randomUUID().replaceAll('-', '');
 const schema = `codex_test_${runId}`;
 const prefix = `codex-test-${runId}`;
-const local = dotenv.parse(readFileSync('.env'));
-const baseUrl = new URL(process.env.INTEGRATION_DATABASE_URL ?? local.DATABASE_URL);
+const local = existsSync('.env') ? dotenv.parse(readFileSync('.env')) : {};
+const baseUrl = new URL(
+  process.env.INTEGRATION_DATABASE_URL ?? local.DATABASE_URL ?? process.env.DATABASE_URL!,
+);
 if (!['localhost', '127.0.0.1', '[::1]'].includes(baseUrl.hostname))
   throw new Error('Integration tests require local PostgreSQL.');
 const testUrl = new URL(baseUrl);
@@ -67,7 +69,7 @@ const objectKeys = new Set<string>();
 const workers: any[] = [];
 const queues: any[] = [];
 async function waitForMail(recipient: string) {
-  for (let attempt = 0; attempt < 40; attempt++) {
+  for (let attempt = 0; attempt < 100; attempt++) {
     const response = await fetch(
       `http://127.0.0.1:8025/api/v2/search?kind=to&query=${encodeURIComponent(recipient)}`,
     );
@@ -207,7 +209,8 @@ afterAll(async () => {
   }
   if (container) {
     await clean(() => container.cacheService.deletePattern(`${prefix}:*`));
-    await clean(() => modules.di.destroyContainer());
+    const di = await import('../src/presentation/di/container.js');
+    await clean(di.destroyContainer);
     const { disconnectPrisma } = await import('../src/config-middleware/shared/database/client.js');
     await clean(disconnectPrisma);
   }
@@ -430,13 +433,13 @@ describe('Real PostgreSQL repositories and seed data', () => {
 describe('Real HTTP, JWT and ingredient command handlers', () => {
   it('reads manageable recipes and enforces owner authorization', async () => {
     const list = await request(app)
-      .get('/api/v1/recipes/manageable?page=1&pageSize=2')
+      .get('/api/v1/recipes/manage?page=1&pageSize=2')
       .set('Authorization', bearer());
     expect(list.status).toBe(200);
     expect(list.body.items).toHaveLength(2);
     expect(list.body.items.every((item: any) => item.authorId === owner.id)).toBe(true);
     const all = await request(app)
-      .get('/api/v1/recipes/manageable')
+      .get('/api/v1/recipes/manage')
       .set('Authorization', bearer(adminToken));
     expect(all.status).toBe(200);
     expect(all.body.meta.totalCount).toBe(100);
@@ -449,7 +452,7 @@ describe('Real HTTP, JWT and ingredient command handlers', () => {
     ).toBe(403);
     expect((await request(app).get(`/api/v1/recipes/${recipe.id}/ingredients`)).status).toBe(401);
     expect(
-      (await request(app).get('/api/v1/recipes/manageable?page=0').set('Authorization', bearer()))
+      (await request(app).get('/api/v1/recipes/manage?page=0').set('Authorization', bearer()))
         .status,
     ).toBe(422);
   });

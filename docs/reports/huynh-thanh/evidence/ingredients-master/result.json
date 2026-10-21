@@ -1,0 +1,74 @@
+{
+  "capturedAt": "2026-10-21T09:25:23.165Z",
+  "baseCommit": "1ed7022",
+  "feature": "FR-RCP-009",
+  "result": "passed",
+  "services": "Real PostgreSQL + real HTTP/JWT + real Edge browser; no API interception",
+  "checks": [
+    "Dashboard integration",
+    "Recipe link on page 2",
+    "Create 201",
+    "Update 200",
+    "Reload persistence",
+    "Delete 204 and soft-delete persistence",
+    "Mobile navigation",
+    "Refresh token"
+  ],
+  "responses": [
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/285b9755-788d-4cf8-aece-64c381756271/ingredients",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/recipes/285b9755-788d-4cf8-aece-64c381756271/ingredients",
+      "status": 201
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/recipes/285b9755-788d-4cf8-aece-64c381756271/ingredients/923837f6-189a-48c7-a648-0ec15e742f5d",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/285b9755-788d-4cf8-aece-64c381756271/ingredients",
+      "status": 200
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/recipes/285b9755-788d-4cf8-aece-64c381756271/ingredients/923837f6-189a-48c7-a648-0ec15e742f5d",
+      "status": 204
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/285b9755-788d-4cf8-aece-64c381756271/ingredients",
+      "status": 200
+    }
+  ]
+}

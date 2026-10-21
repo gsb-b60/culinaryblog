@@ -1,8 +1,8 @@
-﻿# Kiểm thử backend với dịch vụ thật
+# Kiểm thử backend với dịch vụ thật
 
 ## Kết quả
 
-`pnpm test` đã chạy thành công: **160/160 test**, coverage dòng code **84,69%**, vượt ngưỡng **80%**. Ngưỡng và phạm vi coverage trong `vitest.config.ts` được giữ nguyên.
+`pnpm test` đã chạy thành công: **202/202 test**, coverage dòng code **89,23%**, vượt ngưỡng **80%**. Ngưỡng và phạm vi coverage trong `vitest.config.ts` được giữ nguyên. Kết quả được chạy lại ngày 21/10/2026 trên nhánh `feat/integrate-ingredients-master`, dựa master `1ed7022`; không phải số liệu của snapshot cũ.
 
 ## Cách chạy và chụp minh chứng
 
@@ -14,7 +14,7 @@ cd backend
 pnpm test
 ```
 
-Chụp phần cuối terminal có `Test Files 15 passed`, `Tests 160 passed` và dòng `All files` trong bảng coverage. Số lượng có thể thay đổi nếu sau này dự án bổ sung test.
+Chụp phần cuối terminal có `Test Files 18 passed`, `Tests 202 passed` và dòng `All files` trong bảng coverage. Số lượng có thể thay đổi nếu sau này dự án bổ sung test.
 
 Báo cáo HTML được tạo tại `backend/coverage/index.html`; có thể mở bằng trình duyệt để xem những dòng chưa được kiểm thử.
 
@@ -39,7 +39,7 @@ Những unit test cũ có mock vẫn được giữ nguyên. Yêu cầu không m
 
 ## Dịch vụ và cấu hình
 
-Test đọc kết nối PostgreSQL, Redis, MinIO và credentials từ `backend/.env`. Không sửa file này. PostgreSQL, Redis và MinIO phải là dịch vụ local; test từ chối URL remote.
+Khi chạy local, test đọc kết nối PostgreSQL, Redis, MinIO và credentials từ `backend/.env`. Khi không có file này (GitHub Actions), test dùng biến môi trường của tiến trình. Không cần commit hoặc tạo `.env` trên CI. PostgreSQL, Redis và MinIO phải là dịch vụ local; test từ chối URL remote.
 
 - PostgreSQL trong Docker Compose: localhost:5433.
 - Redis: localhost:6379.
@@ -67,4 +67,17 @@ Sau khi chạy, test dọn schema, bucket/object, key Redis, queue/worker và nh
 
 ## Giới hạn
 
-Đây là kiểm thử tích hợp backend với các dịch vụ thật, chưa phải kiểm thử trình duyệt. Worker image resize và sitemap của dự án hiện còn TODO; test xác nhận xử lý job qua Redis thật, không khẳng định việc resize ảnh hay sinh sitemap đã hoàn thiện. Test có dịch vụ thật không đồng nghĩa toàn bộ code backend đã được kiểm thử: coverage hiện đạt 84,69%.
+Đây là kiểm thử tích hợp backend với các dịch vụ thật, chưa phải kiểm thử trình duyệt. Worker image resize và sitemap của dự án hiện còn TODO; test xác nhận xử lý job qua Redis thật, không khẳng định việc resize ảnh hay sinh sitemap đã hoàn thiện. Test có dịch vụ thật không đồng nghĩa toàn bộ code backend đã được kiểm thử: coverage hiện đạt 89,23%.
+## Tích hợp với master mới
+
+Bộ test dùng danh sách công thức `/api/v1/recipes/manage` và query/handler nguyên liệu đã đăng ký trong container của master mới. Suite gồm 18 test domain và 22 test dịch vụ thật được chuyển sang phiên bản này; 7 test `ingredients-master.integration.test.ts` tiếp tục kiểm tra API nguyên liệu riêng. Các test và ngưỡng coverage có sẵn được giữ nguyên.
+
+Lệnh `pnpm exec tsc --noEmit` thành công. Lint các file infrastructure/config vừa sửa có 0 errors và 42 warnings có sẵn về console/any; không coi đây là lint clean hoàn toàn.
+
+Test tích hợp mới không mô phỏng kết nối. Các unit test cũ có mock vẫn được giữ nguyên. Kết quả pnpm test hoàn tất với exit code 0.
+
+## GitHub Actions trên nhánh nguyên liệu
+
+Workflow `.github/workflows/ci.yml` chạy khi push `feat-frontend-add/delete/fix-ingredient-management` hoặc `master`, và khi tạo PR vào `master` có thay đổi backend/frontend/workflow. Backend chạy PostgreSQL, Redis, MinIO và MailHog thật; `pnpm test` kiểm tra coverage dòng code tối thiểu 80%, không tắt coverage. Image MinIO được ghim theo digest của image đã chạy thật và xác minh tải được từ registry. Báo cáo coverage được tải lên artifact `backend-coverage`. Frontend chạy lint, TypeScript, build và toàn bộ test với tối đa 2 workers.
+
+Sau khi push, mở GitHub → Actions → CI để xem kết quả từng job. Khi tạo PR vào master, kết quả hiện ở tab Checks của PR. Kết quả kiểm tra local không thay thế kết quả chạy trên GitHub.

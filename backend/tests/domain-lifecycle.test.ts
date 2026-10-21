@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { Category } from '../src/domain/entities/Category.js';
 import { Recipe } from '../src/domain/entities/Recipe.js';
