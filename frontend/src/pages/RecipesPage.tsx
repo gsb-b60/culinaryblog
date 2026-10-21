@@ -10,6 +10,7 @@ import type { Recipe, RecipePage } from '../types/recipe'
 
 const labels = { DRAFT: 'Bản nháp', PUBLISHED: 'Đã xuất bản', ARCHIVED: 'Đã lưu trữ' }
 
+/** Translate API and validation failures into a message suitable for the user. */
 function errorMessage(reason: unknown): string {
   if (!(reason instanceof ApiError)) return 'Không thể thực hiện yêu cầu. Vui lòng thử lại.'
   if (reason.status === 403) return 'Bạn không có quyền thay đổi công thức này.'

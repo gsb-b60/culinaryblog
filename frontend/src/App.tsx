@@ -13,6 +13,7 @@ import ProfilePage from './pages/ProfilePage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
 
+/** Render the fallback for an unknown application route. */
 function NotFoundPage() {
   return (
     <main className="flex flex-1 items-center justify-center p-8">
@@ -27,6 +28,7 @@ function NotFoundPage() {
   )
 }
 
+/** Compose public, authentication and dashboard routes. */
 export default function App() {
   return (
     <Routes>

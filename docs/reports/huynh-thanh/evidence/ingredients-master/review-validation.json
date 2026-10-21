@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-10-21T11:40:27.806Z",
+  "branch": "feat-frontend-add/delete/fix-ingredient-management",
+  "baseCommit": "1ed7022",
+  "tests": {
+    "backend": 202,
+    "frontend": 160,
+    "backendLinesCoverage": 89.23
+  },
+  "exitCodes": {
+    "backendTests": 0,
+    "frontendTests": 0,
+    "backendLint": 0,
+    "frontendLint": 0,
+    "backendBuild": 0,
+    "frontendBuild": 0,
+    "e2e": 0
+  },
+  "backendLintWarnings": 197,
+  "e2eBrowser": "msedge",
+  "githubChecksVerified": false,
+  "docstringBotRecheckPending": true
+}

@@ -73,7 +73,10 @@ try {
   });
   assert.equal(loggedIn.status, 200);
   const session = await loggedIn.json();
-  browser = await chromium.launch({ channel: 'msedge', headless: true });
+  browser = await chromium.launch({
+    channel: process.env.E2E_BROWSER_CHANNEL || undefined,
+    headless: true,
+  });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   await context.addInitScript(
     (value) => localStorage.setItem('culinary_session', JSON.stringify(value)),
@@ -112,11 +115,87 @@ try {
       .getByRole('link', { name: 'Nguyên liệu', exact: true }),
   ).toHaveAttribute('aria-current', 'page');
   assert.equal(await page.getByRole('navigation', { name: 'Dashboard menu' }).count(), 1);
+  // Real browser navigation must preserve both the selected recipe and its page.
+  await page.getByLabel('Chọn công thức', { exact: true }).selectOption(fixture.recipes[0]!.id);
+  await expect(page).toHaveURL(new RegExp('recipeId=' + fixture.recipes[0]!.id));
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: 90000 });
+  await expect(page.getByLabel('Chọn công thức', { exact: true })).toHaveValue(
+    fixture.recipes[0]!.id,
+  );
+  await expect(page.getByRole('button', { name: 'Thêm nguyên liệu', exact: true })).toBeEnabled();
+  await page.getByLabel('Chọn công thức', { exact: true }).selectOption(fixture.recipes[1]!.id);
+  await page.getByRole('button', { name: 'Trang trước', exact: true }).click();
+  await expect(page).toHaveURL(/page=1(?:&|$)/);
+  await expect(page.getByRole('button', { name: 'Thêm nguyên liệu', exact: true })).toBeEnabled();
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: 90000 });
+  await expect(page.getByRole('navigation', { name: 'Phân trang chọn công thức' })).toContainText(
+    'Trang 1/2',
+  );
+  await expect(page.getByRole('button', { name: 'Thêm nguyên liệu', exact: true })).toBeEnabled();
+
+  // Disconnect real networking during a pending ingredient request; do not intercept APIs.
+  const network = await context.newCDPSession(page);
+  await network.send('Network.enable');
+  const normalNetwork = {
+    offline: false,
+    latency: 0,
+    downloadThroughput: -1,
+    uploadThroughput: -1,
+  };
+  await network.send('Network.emulateNetworkConditions', { ...normalNetwork, latency: 5000 });
+  const pendingIngredients = page.waitForRequest(
+    (request) => request.url().includes('/ingredients') && request.method() === 'GET',
+  );
+  await page.getByLabel('Chọn công thức', { exact: true }).selectOption(fixture.recipes[12]!.id);
+  await pendingIngredients;
+  await network.send('Network.emulateNetworkConditions', { ...normalNetwork, offline: true });
+  await page.getByRole('button', { name: 'Trang sau', exact: true }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tải lại', exact: true })).toBeEnabled();
+  await network.send('Network.emulateNetworkConditions', normalNetwork);
+  await network.detach();
+  await page.getByRole('button', { name: 'Tải lại', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Thêm nguyên liệu', exact: true })).toBeEnabled();
+  await expect(page.getByRole('navigation', { name: 'Phân trang chọn công thức' })).toContainText(
+    'Trang 2/2',
+  );
+  await page.getByLabel('Chọn công thức', { exact: true }).selectOption(fixture.recipes[1]!.id);
+  await expect(page.getByRole('button', { name: 'Thêm nguyên liệu', exact: true })).toBeEnabled();
+
+  /** Capture the actual HTTP response without exposing authentication headers. */
+  async function captureApiEvidence(
+    response: Awaited<ReturnType<typeof page.waitForResponse>>,
+    file: string,
+  ) {
+    const body = await response.text();
+    const summary =
+      response.request().method() +
+      ' ' +
+      new URL(response.url()).pathname +
+      '\nHTTP ' +
+      response.status() +
+      '\n' +
+      (body || '(empty response body)');
+    await page.evaluate((text) => {
+      const panel = document.createElement('pre');
+      panel.id = 'api-evidence';
+      panel.textContent = text;
+      panel.style.cssText =
+        'position:fixed;bottom:12px;left:12px;right:12px;z-index:99999;max-height:240px;overflow:auto;background:#111827;color:#f9fafb;padding:20px;white-space:pre-wrap;font:14px monospace;border:2px solid #22c55e';
+      document.body.append(panel);
+    }, summary);
+    await page.screenshot({ path: resolve(output, file), fullPage: true });
+    await page.locator('#api-evidence').evaluate((element) => element.remove());
+  }
   await page.getByLabel('Thêm - Tên nguyên liệu', { exact: true }).fill('Gạo kiểm thử E2E');
   await page.getByLabel('Thêm - Số lượng', { exact: true }).fill('2.5');
   await page.getByLabel('Thêm - Đơn vị', { exact: true }).fill('kg');
   await page.getByLabel('Thêm - Ghi chú', { exact: true }).fill('Vo sạch');
+  const postResponse = page.waitForResponse(
+    (response) => response.url().includes('/ingredients') && response.request().method() === 'POST',
+  );
   await page.getByRole('button', { name: 'Thêm nguyên liệu', exact: true }).click();
+  await captureApiEvidence(await postResponse, 'api-post-201.png');
   await expect(page.getByRole('status')).toContainText('Đã thêm nguyên liệu.');
   await page.screenshot({ path: resolve(output, 'desktop-created.png'), fullPage: true });
   const stored = await fixture.prisma.recipeIngredient.findFirstOrThrow({
@@ -128,7 +207,11 @@ try {
   await page.getByLabel('Sửa - Số lượng', { exact: true }).fill('3');
   await page.getByLabel('Sửa - Đơn vị', { exact: true }).fill('g');
   await page.getByLabel('Sửa - Ghi chú', { exact: true }).fill('');
+  const putResponse = page.waitForResponse(
+    (response) => response.url().includes('/ingredients') && response.request().method() === 'PUT',
+  );
   await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await captureApiEvidence(await putResponse, 'api-put-200.png');
   await expect(page.getByRole('status')).toContainText('Đã cập nhật nguyên liệu.');
   await page.reload({ waitUntil: 'domcontentloaded', timeout: 90000 });
   await expect(page.getByRole('heading', { name: 'Gạo đã cập nhật', exact: true })).toBeVisible();
@@ -144,7 +227,12 @@ try {
   ).toBeVisible();
   await page.screenshot({ path: resolve(output, 'mobile-updated.png'), fullPage: true });
   await page.getByRole('button', { name: 'Xóa Gạo đã cập nhật', exact: true }).click();
+  const deleteResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes('/ingredients') && response.request().method() === 'DELETE',
+  );
   await page.getByRole('button', { name: 'Xác nhận xóa', exact: true }).click();
+  await captureApiEvidence(await deleteResponse, 'api-delete-204.png');
   await expect(page.getByRole('status')).toContainText('Đã xóa nguyên liệu.');
   assert.equal(
     (await fixture.prisma.recipeIngredient.findUniqueOrThrow({ where: { id: stored.id } }))
@@ -188,10 +276,13 @@ try {
         baseCommit: '1ed7022',
         feature: 'FR-RCP-009',
         result: 'passed',
-        services: 'Real PostgreSQL + real HTTP/JWT + real Edge browser; no API interception',
+        services: 'Real PostgreSQL + real HTTP/JWT + real browser; no API interception',
         checks: [
           'Dashboard integration',
           'Recipe link on page 2',
+          'Selection and page survive browser reload',
+          'Retry enabled after page change during offline ingredient loading',
+          'Real HTTP response screenshots (POST/PUT/DELETE)',
           'Create 201',
           'Update 200',
           'Reload persistence',

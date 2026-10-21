@@ -2,7 +2,7 @@
 
 Ngày kiểm tra: **21/10/2026**. Nhánh bàn giao: **feat-frontend-add/delete/fix-ingredient-management**. Bản tích hợp nguồn: **feat/integrate-ingredients-master tại fc4de45**. Nền tảng: **origin/master tại 1ed7022** sau `git fetch origin --prune`; master local và origin/master không lệch commit. Repo hiện không có nhánh main.
 
-Bản tích hợp đã được lưu tại fc4de45 và đưa về nhánh nguyên liệu cũ bằng merge, giữ lịch sử cả hai nhánh. Chưa push trong lần cập nhật này và chưa merge vào master. Các báo cáo snapshot ngày 14/10 được giữ lại làm lịch sử; không dùng kết quả cũ để khẳng định trạng thái master hiện tại.
+Bản tích hợp đã được lưu tại fc4de45 và đưa về nhánh nguyên liệu cũ bằng merge, giữ lịch sử cả hai nhánh. Chưa push trong lần cập nhật này và chưa merge vào master. Các báo cáo snapshot ngày 14/10 được giữ tại nhánh tài liệu riêng `docs/huynh-thanh-review-snapshots`; không dùng kết quả cũ để khẳng định trạng thái master hiện tại.
 
 ## 1. Những điểm thay đổi theo master
 
@@ -129,7 +129,7 @@ Kịch bản đã xác nhận: đi từ công thức ở trang 2 đến nguyên 
 - backend/tests/support/ingredientIntegration.ts
 - backend/tests/ingredients-master.e2e.ts
 
-Giữ nguyên nội dung snapshot và ảnh cũ; các báo cáo hiện có chỉ được bổ sung liên kết đến bản tích hợp mới. Không stage hoặc thay đổi file huynh-thanh.rar đang có trạng thái thay đổi của người dùng.
+Báo cáo/ảnh các chức năng khác và script snapshot đã được tách khỏi PR nguyên liệu theo review; bản đầy đủ được bảo toàn ở nhánh tài liệu riêng.
 
 ## 6. Cập nhật coverage đạt yêu cầu — 21/10/2026
 
@@ -137,7 +137,7 @@ Lệnh `pnpm test` chạy thật trên nhánh tích hợp đã hoàn tất **exi
 
 Test mới dùng PostgreSQL, Redis, MinIO, MailHog và BullMQ thật với tài nguyên riêng được dọn sau mỗi lần chạy. Các sửa lỗi Prisma/SMTP đã xác minh ở nhánh trước được áp dụng lại cho master mới; queue và worker có BULLMQ_PREFIX mặc định bull, riêng test dùng prefix ngẫu nhiên để tránh xử lý job của ứng dụng.
 
-[Hướng dẫn chạy test dịch vụ thật](../../../backend/TESTING_REAL_SERVICES.md) và [kết quả coverage](./evidence/ingredients-master/coverage-result.json). HTML report nằm tại backend/coverage/index.html sau khi chạy test. Chưa commit/push các thay đổi.
+[Hướng dẫn chạy test dịch vụ thật](../../../backend/TESTING_REAL_SERVICES.md) và [kết quả coverage](./evidence/ingredients-master/coverage-result.json). HTML report nằm tại backend/coverage/index.html sau khi chạy test. Kết quả này thuộc lần kiểm tra tích hợp trước review; xem mục cập nhật sau review bên dưới.
 ## 7. Bàn giao trên nhánh frontend-add/delete/fix
 
 Nhánh `feat-frontend-add/delete/fix-ingredient-management` nhận bản tích hợp tại `fc4de45` bằng merge, bao gồm nền master `1ed7022`. Khi xử lý xung đột, dùng API `/recipes/manage`, DashboardLayout và Zustand từ bản tích hợp thay cho cấu trúc cũ.
@@ -152,3 +152,19 @@ Kết quả chạy lại trên nhánh bàn giao ngày 21/10/2026:
 - Image MinIO dùng cho CI đã xác minh manifest và khởi động thử container riêng, health endpoint trả 200. Container kiểm tra đã được dọn.
 
 Workflow chạy khi push nhánh này và khi tạo PR vào master; backend chạy test có coverage với PostgreSQL/Redis/MinIO/MailHog thật. Sau khi push, xem GitHub → Actions → CI hoặc tab Checks của PR. Chưa xác nhận kết quả runner GitHub trong lần kiểm tra local này.
+
+## 8. Xử lý review PR #55
+
+- Đồng bộ `recipeId` và `page` với URL; URL là nguồn lựa chọn hiện tại nên tải lại giữ đúng công thức/trang và không còn ref bị thay đổi trong updater state.
+- Xóa trạng thái tải nguyên liệu khi bỏ chọn/chuyển trang; bỏ qua sự kiện chọn lại cùng công thức để tránh khóa form.
+- E2E dùng Chromium mặc định, hỗ trợ biến `E2E_BROWSER_CHANNEL=msedge` khi cần Edge. Đã kiểm tra hồi quy bằng Edge thật, HTTP và PostgreSQL thật; dùng CDP ngắt kết nối mạng trong kịch bản lỗi, không giả API/dịch vụ.
+- Thêm ảnh HTTP response thật 201/200/204 từ E2E. Panel trong ảnh là bản hiển thị method/path/status/body do trình duyệt nhận, không phải ảnh Scalar/DevTools.
+- Thêm JSDoc cho 76 hàm/constructor chưa có mô tả trong các file source thuộc PR. Đây là kiểm tra tài liệu hàm, độc lập với test coverage. Chờ CodeRabbit tính lại tỷ lệ trên diff mới sau push.
+- Báo cáo/ảnh đa chức năng và script capture-demo được tách sang nhánh local `docs/huynh-thanh-review-snapshots`, commit `7f49a92`. Trên nhánh đó đã sửa `fileURLToPath`, `list.data.items`, bảo vệ env và ghi rõ mốc master lịch sử; chưa chạy lại toàn bộ snapshot lịch sử.
+- Giữ Playwright vì E2E của FR-RCP-009 trực tiếp dùng thư viện này; không giữ dependency chỉ để chụp các chức năng khác.
+
+[Kết quả E2E mới](./evidence/ingredients-master/result.json) · [POST 201](./evidence/ingredients-master/api-post-201.png) · [PUT 200](./evidence/ingredients-master/api-put-200.png) · [DELETE 204](./evidence/ingredients-master/api-delete-204.png).
+
+### Kết quả cuối sau sửa review
+
+Backend: 202 tests pass, lines coverage 89,23%; frontend: 160 tests pass. Lint/build cả hai phía exit 0; backend còn 197 warnings. E2E thực chạy bằng Edge cấu hình qua biến môi trường đã pass toàn bộ hồi quy. [Metadata](./evidence/ingredients-master/review-validation.json), [log backend](./evidence/ingredients-master/validation-backend.txt), [log frontend](./evidence/ingredients-master/validation-frontend.txt). Ảnh validation là bản render trích đoạn log thật, không phải chụp terminal. Chưa xác nhận lại GitHub Actions/CodeRabbit sau các thay đổi này.

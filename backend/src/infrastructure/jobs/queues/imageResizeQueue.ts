@@ -25,6 +25,7 @@ export interface ImageResizeJobData {
   originalUrl: string;
 }
 
+/** Enqueue image processing in the configured BullMQ namespace. */
 export async function addImageResizeJob(data: ImageResizeJobData): Promise<void> {
   await imageResizeQueue.add('resize-image', data);
 }

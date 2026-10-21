@@ -842,6 +842,7 @@ const scalarHtml = `<!doctype html>
 </body>
 </html>`;
 
+/** Expose the OpenAPI JSON document and Scalar reference on Express. */
 export function setupOpenAPI(app: Express | Router): void {
   (app as Router).get('/api-docs.json', (_req, res) => {
     res.json(openApiSpec);
@@ -855,6 +856,7 @@ export function setupOpenAPI(app: Express | Router): void {
 }
 
 // Legacy export kept for backwards-compat imports.
+/** Register API reference routes on the supplied router. */
 export function setupRoutes(app: Router): void {
   setupOpenAPI(app as unknown as Express);
 }

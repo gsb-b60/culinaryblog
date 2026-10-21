@@ -1,12 +1,15 @@
 {
-  "capturedAt": "2026-10-21T09:25:23.165Z",
+  "capturedAt": "2026-10-21T11:34:08.130Z",
   "baseCommit": "1ed7022",
   "feature": "FR-RCP-009",
   "result": "passed",
-  "services": "Real PostgreSQL + real HTTP/JWT + real Edge browser; no API interception",
+  "services": "Real PostgreSQL + real HTTP/JWT + real browser; no API interception",
   "checks": [
     "Dashboard integration",
     "Recipe link on page 2",
+    "Selection and page survive browser reload",
+    "Retry enabled after page change during offline ingredient loading",
+    "Real HTTP response screenshots (POST/PUT/DELETE)",
     "Create 201",
     "Update 200",
     "Reload persistence",
@@ -32,17 +35,7 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/recipes/285b9755-788d-4cf8-aece-64c381756271/ingredients",
-      "status": 200
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/recipes/285b9755-788d-4cf8-aece-64c381756271/ingredients",
-      "status": 201
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/recipes/285b9755-788d-4cf8-aece-64c381756271/ingredients/923837f6-189a-48c7-a648-0ec15e742f5d",
+      "path": "/api/v1/recipes/2ce0c064-15b8-4b39-a9b7-631bbcd699a3/ingredients",
       "status": 200
     },
     {
@@ -52,12 +45,107 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/recipes/285b9755-788d-4cf8-aece-64c381756271/ingredients",
+      "path": "/api/v1/recipes/f29bcecc-7dcb-487e-8161-4a26a8b911e8/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/2ce0c064-15b8-4b39-a9b7-631bbcd699a3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/2ce0c064-15b8-4b39-a9b7-631bbcd699a3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/86d70aaa-3809-42b1-b5fc-f8d30cd6100d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/86d70aaa-3809-42b1-b5fc-f8d30cd6100d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/86d70aaa-3809-42b1-b5fc-f8d30cd6100d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/873aa765-a99e-4f9a-9d8e-68d4fa4e859c/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/2ce0c064-15b8-4b39-a9b7-631bbcd699a3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/2ce0c064-15b8-4b39-a9b7-631bbcd699a3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/recipes/2ce0c064-15b8-4b39-a9b7-631bbcd699a3/ingredients",
+      "status": 201
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/recipes/2ce0c064-15b8-4b39-a9b7-631bbcd699a3/ingredients/5612a847-21cd-41f7-ba87-fa1331819487",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/2ce0c064-15b8-4b39-a9b7-631bbcd699a3/ingredients",
       "status": 200
     },
     {
       "method": "DELETE",
-      "path": "/api/v1/recipes/285b9755-788d-4cf8-aece-64c381756271/ingredients/923837f6-189a-48c7-a648-0ec15e742f5d",
+      "path": "/api/v1/recipes/2ce0c064-15b8-4b39-a9b7-631bbcd699a3/ingredients/5612a847-21cd-41f7-ba87-fa1331819487",
       "status": 204
     },
     {
@@ -67,7 +155,7 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/recipes/285b9755-788d-4cf8-aece-64c381756271/ingredients",
+      "path": "/api/v1/recipes/2ce0c064-15b8-4b39-a9b7-631bbcd699a3/ingredients",
       "status": 200
     }
   ]

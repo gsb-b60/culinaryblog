@@ -23,11 +23,13 @@ export interface SitemapJobData {
   trigger: 'manual' | 'scheduled';
 }
 
+/** Enqueue sitemap generation in the configured BullMQ namespace. */
 export async function addSitemapJob(data: SitemapJobData = { trigger: 'manual' }): Promise<void> {
   await sitemapQueue.add('generate-sitemap', data);
 }
 
 // Recurring job - runs daily at 2 AM UTC
+/** Register recurring sitemap generation in the configured BullMQ namespace. */
 export async function scheduleSitemapJob(): Promise<void> {
   await sitemapQueue.add(
     'generate-sitemap',

@@ -6,6 +6,7 @@ import { env } from '../../config-middleware/config/env.js';
 export class NodemailerEmailService implements IEmailService {
   private transporter: nodemailer.Transporter;
 
+  /** Configure SMTP, omitting authentication when no username is provided. */
   constructor() {
     this.transporter = nodemailer.createTransport({
       host: env.SMTP_HOST,
@@ -15,6 +16,7 @@ export class NodemailerEmailService implements IEmailService {
     });
   }
 
+  /** Deliver the welcome message through the configured SMTP transporter. */
   async sendWelcomeEmail(to: string, displayName: string): Promise<void> {
     const html = `
       <!DOCTYPE html>
@@ -58,6 +60,7 @@ export class NodemailerEmailService implements IEmailService {
     });
   }
 
+  /** Send a password-reset link containing the supplied reset token. */
   async sendPasswordResetEmail(to: string, resetToken: string): Promise<void> {
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`;
 
@@ -85,6 +88,7 @@ export class NodemailerEmailService implements IEmailService {
     });
   }
 
+  /** Send a verification link containing the supplied verification token. */
   async sendEmailVerificationEmail(to: string, verificationToken: string): Promise<void> {
     const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/verify-email?token=${verificationToken}`;
 

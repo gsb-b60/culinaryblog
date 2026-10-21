@@ -24,6 +24,7 @@ export interface WelcomeEmailJobData {
   displayName: string;
 }
 
+/** Enqueue welcome email delivery in the configured BullMQ namespace. */
 export async function addWelcomeEmailJob(data: WelcomeEmailJobData): Promise<void> {
   await welcomeEmailQueue.add('send-welcome-email', data);
 }

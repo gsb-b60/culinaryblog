@@ -12,8 +12,10 @@ import {
 import { Slug } from '../../../domain/value-objects/Slug.js';
 
 export class RecipeRepository implements IRecipeRepository {
+  /** Bind recipe persistence to the supplied Prisma client. */
   constructor(private prisma: PrismaClient) {}
 
+  /** Reconstruct a recipe aggregate from Prisma data and attach display metadata. */
   private toDomain(
     prismaRecipe: PrismaRecipe & {
       author?: { displayName: string };
@@ -58,6 +60,7 @@ export class RecipeRepository implements IRecipeRepository {
     return recipe;
   }
 
+  /** Project recipe fields and display names into a paginated summary DTO. */
   private toSummaryDto(recipe: Recipe, categoryName: string, authorName: string) {
     return {
       id: recipe.id,
@@ -78,6 +81,7 @@ export class RecipeRepository implements IRecipeRepository {
     };
   }
 
+  /** Find an active recipe by identifier and reconstruct its aggregate. */
   async findById(id: string): Promise<Recipe | null> {
     const recipe = await this.prisma.recipe.findUnique({
       where: { id, isDeleted: false },
@@ -90,6 +94,7 @@ export class RecipeRepository implements IRecipeRepository {
     return recipe ? this.toDomain(recipe) : null;
   }
 
+  /** Find an active recipe by slug and reconstruct its aggregate. */
   async findBySlug(slug: string): Promise<Recipe | null> {
     const recipe = await this.prisma.recipe.findUnique({
       where: { slug, isDeleted: false },
@@ -104,6 +109,7 @@ export class RecipeRepository implements IRecipeRepository {
     return recipe ? this.toDomain(recipe) : null;
   }
 
+  /** Load recipe summaries and pagination metadata matching repository filters. */
   async findMany(
     filters: RecipeFilters,
     sort: RecipeSortOptions,
@@ -139,6 +145,7 @@ export class RecipeRepository implements IRecipeRepository {
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
 
+  /** Load published recipes in a category with pagination. */
   async findPublishedByCategory(
     categoryId: string,
     page: number,
@@ -179,6 +186,7 @@ export class RecipeRepository implements IRecipeRepository {
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
 
+  /** Search published recipes using repository filtering and ordering. */
   async search(
     query: string,
     filters: RecipeFilters,
@@ -215,6 +223,7 @@ export class RecipeRepository implements IRecipeRepository {
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
 
+  /** Persist recipe scalar fields and foreign keys without mixing relation writes. */
   async save(recipe: Recipe): Promise<Recipe> {
     const props = recipe.toPersistence();
 
@@ -253,10 +262,12 @@ export class RecipeRepository implements IRecipeRepository {
     return this.toDomain(saved);
   }
 
+  /** Permanently remove a recipe row; lifecycle soft deletion is handled separately. */
   async delete(id: string): Promise<void> {
     await this.prisma.recipe.delete({ where: { id } });
   }
 
+  /** Check whether an active recipe already uses the supplied slug. */
   async existsBySlug(slug: string): Promise<boolean> {
     const count = await this.prisma.recipe.count({
       where: { slug, isDeleted: false },
@@ -264,11 +275,13 @@ export class RecipeRepository implements IRecipeRepository {
     return count > 0;
   }
 
+  /** Count recipes matching the supplied repository filters. */
   async count(filters: RecipeFilters): Promise<number> {
     const where = this.buildWhereClause(filters);
     return this.prisma.recipe.count({ where });
   }
 
+  /** Translate repository filters into a Prisma predicate excluding deleted recipes. */
   private buildWhereClause(filters: RecipeFilters): Prisma.RecipeWhereInput {
     const where: Prisma.RecipeWhereInput = { isDeleted: false };
 
@@ -296,6 +309,7 @@ export class RecipeRepository implements IRecipeRepository {
     return where;
   }
 
+  /** Translate requested sorting into Prisma ordering with repository defaults. */
   private buildOrderBy(sort: RecipeSortOptions): Prisma.RecipeOrderByWithRelationInput {
     const { field, order } = sort;
     const fieldMap: Record<string, string> = {

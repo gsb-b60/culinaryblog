@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 
 type Section = 'overview' | 'recipes' | 'ingredients' | 'profile'
 
+/** Render dashboard destinations and indicate the active page. */
 export default function DashboardSidebar({
   onLogout,
   active = 'overview',

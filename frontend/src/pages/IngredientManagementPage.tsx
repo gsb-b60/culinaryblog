@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -16,12 +16,23 @@ import {
 import { useAuthStore } from '../store'
 import type { CreateIngredientPayload, RecipeIngredient, RecipePage } from '../types/recipe'
 
-type IngredientForm = { name: string; quantity: string; unit: string; notes: string }
-const emptyForm: IngredientForm = { name: '', quantity: '', unit: '', notes: '' }
+type IngredientForm = {
+  name: string
+  quantity: string
+  unit: string
+  notes: string
+}
+const emptyForm: IngredientForm = {
+  name: '',
+  quantity: '',
+  unit: '',
+  notes: '',
+}
 const inputClass =
   'mt-1 w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500'
 const buttonClass =
   'rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50'
+/** Copy persisted ingredient values into editable form fields without mutating the DTO. */
 function formFor(item: RecipeIngredient): IngredientForm {
   return {
     name: item.name,
@@ -30,6 +41,7 @@ function formFor(item: RecipeIngredient): IngredientForm {
     notes: item.notes ?? '',
   }
 }
+/** Translate API and validation failures into a message suitable for the user. */
 function errorMessage(reason: unknown): string {
   if (!(reason instanceof ApiError))
     return reason instanceof Error ? reason.message : 'Không thể thực hiện yêu cầu.'
@@ -44,6 +56,7 @@ function errorMessage(reason: unknown): string {
     )
   return reason.message
 }
+/** Validate and normalize ingredient fields before sending a mutation. */
 function payloadFor(form: IngredientForm, orderIndex: number): CreateIngredientPayload {
   const name = form.name.trim()
   if (!name) throw new Error('Vui lòng nhập tên nguyên liệu.')
@@ -54,22 +67,25 @@ function payloadFor(form: IngredientForm, orderIndex: number): CreateIngredientP
   ) {
     throw new Error('Số lượng phải lớn hơn 0 và không vượt quá 999999.999.')
   }
-  return { name, quantity, unit: form.unit.trim(), notes: form.notes.trim(), orderIndex }
+  return {
+    name,
+    quantity,
+    unit: form.unit.trim(),
+    notes: form.notes.trim(),
+    orderIndex,
+  }
 }
 
 /** DashboardLayout owns authentication, navigation and logout. */
 export default function IngredientManagementPage() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const session = useAuthStore((state) => state.session)
   const accountKey = session ? `${session.user.id}:${session.user.roles.join(',')}` : ''
-  const requestedRecipe = useRef(searchParams.get('recipeId'))
-  const [page, setPage] = useState(() => {
-    const value = Number(searchParams.get('page') ?? 1)
-    return Number.isInteger(value) && value > 0 ? value : 1
-  })
+  const requestedPage = Number(searchParams.get('page') ?? 1)
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1
+  const recipeId = searchParams.get('recipeId') ?? ''
   const [recipes, setRecipes] = useState<RecipePage | null>(null)
-  const [recipeId, setRecipeId] = useState('')
   const [ingredients, setIngredients] = useState<RecipeIngredient[]>([])
   const [loadedRecipeId, setLoadedRecipeId] = useState('')
   const [loadingRecipes, setLoadingRecipes] = useState(true)
@@ -82,6 +98,8 @@ export default function IngredientManagementPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const selectedRecipe =
+    recipes?.meta.page === page ? recipes.items.find((item) => item.id === recipeId) : undefined
   const busy = useRef(false)
   const mounted = useRef(true)
   useEffect(() => {
@@ -100,13 +118,20 @@ export default function IngredientManagementPage() {
       .then((result) => {
         if (!active) return
         setRecipes(result)
-        setRecipeId((current) => {
-          const preferred = requestedRecipe.current ?? current
-          requestedRecipe.current = null
-          return result.items.some((item) => item.id === preferred)
-            ? preferred
-            : (result.items[0]?.id ?? '')
-        })
+        setSearchParams(
+          (current) => {
+            const preferred = current.get('recipeId') ?? ''
+            const nextId = result.items.some((item) => item.id === preferred)
+              ? preferred
+              : (result.items[0]?.id ?? '')
+            const next = new URLSearchParams(current)
+            next.set('page', String(page))
+            if (nextId) next.set('recipeId', nextId)
+            else next.delete('recipeId')
+            return next
+          },
+          { replace: true },
+        )
       })
       .catch((reason: unknown) => {
         if (reason instanceof ApiError && reason.status === 401 && mounted.current) {
@@ -123,11 +148,11 @@ export default function IngredientManagementPage() {
       active = false
       controller.abort()
     }
-  }, [accountKey, page, revision, navigate])
+  }, [accountKey, page, revision, navigate, setSearchParams])
 
   useEffect(() => {
     const token = useAuthStore.getState().session?.accessToken
-    if (!accountKey || !recipeId || !token) return
+    if (!accountKey || !selectedRecipe || !token) return
     let active = true
     const controller = new AbortController()
     getRecipeIngredients(token, recipeId, controller.signal)
@@ -152,13 +177,14 @@ export default function IngredientManagementPage() {
       active = false
       controller.abort()
     }
-  }, [accountKey, recipeId, revision, navigate])
+  }, [accountKey, recipeId, selectedRecipe, revision, navigate])
 
   if (!session) return null
   const ready =
-    loadedRecipeId === recipeId && recipeId !== '' && !loadingRecipes && !loadingIngredients
-  const selectedRecipe = recipes?.items.find((item) => item.id === recipeId)
+    Boolean(selectedRecipe) && loadedRecipeId === recipeId && !loadingRecipes && !loadingIngredients
+  /** Clear recipe-specific forms, messages and loading state when selection changes. */
   function resetSelection() {
+    setLoadingIngredients(false)
     setIngredients([])
     setLoadedRecipeId('')
     setEditing(null)
@@ -168,12 +194,14 @@ export default function IngredientManagementPage() {
     setError('')
     setNotice('')
   }
+  /** Retry the current page and ingredients after clearing stale form state. */
   function reload() {
     resetSelection()
     setLoadingRecipes(true)
     setLoadingIngredients(Boolean(recipeId))
     setRevision((value) => value + 1)
   }
+  /** Serialize ingredient changes and restore controls after completion or failure. */
   async function mutate(action: () => Promise<void>) {
     if (busy.current || !ready) return
     busy.current = true
@@ -193,9 +221,11 @@ export default function IngredientManagementPage() {
       if (mounted.current) setPending(false)
     }
   }
+  /** Read current credentials so mutations use any token rotated by the API client. */
   function currentToken() {
     return useAuthStore.getState().session?.accessToken ?? ''
   }
+  /** Append a validated ingredient and display the persisted API result. */
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     await mutate(async () => {
@@ -211,6 +241,7 @@ export default function IngredientManagementPage() {
       setNotice('Đã thêm nguyên liệu.')
     })
   }
+  /** Save edited fields and replace the matching ingredient in the list. */
   async function update(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!editing) return
@@ -227,6 +258,7 @@ export default function IngredientManagementPage() {
       setNotice('Đã cập nhật nguyên liệu.')
     })
   }
+  /** Delete the confirmed ingredient through the API and remove it from the display. */
   async function remove() {
     if (!deleting) return
     await mutate(async () => {
@@ -238,6 +270,7 @@ export default function IngredientManagementPage() {
       setNotice('Đã xóa nguyên liệu.')
     })
   }
+  /** Render labelled ingredient inputs shared by creation and editing forms. */
   function fields(form: IngredientForm, setForm: (value: IngredientForm) => void, label: string) {
     return (
       <div className="grid gap-4 sm:grid-cols-2">
@@ -322,12 +355,19 @@ export default function IngredientManagementPage() {
         </label>
         <select
           id="ingredient-recipe"
-          className={inputClass}
+          size={6}
+          aria-describedby="ingredient-recipe-help"
+          className={`${inputClass} h-52 overflow-y-scroll`}
           value={recipeId}
           disabled={pending || loadingRecipes}
           onChange={(event) => {
+            if (event.target.value === recipeId) return
             resetSelection()
-            setRecipeId(event.target.value)
+            const next = new URLSearchParams(searchParams)
+            next.set('page', String(page))
+            if (event.target.value) next.set('recipeId', event.target.value)
+            else next.delete('recipeId')
+            setSearchParams(next, { replace: true })
             setLoadingIngredients(Boolean(event.target.value))
           }}
         >
@@ -343,6 +383,9 @@ export default function IngredientManagementPage() {
             </option>
           ))}
         </select>
+        <p id="ingredient-recipe-help" className="mt-2 text-sm text-surface-500">
+          Cuộn danh sách để chọn công thức. Dùng phân trang bên dưới để xem các công thức còn lại.
+        </p>
         {recipes && (
           <Pagination
             page={recipes.meta.page}
@@ -353,8 +396,10 @@ export default function IngredientManagementPage() {
             label="Phân trang chọn công thức"
             onPageChange={(value) => {
               resetSelection()
-              setRecipeId('')
-              setPage(value)
+              const next = new URLSearchParams(searchParams)
+              next.delete('recipeId')
+              next.set('page', String(value))
+              setSearchParams(next)
               setLoadingRecipes(true)
             }}
           />

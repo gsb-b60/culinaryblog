@@ -1,0 +1,14 @@
+Frontend — actual local command log excerpts
+
+$ pnpm test --maxWorkers=2
+ Test Files  17 passed (17)
+      Tests  160 passed (160)
+Exit code: 0
+
+$ pnpm lint
+Exit code: 0
+
+$ pnpm build
+(!) Some chunks are larger than 500 kB after minification. Consider:
+✓ built in 11.48s
+Exit code: 0
