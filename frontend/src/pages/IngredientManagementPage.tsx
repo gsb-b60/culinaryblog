@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { EmptyState } from '../components/common/EmptyState'
 import { PageLoading } from '../components/common/PageLoading'
@@ -79,6 +79,7 @@ function payloadFor(form: IngredientForm, orderIndex: number): CreateIngredientP
 /** DashboardLayout owns authentication, navigation and logout. */
 export default function IngredientManagementPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const session = useAuthStore((state) => state.session)
   const accountKey = session ? `${session.user.id}:${session.user.roles.join(',')}` : ''
@@ -86,10 +87,10 @@ export default function IngredientManagementPage() {
   const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1
   const recipeId = searchParams.get('recipeId') ?? ''
   const [recipes, setRecipes] = useState<RecipePage | null>(null)
-  const [ingredients, setIngredients] = useState<RecipeIngredient[]>([])
-  const [loadedRecipeId, setLoadedRecipeId] = useState('')
+  const [savedIngredients, setIngredients] = useState<RecipeIngredient[]>([])
+  const [loadedIngredientKey, setLoadedIngredientKey] = useState('')
   const [loadingRecipes, setLoadingRecipes] = useState(true)
-  const [loadingIngredients, setLoadingIngredients] = useState(false)
+  const [finishedIngredientKey, setFinishedIngredientKey] = useState('')
   const [revision, setRevision] = useState(0)
   const [pending, setPending] = useState(false)
   const [addForm, setAddForm] = useState<IngredientForm>(emptyForm)
@@ -100,6 +101,13 @@ export default function IngredientManagementPage() {
   const [notice, setNotice] = useState('')
   const selectedRecipe =
     recipes?.meta.page === page ? recipes.items.find((item) => item.id === recipeId) : undefined
+  const ingredientKey = JSON.stringify([accountKey, recipeId, location.key, revision])
+  const loadingIngredients = Boolean(selectedRecipe) && finishedIngredientKey !== ingredientKey
+  const ingredients = loadedIngredientKey === ingredientKey ? savedIngredients : []
+  const selectionVersion = useRef(0)
+  useLayoutEffect(() => {
+    selectionVersion.current += 1
+  }, [accountKey, recipeId, location.key])
   const busy = useRef(false)
   const mounted = useRef(true)
   useEffect(() => {
@@ -159,7 +167,7 @@ export default function IngredientManagementPage() {
       .then((result) => {
         if (active) {
           setIngredients(result)
-          setLoadedRecipeId(recipeId)
+          setLoadedIngredientKey(ingredientKey)
         }
       })
       .catch((reason: unknown) => {
@@ -171,22 +179,25 @@ export default function IngredientManagementPage() {
         if (active) setError(errorMessage(reason))
       })
       .finally(() => {
-        if (active) setLoadingIngredients(false)
+        if (active) setFinishedIngredientKey(ingredientKey)
       })
     return () => {
       active = false
       controller.abort()
     }
-  }, [accountKey, recipeId, selectedRecipe, revision, navigate])
+  }, [accountKey, recipeId, selectedRecipe, ingredientKey, navigate])
 
   if (!session) return null
   const ready =
-    Boolean(selectedRecipe) && loadedRecipeId === recipeId && !loadingRecipes && !loadingIngredients
+    Boolean(selectedRecipe) &&
+    loadedIngredientKey === ingredientKey &&
+    !loadingRecipes &&
+    !loadingIngredients
   /** Clear recipe-specific forms, messages and loading state when selection changes. */
   function resetSelection() {
-    setLoadingIngredients(false)
+    setFinishedIngredientKey('')
     setIngredients([])
-    setLoadedRecipeId('')
+    setLoadedIngredientKey('')
     setEditing(null)
     setDeleting(null)
     setAddForm(emptyForm)
@@ -198,20 +209,21 @@ export default function IngredientManagementPage() {
   function reload() {
     resetSelection()
     setLoadingRecipes(true)
-    setLoadingIngredients(Boolean(recipeId))
     setRevision((value) => value + 1)
   }
   /** Serialize ingredient changes and restore controls after completion or failure. */
-  async function mutate(action: () => Promise<void>) {
+  async function mutate(action: (isCurrent: () => boolean) => Promise<void>) {
     if (busy.current || !ready) return
+    const version = selectionVersion.current
+    const isCurrent = () => mounted.current && selectionVersion.current === version
     busy.current = true
     setPending(true)
     setError('')
     setNotice('')
     try {
-      await action()
+      await action(isCurrent)
     } catch (reason) {
-      if (!mounted.current) return
+      if (!isCurrent()) return
       if (reason instanceof ApiError && reason.status === 401) {
         useAuthStore.getState().signOut()
         navigate('/auth/login', { replace: true })
@@ -228,14 +240,14 @@ export default function IngredientManagementPage() {
   /** Append a validated ingredient and display the persisted API result. */
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    await mutate(async () => {
+    await mutate(async (isCurrent) => {
       const nextOrder = ingredients.reduce((max, item) => Math.max(max, item.orderIndex), -1) + 1
       const result = await addRecipeIngredient(
         currentToken(),
         recipeId,
         payloadFor(addForm, nextOrder),
       )
-      if (!mounted.current) return
+      if (!isCurrent()) return
       setIngredients((items) => [...items, result])
       setAddForm(emptyForm)
       setNotice('Đã thêm nguyên liệu.')
@@ -245,14 +257,14 @@ export default function IngredientManagementPage() {
   async function update(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!editing) return
-    await mutate(async () => {
+    await mutate(async (isCurrent) => {
       const result = await updateRecipeIngredient(
         currentToken(),
         recipeId,
         editing.id,
         payloadFor(editForm, editing.orderIndex),
       )
-      if (!mounted.current) return
+      if (!isCurrent()) return
       setIngredients((items) => items.map((item) => (item.id === result.id ? result : item)))
       setEditing(null)
       setNotice('Đã cập nhật nguyên liệu.')
@@ -261,9 +273,9 @@ export default function IngredientManagementPage() {
   /** Delete the confirmed ingredient through the API and remove it from the display. */
   async function remove() {
     if (!deleting) return
-    await mutate(async () => {
+    await mutate(async (isCurrent) => {
       await deleteRecipeIngredient(currentToken(), recipeId, deleting)
-      if (!mounted.current) return
+      if (!isCurrent()) return
       setIngredients((items) => items.filter((item) => item.id !== deleting))
       if (editing?.id === deleting) setEditing(null)
       setDeleting(null)
@@ -368,7 +380,6 @@ export default function IngredientManagementPage() {
             if (event.target.value) next.set('recipeId', event.target.value)
             else next.delete('recipeId')
             setSearchParams(next, { replace: true })
-            setLoadingIngredients(Boolean(event.target.value))
           }}
         >
           <option value="">{loadingRecipes ? 'Đang tải công thức…' : 'Chọn một công thức'}</option>

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
@@ -13,6 +13,38 @@ const require = createRequire(resolve(frontend, 'package.json'));
 const { chromium, expect: baseExpect } =
   require('@playwright/test') as typeof import('@playwright/test');
 const expect = baseExpect.configure({ timeout: 30000 });
+// Record the committed source tested; generated evidence is committed separately afterwards.
+const testedInputs = [
+  'frontend/src',
+  'frontend/package.json',
+  'frontend/pnpm-lock.yaml',
+  'frontend/vite.config.ts',
+  'backend/src',
+  'backend/tests',
+  'backend/prisma',
+  'backend/package.json',
+  'backend/pnpm-lock.yaml',
+  'backend/tsconfig.json',
+  'backend/vitest.config.ts',
+];
+const testedCommit = execFileSync('git', ['rev-parse', 'HEAD'], {
+  cwd: root,
+  encoding: 'utf8',
+}).trim();
+execFileSync('git', ['diff', '--exit-code', 'HEAD', '--', ...testedInputs], {
+  cwd: root,
+  stdio: 'pipe',
+});
+const testedTrees = Object.fromEntries(
+  ['frontend/src', 'backend/src', 'backend/tests'].map((input) => [
+    input,
+    execFileSync('git', ['rev-parse', testedCommit + ':' + input], {
+      cwd: root,
+      encoding: 'utf8',
+    }).trim(),
+  ]),
+);
+const startedAt = new Date().toISOString();
 const output = resolve(root, 'docs/reports/huynh-thanh/evidence/ingredients-master');
 mkdirSync(output, { recursive: true });
 const responses: { method: string; path: string; status: number }[] = [];
@@ -22,8 +54,30 @@ let api:
 let web: ReturnType<typeof spawn> | undefined;
 let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
 let webLog = '';
+let failRecipeLists = false;
+let delayedMutation:
+  { method: string; recipeId: string; entered: () => void; wait: Promise<void> } | undefined;
+const releaseRequests = new Set<() => void>();
 try {
-  fixture = await startIngredientIntegration();
+  fixture = await startIngredientIntegration({
+    beforeRecipeRequest(request, _response, next) {
+      // Real transport faults and delayed real handlers, never substituted API responses.
+      if (failRecipeLists && request.method === 'GET' && request.path === '/manage') {
+        request.socket.destroy();
+        return;
+      }
+      const gate = delayedMutation;
+      if (
+        gate &&
+        request.method === gate.method &&
+        request.path.startsWith('/' + gate.recipeId + '/ingredients')
+      ) {
+        delayedMutation = undefined;
+        gate.entered();
+        void gate.wait.then(() => next()).catch(next);
+      } else next();
+    },
+  });
   api = fixture.app.listen(0, '127.0.0.1');
   await new Promise<void>((resolve) => api!.once('listening', resolve));
   const address = api.address();
@@ -162,6 +216,109 @@ try {
   await page.getByLabel('Chọn công thức', { exact: true }).selectOption(fixture.recipes[1]!.id);
   await expect(page.getByRole('button', { name: 'Thêm nguyên liệu', exact: true })).toBeEnabled();
 
+  // A URL-selected recipe with failed list loading must allow repeated retries.
+  failRecipeLists = true;
+  await page.goto(
+    'http://127.0.0.1:5187/dashboard/ingredients?page=1&recipeId=' + fixture.recipes[13]!.id,
+    { waitUntil: 'domcontentloaded', timeout: 90000 },
+  );
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tải lại', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Tải lại', exact: true }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tải lại', exact: true })).toBeEnabled();
+  failRecipeLists = false;
+  await page.getByRole('button', { name: 'Tải lại', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Thêm nguyên liệu', exact: true })).toBeEnabled();
+
+  // Delay each real write on B, navigate Back to A, then let PostgreSQL commit B's write.
+  for (const method of ['POST', 'PUT', 'DELETE']) {
+    const recipeB = fixture.recipes[1]!.id;
+    const name = 'Hồi quy ' + method;
+    let ingredientId = '';
+    if (method !== 'POST') {
+      const created = await fetch(apiBase + '/recipes/' + recipeB + '/ingredients', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + fixture.ownerToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, quantity: 1 }),
+      });
+      assert.equal(created.status, 201);
+      ingredientId = (await created.json()).id;
+    }
+    await page.goto(
+      'http://127.0.0.1:5187/dashboard/ingredients?page=1&recipeId=' + fixture.recipes[13]!.id,
+      { waitUntil: 'domcontentloaded', timeout: 90000 },
+    );
+    await expect(page.getByRole('button', { name: 'Thêm nguyên liệu', exact: true })).toBeEnabled();
+    await page.getByRole('button', { name: 'Trang sau', exact: true }).click();
+    await expect(page.getByLabel('Chọn công thức', { exact: true })).toHaveValue(recipeB);
+    await expect(page.getByRole('button', { name: 'Thêm nguyên liệu', exact: true })).toBeEnabled();
+    if (method === 'POST')
+      await page.getByLabel('Thêm - Tên nguyên liệu', { exact: true }).fill(name);
+    if (method === 'PUT') {
+      await page.getByRole('button', { name: 'Sửa ' + name, exact: true }).click();
+      await page.getByLabel('Sửa - Tên nguyên liệu', { exact: true }).fill(name + ' đã sửa');
+    }
+    if (method === 'DELETE')
+      await page.getByRole('button', { name: 'Xóa ' + name, exact: true }).click();
+    let release!: () => void;
+    let entered!: () => void;
+    const wait = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const reached = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    releaseRequests.add(release);
+    delayedMutation = { method, recipeId: recipeB, entered, wait };
+    const writeFinished = page.waitForResponse(
+      (response) =>
+        response.request().method() === method &&
+        response.url().includes('/recipes/' + recipeB + '/ingredients'),
+    );
+    const submit =
+      method === 'POST' ? 'Thêm nguyên liệu' : method === 'PUT' ? 'Lưu thay đổi' : 'Xác nhận xóa';
+    await page.getByRole('button', { name: submit, exact: true }).click();
+    await reached;
+    const loadedA = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'GET' &&
+        response.url().includes('/recipes/' + fixture!.recipes[13]!.id + '/ingredients'),
+    );
+    await page.goBack({ waitUntil: 'domcontentloaded' });
+    await loadedA;
+    await expect(page.getByLabel('Chọn công thức', { exact: true })).toHaveValue(
+      fixture.recipes[13]!.id,
+    );
+    await expect(page.getByText('Chưa có nguyên liệu', { exact: true })).toBeVisible();
+    release();
+    releaseRequests.delete(release);
+    assert.equal(
+      (await writeFinished).status(),
+      method === 'POST' ? 201 : method === 'PUT' ? 200 : 204,
+    );
+    await expect(page.getByRole('button', { name: 'Thêm nguyên liệu', exact: true })).toBeEnabled();
+    await expect(page.getByText('Chưa có nguyên liệu', { exact: true })).toBeVisible();
+    await expect(page.getByRole('status')).toHaveCount(0);
+    const persisted =
+      method === 'POST'
+        ? await fixture.prisma.recipeIngredient.findFirstOrThrow({
+            where: { recipeId: recipeB, name },
+          })
+        : await fixture.prisma.recipeIngredient.findUniqueOrThrow({ where: { id: ingredientId } });
+    assert.equal(persisted.recipeId, recipeB);
+    if (method === 'PUT') assert.equal(persisted.name, name + ' đã sửa');
+    if (method === 'DELETE') assert.equal(persisted.isDeleted, true);
+  }
+  await page.goto(
+    'http://127.0.0.1:5187/dashboard/ingredients?page=2&recipeId=' + fixture.recipes[1]!.id,
+    { waitUntil: 'domcontentloaded', timeout: 90000 },
+  );
+  await expect(page.getByRole('button', { name: 'Thêm nguyên liệu', exact: true })).toBeEnabled();
+
   /** Capture the actual HTTP response without exposing authentication headers. */
   async function captureApiEvidence(
     response: Awaited<ReturnType<typeof page.waitForResponse>>,
@@ -240,7 +397,8 @@ try {
     true,
   );
   await page.reload({ waitUntil: 'domcontentloaded', timeout: 90000 });
-  await expect(page.getByText('Chưa có nguyên liệu', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Gạo đã cập nhật', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Thêm nguyên liệu', exact: true })).toBeEnabled();
   assert(responses.some((item) => item.method === 'POST' && item.status === 201));
   assert(responses.some((item) => item.method === 'PUT' && item.status === 200));
   assert(responses.some((item) => item.method === 'DELETE' && item.status === 204));
@@ -273,12 +431,19 @@ try {
     JSON.stringify(
       {
         capturedAt: new Date().toISOString(),
+        startedAt,
+        testedCommit,
+        testedTrees,
+        testedSourceDirty: false,
         baseCommit: '1ed7022',
         feature: 'FR-RCP-009',
         result: 'passed',
         services: 'Real PostgreSQL + real HTTP/JWT + real browser; no API interception',
         checks: [
           'Dashboard integration',
+          'Delayed POST/PUT/DELETE results ignored after browser Back to another recipe',
+          'Real PostgreSQL writes stay bound to original recipe',
+          'Repeated retry with URL recipe and failed initial recipe list',
           'Recipe link on page 2',
           'Selection and page survive browser reload',
           'Retry enabled after page change during offline ingredient loading',
@@ -300,6 +465,7 @@ try {
     'PASS: ingredient management on master, desktop/mobile CRUD, persistence and token refresh.',
   );
 } finally {
+  for (const release of releaseRequests) release();
   if (browser) await browser.close();
   if (web && web.exitCode === null) {
     web.kill();

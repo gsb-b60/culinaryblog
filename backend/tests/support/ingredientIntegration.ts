@@ -12,7 +12,9 @@ import express from 'express';
 import passport from 'passport';
 
 /** Isolated schema on the running PostgreSQL service. No mocked auth or persistence. */
-export async function startIngredientIntegration() {
+export async function startIngredientIntegration(
+  options: { beforeRecipeRequest?: express.RequestHandler } = {},
+) {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
   const envPath = resolve(root, '.env');
   const configured = existsSync(envPath) ? dotenv.parse(readFileSync(envPath)) : {};
@@ -134,6 +136,7 @@ export async function startIngredientIntegration() {
     app.use(cors({ origin: ['http://127.0.0.1:5187', 'http://localhost:5187'] }));
     app.use(express.json());
     app.use(passport.initialize());
+    if (options.beforeRecipeRequest) app.use('/api/v1/recipes', options.beforeRecipeRequest);
     app.use('/api/v1/recipes', recipeRoutes);
     app.use('/api/v1/auth', authRoutes);
     setupOpenAPI(app);
