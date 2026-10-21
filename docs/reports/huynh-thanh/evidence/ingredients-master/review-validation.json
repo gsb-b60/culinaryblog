@@ -1,7 +1,16 @@
 {
-  "checkedAt": "2026-10-21T11:40:27.806Z",
+  "checkedAt": "2026-10-21T12:16:17.736Z",
+  "testedCommit": "70fdcb99639d25c30357a0e3e885c178b5813233",
+  "testedTrees": {
+    "frontend/src": "71e2c7a7d00f5a31b95d257187717903877b4e86",
+    "backend/src": "0294bcf546aca6af7bdc8c0e50121dad713bd830",
+    "backend/tests": "734c78061d82f5e78898e20d800e539580bd3ef3"
+  },
+  "sourceCommittedAt": "2026-10-21T05:09:23-07:00",
+  "e2eStartedAt": "2026-10-21T12:09:31.881Z",
+  "e2eCapturedAt": "2026-10-21T12:10:12.699Z",
+  "testedSourceDirty": false,
   "branch": "feat-frontend-add/delete/fix-ingredient-management",
-  "baseCommit": "1ed7022",
   "tests": {
     "backend": 202,
     "frontend": 160,
@@ -17,7 +26,7 @@
     "e2e": 0
   },
   "backendLintWarnings": 197,
-  "e2eBrowser": "msedge",
-  "githubChecksVerified": false,
-  "docstringBotRecheckPending": true
+  "githubChecksVerifiedForTestedCommit": false,
+  "previousGitHubVerifiedCommit": "46b16b18bcc32035d5237be1ed4fa38d8c2ecc01",
+  "previousDocstringCoverage": 84.51
 }

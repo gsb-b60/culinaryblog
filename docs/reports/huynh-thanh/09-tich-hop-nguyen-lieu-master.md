@@ -168,3 +168,16 @@ Workflow chạy khi push nhánh này và khi tạo PR vào master; backend chạ
 ### Kết quả cuối sau sửa review
 
 Backend: 202 tests pass, lines coverage 89,23%; frontend: 160 tests pass. Lint/build cả hai phía exit 0; backend còn 197 warnings. E2E thực chạy bằng Edge cấu hình qua biến môi trường đã pass toàn bộ hồi quy. [Metadata](./evidence/ingredients-master/review-validation.json), [log backend](./evidence/ingredients-master/validation-backend.txt), [log frontend](./evidence/ingredients-master/validation-frontend.txt). Ảnh validation là bản render trích đoạn log thật, không phải chụp terminal. Chưa xác nhận lại GitHub Actions/CodeRabbit sau các thay đổi này.
+
+## 9. Sửa review còn lại — commit source 70fdcb9
+
+- Kết quả thêm/sửa/xóa chỉ được áp dụng nếu lượt chọn công thức vẫn còn hiệu lực. Điều hướng Back/Forward làm lượt chọn thay đổi ngay trong layout effect; kết quả và lỗi của lượt cũ không ghi vào danh sách/thông báo hiện tại. Dữ liệu trả về cũng chỉ hiển thị cho đúng khóa công thức/tài khoản/lượt tải.
+- Trạng thái tải nguyên liệu được suy ra từ công thức hợp lệ và request đã hoàn tất, thay cho cờ boolean có thể bị kẹt. Khi danh sách công thức lỗi hoặc chưa có selectedRecipe, nút tải lại không chờ một request nguyên liệu chưa từng được tạo.
+- E2E điều phối request HTTP thật: giữ từng POST/PUT/DELETE của B, Back về A, chờ A tải xong rồi cho handler B tiếp tục; kiểm tra dữ liệu PostgreSQL của B và UI của A. Với lỗi danh sách, server test đóng kết nối thật để thử tải lại nhiều lần. Không trả response giả hoặc thay thế dịch vụ. Các điểm điều phối chỉ có trong fixture kiểm thử.
+- Source được commit trước khi chạy E2E. result.json mới lưu testedCommit, startedAt, capturedAt, testedTrees và testedSourceDirty=false. Runner từ chối chạy nếu các đầu vào source/config/test đã theo dõi khác HEAD.
+
+Commit được kiểm thử: `70fdcb99639d25c30357a0e3e885c178b5813233`. Ảnh/JSON được tạo sau commit này rồi lưu bằng commit minh chứng riêng. Commit minh chứng/tài liệu không thay đổi source đã kiểm thử; đối chiếu testedTrees thay vì suy luận rằng ảnh được chụp trước lúc commit nghĩa là chưa kiểm thử code.
+
+Trên commit cũ 46b16b1, CI backend/frontend và 5 pre-merge checks đã pass, docstring coverage 84,51%. Các kết quả GitHub này không được coi là xác nhận tự động cho source 70fdcb9; cần push và chạy lại.
+
+Kết quả chạy lại trên source 70fdcb9: backend 202/202 test, lines coverage 89,23%; frontend 160/160 test; lint/build cả hai phía exit 0, backend còn 197 warnings. E2E startedAt/capturedAt đều sau thời điểm commit source. Ảnh/log/metadata đã được tạo lại; source tree được đối chiếu không đổi trước khi lưu minh chứng.

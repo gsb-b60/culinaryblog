@@ -1,25 +1,20 @@
 {
-    "verifiedAtUtc":  "2026-10-21T09:55:51.8447126Z",
-    "branch":  "feat/integrate-ingredients-master",
-    "baseCommit":  "1ed7022",
-    "uncommittedWorkingTree":  true,
-    "command":  "pnpm test",
-    "exitCode":  0,
-    "testFilesPassed":  18,
-    "testsPassed":  202,
-    "lineCoveragePercent":  89.23,
-    "lineCoverageThresholdPercent":  80,
-    "coverageConfigurationChanged":  false,
-    "services":  [
-                     "PostgreSQL",
-                     "Redis",
-                     "MinIO",
-                     "MailHog",
-                     "BullMQ"
-                 ],
-    "typescriptNoEmit":  "passed",
-    "changedInfrastructureLint":  {
-                                      "errors":  0,
-                                      "warnings":  42
-                                  }
+  "verifiedAtUtc": "2026-10-21T12:16:17.737Z",
+  "testedCommit": "70fdcb99639d25c30357a0e3e885c178b5813233",
+  "testedSourceDirty": false,
+  "branch": "feat-frontend-add/delete/fix-ingredient-management",
+  "command": "pnpm test",
+  "exitCode": 0,
+  "testFilesPassed": 18,
+  "testsPassed": 202,
+  "lineCoveragePercent": 89.23,
+  "lineCoverageThresholdPercent": 80,
+  "coverageConfigurationChanged": false,
+  "services": [
+    "PostgreSQL",
+    "Redis",
+    "MinIO",
+    "MailHog",
+    "BullMQ"
+  ]
 }

@@ -81,3 +81,9 @@ Test tích hợp mới không mô phỏng kết nối. Các unit test cũ có mo
 Workflow `.github/workflows/ci.yml` chạy khi push `feat-frontend-add/delete/fix-ingredient-management` hoặc `master`, và khi tạo PR vào `master` có thay đổi backend/frontend/workflow. Backend chạy PostgreSQL, Redis, MinIO và MailHog thật; `pnpm test` kiểm tra coverage dòng code tối thiểu 80%, không tắt coverage. Image MinIO được ghim theo digest của image đã chạy thật và xác minh tải được từ registry. Báo cáo coverage được tải lên artifact `backend-coverage`. Frontend chạy lint, TypeScript, build và toàn bộ test với tối đa 2 workers.
 
 Sau khi push, mở GitHub → Actions → CI để xem kết quả từng job. Khi tạo PR vào master, kết quả hiện ở tab Checks của PR. Kết quả kiểm tra local không thay thế kết quả chạy trên GitHub.
+
+## Nguồn của minh chứng E2E
+
+Commit source được lưu trước khi chạy `pnpm test:e2e:ingredients`. Runner kiểm tra source/config/test không khác HEAD và ghi `testedCommit`, `testedTrees`, `startedAt`, `capturedAt`, `testedSourceDirty` vào result.json. Sau đó lưu ảnh và JSON bằng commit riêng; commit này chỉ chứa minh chứng/tài liệu. Không chỉnh thời gian chụp hoặc khai báo một commit chưa thực sự chạy test.
+
+E2E kiểm tra write đang chờ khi Back/Forward và tải lại khi danh sách lỗi bằng cách điều phối request thật tại Express fixture (giữ handler hoặc đóng kết nối). Cơ sở dữ liệu, JWT, handler sản phẩm và thao tác ghi vẫn chạy thật; hook kiểm thử không được đăng ký trong ứng dụng production.
