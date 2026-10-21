@@ -8,6 +8,7 @@ import RecipesBrowsePage from './pages/RecipesBrowsePage'
 import RecipeDetailPage from './pages/RecipeDetailPage'
 import DashboardPage from './pages/DashboardPage'
 import HomePage from './pages/HomePage'
+import NewRecipePage from './pages/NewRecipePage'
 import ProfilePage from './pages/ProfilePage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
@@ -41,6 +42,7 @@ export default function App() {
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/recipes" element={<RecipesPage />} />
+        <Route path="/dashboard/recipes/new" element={<NewRecipePage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
 

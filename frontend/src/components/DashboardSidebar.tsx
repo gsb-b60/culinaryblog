@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
 type Section = 'overview' | 'recipes' | 'profile'
 
@@ -6,6 +6,8 @@ export default function DashboardSidebar({ onLogout, active = 'overview' }: {
   onLogout: () => void
   active?: Section
 }) {
+  const { pathname } = useLocation()
+  const onNewRecipe = pathname === '/dashboard/recipes/new'
   const itemClass = (selected: boolean) => 'flex items-center gap-2 rounded-lg px-3 py-2 text-sm ' + (
     selected ? 'bg-brand-500 font-medium text-white' : 'hover:bg-surface-700'
   )
@@ -18,7 +20,8 @@ export default function DashboardSidebar({ onLogout, active = 'overview' }: {
         </div>
         <nav className="space-y-1" aria-label="Dashboard menu">
           <Link to="/dashboard" aria-current={active === 'overview' ? 'page' : undefined} className={itemClass(active === 'overview')}>Tổng quan</Link>
-          <Link to="/dashboard/recipes" aria-current={active === 'recipes' ? 'page' : undefined} className={itemClass(active === 'recipes')}>Công thức</Link>
+          <Link to="/dashboard/recipes" aria-current={active === 'recipes' && !onNewRecipe ? 'page' : undefined} className={itemClass(active === 'recipes' && !onNewRecipe)}>Công thức</Link>
+          <Link to="/dashboard/recipes/new" aria-current={onNewRecipe ? 'page' : undefined} className={itemClass(onNewRecipe)}>Tạo công thức</Link>
           <Link to="/dashboard" className={itemClass(false)}>Danh mục</Link>
           <Link to="/profile" aria-current={active === 'profile' ? 'page' : undefined} className={itemClass(active === 'profile')}>Hồ sơ</Link>
         </nav>

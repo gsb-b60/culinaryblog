@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { ApiError, createRecipe, getCategories } from '../lib/api'
-import { loadSession } from '../lib/tokenStorage'
+import { useCategories } from '../hooks/useCategories'
+import { ApiError, createRecipe } from '../lib/api'
+import { useAuthStore } from '../store'
 import type { CreateRecipePayload } from '../types/recipe'
 
-interface NewRecipePageProps { embedded?: boolean }
 type Ingredient = NonNullable<CreateRecipePayload['ingredients']>[number]
 type Step = NonNullable<CreateRecipePayload['steps']>[number]
 type NutritionKey = 'calories' | 'protein' | 'carbohydrates' | 'fat' | 'fiber' | 'sodium'
@@ -24,29 +24,23 @@ const emptyIngredient = (): Ingredient => ({ name: '', quantity: undefined, unit
 const emptyStep = (stepNumber: number): Step => ({ stepNumber, title: '', description: '', timerMinutes: undefined })
 const formatMinutes = (value: number) => value >= 60 ? `${Math.floor(value / 60)} giờ${value % 60 ? ` ${value % 60} phút` : ''}` : `${value} phút`
 
-export default function NewRecipePage({ embedded = false }: NewRecipePageProps) {
+export default function NewRecipePage() {
   const navigate = useNavigate()
-  const session = loadSession()
+  const session = useAuthStore((state) => state.session)
+  const { data: categoryList, isLoading: categoriesLoading, isError: categoriesFailed } = useCategories()
+  const categories = categoryList ?? []
+  const categoriesError = categoriesFailed ? 'Không thể tải danh mục. Vui lòng thử lại.' : ''
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({ title: '', description: '', categoryId: '', prepTime: 15, cookTime: 30, servings: 2, difficulty: 'EASY' as const, instructions: '' })
   const [ingredients, setIngredients] = useState<Ingredient[]>([emptyIngredient()])
   const [steps, setSteps] = useState<Step[]>([emptyStep(1)])
   const [nutrition, setNutrition] = useState<Record<NutritionKey, string>>({ calories: '', protein: '', carbohydrates: '', fat: '', fiber: '', sodium: '' })
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
   const [categorySearch, setCategorySearch] = useState('')
-  const [categoriesLoading, setCategoriesLoading] = useState(true)
-  const [categoriesError, setCategoriesError] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    let active = true
-    getCategories().then((result) => { if (active) setCategories(result.items) }).catch(() => { if (active) setCategoriesError('Không thể tải danh mục. Vui lòng thử lại.') }).finally(() => { if (active) setCategoriesLoading(false) })
-    return () => { active = false }
-  }, [])
-
-  if (!session) { navigate('/auth/login'); return null }
-  const activeSession = session
+  // DashboardLayout owns the redirect when the session is gone.
+  if (!session) return null
   const selectedCategory = categories.find((category) => category.id === form.categoryId)
   const filteredCategories = categories.filter((category) => category.name.toLocaleLowerCase().includes(categorySearch.toLocaleLowerCase()))
   const update = (field: keyof typeof form, value: string | number) => setForm((current) => ({ ...current, [field]: value }))
@@ -61,13 +55,16 @@ export default function NewRecipePage({ embedded = false }: NewRecipePageProps) 
   }
   async function submit(event: FormEvent) {
     event.preventDefault(); if (!validateAll()) return; setSaving(true); setError('')
+    // Read the token at call time: the API client may rotate it mid-flight.
+    const accessToken = useAuthStore.getState().session?.accessToken
+    if (!accessToken) { setSaving(false); return }
     try {
-      await createRecipe(activeSession.accessToken, { ...form, instructions: form.instructions || undefined, ingredients: ingredients.map((item, index) => ({ ...item, orderIndex: index })).filter((item) => item.name.trim()), steps: steps.map((item, index) => ({ ...item, stepNumber: index + 1 })).filter((item) => item.title.trim()), nutrition: Object.fromEntries(Object.entries(nutrition).filter(([, value]) => value).map(([key, value]) => [key, Number(value)])) })
-      navigate('/dashboard')
+      await createRecipe(accessToken, { ...form, instructions: form.instructions || undefined, ingredients: ingredients.map((item, index) => ({ ...item, orderIndex: index })).filter((item) => item.name.trim()), steps: steps.map((item, index) => ({ ...item, stepNumber: index + 1 })).filter((item) => item.title.trim()), nutrition: Object.fromEntries(Object.entries(nutrition).filter(([, value]) => value).map(([key, value]) => [key, Number(value)])) })
+      navigate('/dashboard/recipes')
     } catch (cause) { setError(cause instanceof ApiError ? cause.message : 'Không thể tạo công thức. Vui lòng thử lại.') } finally { setSaving(false) }
   }
-  return <main className={embedded ? '' : 'min-h-screen bg-surface-50 p-5 sm:p-8'}><div className={embedded ? '' : 'mx-auto max-w-5xl'}>
-    <div className="mb-6 flex items-center justify-between"><div><p className="text-sm text-surface-500">Công thức</p><h1 className="mt-2 text-2xl font-bold text-surface-900">Tạo công thức mới</h1><p className="mt-1 text-sm text-surface-500">Bản nháp chưa được công khai.</p></div><button type="button" onClick={() => navigate('/dashboard')} className="rounded-lg border border-surface-300 px-4 py-2 text-sm">Hủy</button></div>
+  return <div className="mx-auto max-w-5xl">
+    <div className="mb-6 flex items-center justify-between"><div><p className="text-sm text-surface-500">Công thức</p><h1 className="mt-2 text-2xl font-bold text-surface-900">Tạo công thức mới</h1><p className="mt-1 text-sm text-surface-500">Bản nháp chưa được công khai.</p></div><button type="button" onClick={() => navigate('/dashboard/recipes')} className="rounded-lg border border-surface-300 px-4 py-2 text-sm">Hủy</button></div>
     <div className="mb-6 grid grid-cols-3 gap-2">{['Thông tin cơ bản', 'Nguyên liệu & bước', 'Dinh dưỡng & xem trước'].map((label, index) => <button type="button" key={label} onClick={() => { setStep(index + 1); setError('') }} className={`rounded-lg p-3 text-center text-xs font-medium sm:text-sm ${step === index + 1 ? 'bg-brand-500 text-white' : step > index + 1 ? 'bg-brand-100 text-brand-700' : 'bg-surface-100 text-surface-500'}`}>{index + 1}. {label}</button>)}</div>
     {error && <div role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
     <form onSubmit={submit} className="space-y-6">
@@ -76,5 +73,5 @@ export default function NewRecipePage({ embedded = false }: NewRecipePageProps) 
       {step === 3 && <div className="space-y-6"><section className="rounded-xl border border-surface-200 bg-white p-5 shadow-sm"><h2 className="mb-2 font-bold">Dinh dưỡng mỗi khẩu phần</h2><p className="mb-5 text-sm text-surface-500">Nhập giá trị ước tính cho một phần ăn.</p><div className="grid gap-4 sm:grid-cols-3">{nutritionFields.map((field) => <label key={field.key}><span className="mb-1 block text-sm font-medium">{field.label} <span className="text-surface-400">({field.unit})</span></span><div className="relative"><input type="number" min={0} value={nutrition[field.key]} onChange={(event) => setNutrition((current) => ({ ...current, [field.key]: event.target.value }))} className="w-full rounded-lg border border-surface-300 p-3 pr-14" placeholder="0" /><span className="absolute right-3 top-3 text-sm text-surface-400">{field.unit}</span></div></label>)}</div></section><section className="rounded-xl border border-surface-200 bg-white p-5 shadow-sm"><h2 className="mb-4 font-bold">Hướng dẫn tổng quan</h2><textarea value={form.instructions} onChange={(event) => update('instructions', event.target.value)} className="min-h-32 w-full rounded-lg border border-surface-300 p-3" placeholder="Ghi chú hoặc hướng dẫn bổ sung..." /></section><section className="rounded-xl border border-surface-200 bg-white p-5 shadow-sm"><h2 className="mb-4 font-bold">Xem trước bản nháp</h2><div className="rounded-lg bg-surface-50 p-4"><div className="mb-3 flex flex-wrap items-center gap-2"><span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">Bản nháp</span><span className="rounded-full bg-brand-100 px-3 py-1 text-xs font-medium text-brand-700">{selectedCategory?.name || 'Chưa chọn danh mục'}</span><span className="rounded-full bg-surface-200 px-3 py-1 text-xs font-medium">{form.difficulty === 'EASY' ? 'Dễ' : form.difficulty === 'MEDIUM' ? 'Trung bình' : 'Khó'}</span></div><h3 className="text-xl font-bold">{form.title || 'Tên công thức'}</h3><p className="mt-2 text-sm text-surface-600">{form.description || 'Mô tả công thức'}</p><div className="my-4 grid gap-3 border-y border-surface-200 py-4 text-sm sm:grid-cols-3"><span><strong>Chuẩn bị:</strong> {formatMinutes(form.prepTime)}</span><span><strong>Nấu:</strong> {formatMinutes(form.cookTime)}</span><span><strong>Khẩu phần:</strong> {form.servings} người</span></div><h4 className="font-semibold">Nguyên liệu ({ingredients.filter((item) => item.name.trim()).length})</h4><ul className="mt-2 list-disc pl-5 text-sm">{ingredients.filter((item) => item.name.trim()).map((item, index) => <li key={index}>{item.quantity ? `${item.quantity} ` : ''}{item.unit} {item.name}{item.notes ? ` — ${item.notes}` : ''}</li>)}</ul><h4 className="mt-4 font-semibold">Các bước ({steps.filter((item) => item.title.trim()).length})</h4><ol className="mt-2 space-y-2 text-sm">{steps.filter((item) => item.title.trim()).map((item, index) => <li key={index}><strong>{index + 1}. {item.title}</strong>{item.timerMinutes ? ` (${formatMinutes(item.timerMinutes)})` : ''}<p className="text-surface-600">{item.description}</p></li>)}</ol></div></section></div>}
       <div className="flex justify-between"><button type="button" disabled={step === 1} onClick={() => setStep((current) => current - 1)} className="rounded-lg border border-surface-300 px-5 py-3 disabled:opacity-40">Quay lại</button>{step < 3 ? <button type="button" onClick={() => setStep((current) => Math.min(current + 1, 3))} className="rounded-lg bg-brand-500 px-6 py-3 font-medium text-white">Tiếp theo</button> : <button disabled={saving || categoriesLoading || categories.length === 0} className="rounded-lg bg-brand-500 px-6 py-3 font-medium text-white disabled:opacity-60">{saving ? 'Đang lưu...' : 'Lưu bản nháp'}</button>}</div>
     </form>
-  </div></main>
+  </div>
 }
