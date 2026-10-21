@@ -14,9 +14,10 @@ import {
 } from '../../application/commands/auth/AuthCommands.js';
 import {
   AddRecipeIngredientCommand,
+  CreateRecipeCommand,
+  DeleteRecipeIngredientCommand,
   PublishRecipeCommand,
   UnpublishRecipeCommand,
-  DeleteRecipeIngredientCommand,
   UpdateRecipeIngredientCommand,
 } from '../../application/commands/recipes/RecipeCommands.js';
 import {
@@ -29,6 +30,8 @@ import {
   type GoogleProfile,
 } from '../../application/handlers/AuthCommandHandlers.js';
 import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
+import { GetCategoriesQueryHandler, GetCategoryBySlugQueryHandler } from '../../application/handlers/CategoryQueryHandlers.js';
+import { CreateRecipeCommandHandler } from '../../application/handlers/CreateRecipeCommandHandler.js';
 import { ManagedRecipeQueryHandler } from '../../application/handlers/ManagedRecipeQueryHandler.js';
 import {
   AddRecipeIngredientCommandHandler,
@@ -86,6 +89,10 @@ export function createContainer(): Container {
   const emailService = new NodemailerEmailService();
 
   commandBus.registerCommandHandler(
+    CreateRecipeCommand.name,
+    new CreateRecipeCommandHandler(prisma, () => cacheService.deletePattern('recipes:*')),
+  );
+  commandBus.registerCommandHandler(
     AddRecipeIngredientCommand.name,
     new AddRecipeIngredientCommandHandler(prisma),
   );
@@ -115,6 +122,14 @@ export function createContainer(): Container {
   commandBus.registerQueryHandler(
     'GetCurrentUserQuery',
     new GetCurrentUserQueryHandler(prisma),
+  );
+  commandBus.registerQueryHandler(
+    'GetCategoriesQuery',
+    new GetCategoriesQueryHandler(prisma),
+  );
+  commandBus.registerQueryHandler(
+    'GetCategoryBySlugQuery',
+    new GetCategoryBySlugQueryHandler(prisma),
   );
 
   commandBus.registerCommandHandler(
