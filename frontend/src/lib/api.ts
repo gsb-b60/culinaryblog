@@ -1,6 +1,14 @@
+import type { RecipeIngredient } from '../types/recipe'
 import { loadSession, saveSession, clearSession } from './tokenStorage'
 import type { Recipe, RecipePage } from '../types/recipe'
-import type { AuthResponse, LoginPayload, ProblemDetails, RegisterPayload, UpdateProfilePayload, UserProfile } from '../types/auth'
+import type {
+  AuthResponse,
+  LoginPayload,
+  ProblemDetails,
+  RegisterPayload,
+  UpdateProfilePayload,
+  UserProfile,
+} from '../types/auth'
 import type {
   Category,
   CategoryDetail,
@@ -115,7 +123,10 @@ export function getCurrentUser(accessToken: string): Promise<UserProfile> {
   })
 }
 
-export function updateProfile(accessToken: string, payload: UpdateProfilePayload): Promise<UserProfile> {
+export function updateProfile(
+  accessToken: string,
+  payload: UpdateProfilePayload,
+): Promise<UserProfile> {
   return request<UserProfile>('/auth/me', {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -123,21 +134,28 @@ export function updateProfile(accessToken: string, payload: UpdateProfilePayload
   })
 }
 
-export function getManagedRecipes(accessToken: string, page = 1, signal?: AbortSignal): Promise<RecipePage> {
+export function getManagedRecipes(
+  accessToken: string,
+  page = 1,
+  signal?: AbortSignal,
+): Promise<RecipePage> {
   return request<RecipePage>('/recipes/manage?page=' + page + '&pageSize=12', {
-    headers: { Authorization: 'Bearer ' + accessToken }, signal,
+    headers: { Authorization: 'Bearer ' + accessToken },
+    signal,
   })
 }
 
 export function publishRecipe(accessToken: string, id: string): Promise<Recipe> {
   return request<Recipe>('/recipes/' + encodeURIComponent(id) + '/publish', {
-    method: 'PATCH', headers: { Authorization: 'Bearer ' + accessToken },
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer ' + accessToken },
   })
 }
 
 export function unpublishRecipe(accessToken: string, id: string): Promise<Recipe> {
   return request<Recipe>('/recipes/' + encodeURIComponent(id) + '/unpublish', {
-    method: 'PATCH', headers: { Authorization: 'Bearer ' + accessToken },
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer ' + accessToken },
   })
 }
 
@@ -159,10 +177,15 @@ function toQuery(params: Record<string, string | number | boolean | undefined>):
 }
 
 export function listRecipes(query: RecipeListQuery = {}): Promise<PagedRecipes> {
-  return request<PagedRecipes>(`/recipes${toQuery(query as Record<string, string | number | boolean | undefined>)}`)
+  return request<PagedRecipes>(
+    `/recipes${toQuery(query as Record<string, string | number | boolean | undefined>)}`,
+  )
 }
 
-export function searchRecipes(q: string, query: Omit<RecipeListQuery, 'searchQuery'> = {}): Promise<PagedRecipes> {
+export function searchRecipes(
+  q: string,
+  query: Omit<RecipeListQuery, 'searchQuery'> = {},
+): Promise<PagedRecipes> {
   return request<PagedRecipes>(`/recipes/search${toQuery({ q, ...query })}`)
 }
 
@@ -172,7 +195,10 @@ export function getRecipeBySlug(slug: string, accessToken?: string): Promise<Rec
   })
 }
 
-export function createRecipe(accessToken: string, payload: CreateRecipePayload): Promise<{ id: string }> {
+export function createRecipe(
+  accessToken: string,
+  payload: CreateRecipePayload,
+): Promise<{ id: string }> {
   return request<{ id: string }>('/recipes', {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -180,7 +206,12 @@ export function createRecipe(accessToken: string, payload: CreateRecipePayload):
   })
 }
 
-export function updateRecipe(accessToken: string, id: string, payload: UpdateRecipePayload, version?: number): Promise<{ message: string }> {
+export function updateRecipe(
+  accessToken: string,
+  id: string,
+  payload: UpdateRecipePayload,
+  version?: number,
+): Promise<{ message: string }> {
   return request<{ message: string }>(`/recipes/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: {
@@ -205,7 +236,11 @@ export function deleteRecipe(accessToken: string, id: string): Promise<null> {
   })
 }
 
-export function addRecipeStep(accessToken: string, id: string, payload: CreateStepPayload): Promise<{ id: string }> {
+export function addRecipeStep(
+  accessToken: string,
+  id: string,
+  payload: CreateStepPayload,
+): Promise<{ id: string }> {
   return request<{ id: string }>(`/recipes/${encodeURIComponent(id)}/steps`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -213,8 +248,12 @@ export function addRecipeStep(accessToken: string, id: string, payload: CreateSt
   })
 }
 
-export function addRecipeIngredient(accessToken: string, id: string, payload: CreateIngredientPayload): Promise<{ id: string }> {
-  return request<{ id: string }>(`/recipes/${encodeURIComponent(id)}/ingredients`, {
+export function addRecipeIngredient(
+  accessToken: string,
+  id: string,
+  payload: CreateIngredientPayload,
+): Promise<RecipeIngredient> {
+  return request<RecipeIngredient>(`/recipes/${encodeURIComponent(id)}/ingredients`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(payload),
@@ -226,10 +265,15 @@ export function listCategories(): Promise<Category[]> {
 }
 
 export function getCategoryBySlug(slug: string, page = 1, pageSize = 12): Promise<CategoryDetail> {
-  return request<CategoryDetail>(`/categories/${encodeURIComponent(slug)}${toQuery({ page, pageSize })}`)
+  return request<CategoryDetail>(
+    `/categories/${encodeURIComponent(slug)}${toQuery({ page, pageSize })}`,
+  )
 }
 
-export function createCategory(accessToken: string, payload: CreateCategoryPayload): Promise<{ id: string }> {
+export function createCategory(
+  accessToken: string,
+  payload: CreateCategoryPayload,
+): Promise<{ id: string }> {
   return request<{ id: string }>('/categories', {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -237,7 +281,11 @@ export function createCategory(accessToken: string, payload: CreateCategoryPaylo
   })
 }
 
-export function updateCategory(accessToken: string, id: string, payload: UpdateCategoryPayload): Promise<{ message: string }> {
+export function updateCategory(
+  accessToken: string,
+  id: string,
+  payload: UpdateCategoryPayload,
+): Promise<{ message: string }> {
   return request<{ message: string }>(`/categories/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -250,4 +298,45 @@ export function deleteCategory(accessToken: string, id: string): Promise<null> {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${accessToken}` },
   })
+}
+
+export function getRecipeIngredients(
+  accessToken: string,
+  recipeId: string,
+  signal?: AbortSignal,
+): Promise<RecipeIngredient[]> {
+  return request(`/recipes/${encodeURIComponent(recipeId)}/ingredients`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    signal,
+  })
+}
+
+export function updateRecipeIngredient(
+  accessToken: string,
+  recipeId: string,
+  ingredientId: string,
+  payload: Partial<CreateIngredientPayload>,
+): Promise<RecipeIngredient> {
+  return request(
+    `/recipes/${encodeURIComponent(recipeId)}/ingredients/${encodeURIComponent(ingredientId)}`,
+    {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify(payload),
+    },
+  )
+}
+
+export function deleteRecipeIngredient(
+  accessToken: string,
+  recipeId: string,
+  ingredientId: string,
+): Promise<null> {
+  return request(
+    `/recipes/${encodeURIComponent(recipeId)}/ingredients/${encodeURIComponent(ingredientId)}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  )
 }

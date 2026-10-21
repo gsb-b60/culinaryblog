@@ -8,20 +8,21 @@ const worker = new Worker<ImageResizeJobData>(
   async (job: Job<ImageResizeJobData>) => {
     const { recipeId, imageId } = job.data;
     console.log(`Processing image resize for recipe ${recipeId}, image ${imageId}`);
-    
+
     // TODO: Implement actual image processing with sharp
     // For now, just simulate the work
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     console.log(`Image resize completed for ${imageId}`);
   },
   {
+    prefix: env.BULLMQ_PREFIX,
     connection: {
       host: new URL(env.REDIS_URL).hostname,
       port: parseInt(new URL(env.REDIS_URL).port) || 6379,
     },
     concurrency: 3,
-  }
+  },
 );
 
 worker.on('completed', (job) => {

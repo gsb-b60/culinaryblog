@@ -11,10 +11,7 @@ export class NodemailerEmailService implements IEmailService {
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
       secure: env.SMTP_PORT === 465,
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASS,
-      },
+      auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
     });
   }
 
@@ -63,7 +60,7 @@ export class NodemailerEmailService implements IEmailService {
 
   async sendPasswordResetEmail(to: string, resetToken: string): Promise<void> {
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -90,7 +87,7 @@ export class NodemailerEmailService implements IEmailService {
 
   async sendEmailVerificationEmail(to: string, verificationToken: string): Promise<void> {
     const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/verify-email?token=${verificationToken}`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>

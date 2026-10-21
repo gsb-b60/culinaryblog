@@ -4,6 +4,7 @@ import AppLayout from './components/layout/AppLayout'
 import DashboardLayout from './components/layout/DashboardLayout'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import RecipesPage from './pages/RecipesPage'
+import IngredientManagementPage from './pages/IngredientManagementPage'
 import RecipesBrowsePage from './pages/RecipesBrowsePage'
 import RecipeDetailPage from './pages/RecipeDetailPage'
 import DashboardPage from './pages/DashboardPage'
@@ -41,6 +42,7 @@ export default function App() {
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/recipes" element={<RecipesPage />} />
+        <Route path="/dashboard/ingredients" element={<IngredientManagementPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
 

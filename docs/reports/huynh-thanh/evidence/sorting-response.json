@@ -1,0 +1,101 @@
+{
+  "request": "GET /api/v1/recipes?field=title&order=asc&page=1&pageSize=5",
+  "httpStatus": 200,
+  "data": {
+    "items": [
+      {
+        "id": "0809a0e2-10da-41de-ba50-c3ecd46d8c86",
+        "title": "Bánh canh cua",
+        "slug": "banh-canh-cua-1",
+        "description": "Cogo calcar corpus coniecto conservo crux dignissimos comes sursum. Decumbo videlicet viridis rerum curia. Artificiose debitis quibusdam adinventitias tero angulus deripio cimentarius aperio confero.",
+        "prepTime": 51,
+        "cookTime": 13,
+        "servings": 7,
+        "difficulty": "EASY",
+        "status": "PUBLISHED",
+        "categoryId": "fddbdadb-dc60-4218-9e5b-57dbbb1dcf4c",
+        "categoryName": "Món hấp",
+        "authorId": "8478a5e8-30be-4838-86a9-e18aa1c74621",
+        "authorName": "Chef Phạm",
+        "publishedAt": "2026-10-05T09:47:26.694Z",
+        "createdAt": "2026-10-05T09:47:26.696Z"
+      },
+      {
+        "id": "82097716-6a1f-49f4-bf24-f389edc7fa47",
+        "title": "Bánh canh cua",
+        "slug": "banh-canh-cua-2",
+        "description": "Decet aer aveho compello conventus. Cito venustas calcar certus tonsor adsidue. Tenetur tripudio atrox argumentum brevis cunctatio comitatus vetus conicio eius.",
+        "prepTime": 36,
+        "cookTime": 97,
+        "servings": 7,
+        "difficulty": "EASY",
+        "status": "PUBLISHED",
+        "categoryId": "aa20b673-e110-41f9-9444-74e3eebd4db4",
+        "categoryName": "Món heo",
+        "authorId": "910ed6c1-7325-40b2-a063-58926c6eb21b",
+        "authorName": "Chef Võ",
+        "publishedAt": "2026-10-05T09:47:27.119Z",
+        "createdAt": "2026-10-05T09:47:27.120Z"
+      },
+      {
+        "id": "95dd3c9b-52c5-436d-ae1c-1ab55e09e082",
+        "title": "Bánh canh cua",
+        "slug": "banh-canh-cua",
+        "description": "Cito aestus vacuus succedo depulso abstergo verto. Voveo doloremque soluta commemoro sunt ullus comprehendo desipio adopto. Cursim facere quas aegre adopto vivo vulgus ambulo aequus.",
+        "prepTime": 41,
+        "cookTime": 68,
+        "servings": 3,
+        "difficulty": "EASY",
+        "status": "PUBLISHED",
+        "categoryId": "144a2d69-d7a7-42e0-833e-504969475941",
+        "categoryName": "Món tráng miệng",
+        "authorId": "8478a5e8-30be-4838-86a9-e18aa1c74621",
+        "authorName": "Chef Phạm",
+        "publishedAt": "2026-10-05T09:40:56.561Z",
+        "createdAt": "2026-10-05T09:40:56.563Z"
+      },
+      {
+        "id": "0092624c-a07d-4f7a-bd50-314ca70972f4",
+        "title": "Bánh canh giò heo",
+        "slug": "banh-canh-gio-heo-1",
+        "description": "Eius utrum aestus. Minima talus arto abeo celo sapiente. Somniculosus delicate conqueror admoveo cetera dolores villa ancilla coaegresco vestrum.",
+        "prepTime": 40,
+        "cookTime": 109,
+        "servings": 3,
+        "difficulty": "HARD",
+        "status": "PUBLISHED",
+        "categoryId": "487db552-d8d8-44a2-949d-44342e8c47da",
+        "categoryName": "Món rau củ",
+        "authorId": "910ed6c1-7325-40b2-a063-58926c6eb21b",
+        "authorName": "Chef Võ",
+        "publishedAt": "2026-10-05T09:40:57.034Z",
+        "createdAt": "2026-10-05T09:40:57.036Z"
+      },
+      {
+        "id": "23f396d3-36a4-48cb-a4a3-7ceaacedbe8a",
+        "title": "Bánh canh giò heo",
+        "slug": "banh-canh-gio-heo-2",
+        "description": "Charisma conforto officia utroque architecto. Vita causa cohibeo verbera tutis talis aufero universe. Sursum delectus sponte ventus compono.",
+        "prepTime": 33,
+        "cookTime": 64,
+        "servings": 5,
+        "difficulty": "EXPERT",
+        "status": "PUBLISHED",
+        "categoryId": "e097f9d1-2eb2-4c88-9d30-f419c98b3ae7",
+        "categoryName": "Món trứng",
+        "authorId": "910ed6c1-7325-40b2-a063-58926c6eb21b",
+        "authorName": "Chef Võ",
+        "publishedAt": "2026-10-05T09:40:57.105Z",
+        "createdAt": "2026-10-05T09:40:57.107Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "pageSize": 5,
+      "totalCount": 194,
+      "totalPages": 39,
+      "hasNextPage": true,
+      "hasPreviousPage": false
+    }
+  }
+}

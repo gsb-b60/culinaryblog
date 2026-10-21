@@ -4,16 +4,22 @@ import { PagedResult, createPagedResult } from '../../../application/dtos/PagedR
 import { Recipe, RecipeProps } from '../../../domain/entities/Recipe.js';
 import { RecipeDifficulty } from '../../../domain/enums/RecipeDifficulty.js';
 import { RecipeStatus } from '../../../domain/enums/RecipeStatus.js';
-import { IRecipeRepository, RecipeFilters, RecipeSortOptions } from '../../../domain/repositories/IRecipeRepository.js';
+import {
+  IRecipeRepository,
+  RecipeFilters,
+  RecipeSortOptions,
+} from '../../../domain/repositories/IRecipeRepository.js';
 import { Slug } from '../../../domain/value-objects/Slug.js';
 
 export class RecipeRepository implements IRecipeRepository {
   constructor(private prisma: PrismaClient) {}
 
-  private toDomain(prismaRecipe: PrismaRecipe & { 
-    author?: { displayName: string };
-    category?: { name: string };
-  }): Recipe {
+  private toDomain(
+    prismaRecipe: PrismaRecipe & {
+      author?: { displayName: string };
+      category?: { name: string };
+    },
+  ): Recipe {
     const props: RecipeProps = {
       id: prismaRecipe.id,
       title: prismaRecipe.title,
@@ -28,9 +34,13 @@ export class RecipeRepository implements IRecipeRepository {
       categoryId: prismaRecipe.categoryId,
       authorId: prismaRecipe.authorId,
       nutrition: {
-        calories: prismaRecipe.nutritionCalories ? Number(prismaRecipe.nutritionCalories) : undefined,
+        calories: prismaRecipe.nutritionCalories
+          ? Number(prismaRecipe.nutritionCalories)
+          : undefined,
         protein: prismaRecipe.nutritionProtein ? Number(prismaRecipe.nutritionProtein) : undefined,
-        carbohydrates: prismaRecipe.nutritionCarbohydrates ? Number(prismaRecipe.nutritionCarbohydrates) : undefined,
+        carbohydrates: prismaRecipe.nutritionCarbohydrates
+          ? Number(prismaRecipe.nutritionCarbohydrates)
+          : undefined,
         fat: prismaRecipe.nutritionFat ? Number(prismaRecipe.nutritionFat) : undefined,
         fiber: prismaRecipe.nutritionFiber ? Number(prismaRecipe.nutritionFiber) : undefined,
         sodium: prismaRecipe.nutritionSodium ? Number(prismaRecipe.nutritionSodium) : undefined,
@@ -98,7 +108,7 @@ export class RecipeRepository implements IRecipeRepository {
     filters: RecipeFilters,
     sort: RecipeSortOptions,
     page: number,
-    pageSize: number
+    pageSize: number,
   ): Promise<PagedResult<Recipe>> {
     const where = this.buildWhereClause(filters);
     const orderBy = this.buildOrderBy(sort);
@@ -117,9 +127,15 @@ export class RecipeRepository implements IRecipeRepository {
       this.prisma.recipe.count({ where }),
     ]);
 
-    const recipes = items.map(r => this.toDomain(r));
-    const summaries = recipes.map(r => this.toSummaryDto(r, (r as any)._categoryName || r.categoryId, (r as any)._authorName || r.authorId));
-    
+    const recipes = items.map((r) => this.toDomain(r));
+    const summaries = recipes.map((r) =>
+      this.toSummaryDto(
+        r,
+        (r as any)._categoryName || r.categoryId,
+        (r as any)._authorName || r.authorId,
+      ),
+    );
+
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
 
@@ -127,7 +143,7 @@ export class RecipeRepository implements IRecipeRepository {
     categoryId: string,
     page: number,
     pageSize: number,
-    sort?: RecipeSortOptions
+    sort?: RecipeSortOptions,
   ): Promise<PagedResult<Recipe>> {
     const where: Prisma.RecipeWhereInput = {
       categoryId,
@@ -151,9 +167,15 @@ export class RecipeRepository implements IRecipeRepository {
       this.prisma.recipe.count({ where }),
     ]);
 
-    const recipes = items.map(r => this.toDomain(r));
-    const summaries = recipes.map(r => this.toSummaryDto(r, (r as any)._categoryName || r.categoryId, (r as any)._authorName || r.authorId));
-    
+    const recipes = items.map((r) => this.toDomain(r));
+    const summaries = recipes.map((r) =>
+      this.toSummaryDto(
+        r,
+        (r as any)._categoryName || r.categoryId,
+        (r as any)._authorName || r.authorId,
+      ),
+    );
+
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
 
@@ -162,7 +184,7 @@ export class RecipeRepository implements IRecipeRepository {
     filters: RecipeFilters,
     sort: RecipeSortOptions,
     page: number,
-    pageSize: number
+    pageSize: number,
   ): Promise<PagedResult<Recipe>> {
     const where = this.buildWhereClause({ ...filters, searchQuery: query });
     const orderBy = this.buildOrderBy(sort);
@@ -181,15 +203,21 @@ export class RecipeRepository implements IRecipeRepository {
       this.prisma.recipe.count({ where }),
     ]);
 
-    const recipes = items.map(r => this.toDomain(r));
-    const summaries = recipes.map(r => this.toSummaryDto(r, (r as any)._categoryName || r.categoryId, (r as any)._authorName || r.authorId));
-    
+    const recipes = items.map((r) => this.toDomain(r));
+    const summaries = recipes.map((r) =>
+      this.toSummaryDto(
+        r,
+        (r as any)._categoryName || r.categoryId,
+        (r as any)._authorName || r.authorId,
+      ),
+    );
+
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
 
   async save(recipe: Recipe): Promise<Recipe> {
     const props = recipe.toPersistence();
-    
+
     const data: any = {
       id: props.id,
       title: props.title,
@@ -201,7 +229,7 @@ export class RecipeRepository implements IRecipeRepository {
       servings: props.servings,
       difficulty: props.difficulty,
       status: props.status,
-      category: { connect: { id: props.categoryId } },
+      categoryId: props.categoryId,
       authorId: props.authorId,
       nutritionCalories: props.nutrition?.calories,
       nutritionProtein: props.nutrition?.protein,
