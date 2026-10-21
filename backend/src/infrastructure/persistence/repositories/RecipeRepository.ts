@@ -4,16 +4,24 @@ import { PagedResult, createPagedResult } from '../../../application/dtos/PagedR
 import { Recipe, RecipeProps } from '../../../domain/entities/Recipe.js';
 import { RecipeDifficulty } from '../../../domain/enums/RecipeDifficulty.js';
 import { RecipeStatus } from '../../../domain/enums/RecipeStatus.js';
-import { IRecipeRepository, RecipeFilters, RecipeSortOptions } from '../../../domain/repositories/IRecipeRepository.js';
+import {
+  IRecipeRepository,
+  RecipeFilters,
+  RecipeSortOptions,
+} from '../../../domain/repositories/IRecipeRepository.js';
 import { Slug } from '../../../domain/value-objects/Slug.js';
 
 export class RecipeRepository implements IRecipeRepository {
+  /** Bind recipe persistence to the supplied Prisma client. */
   constructor(private prisma: PrismaClient) {}
 
-  private toDomain(prismaRecipe: PrismaRecipe & { 
-    author?: { displayName: string };
-    category?: { name: string };
-  }): Recipe {
+  /** Reconstruct a recipe aggregate from Prisma data and attach display metadata. */
+  private toDomain(
+    prismaRecipe: PrismaRecipe & {
+      author?: { displayName: string };
+      category?: { name: string };
+    },
+  ): Recipe {
     const props: RecipeProps = {
       id: prismaRecipe.id,
       title: prismaRecipe.title,
@@ -28,9 +36,13 @@ export class RecipeRepository implements IRecipeRepository {
       categoryId: prismaRecipe.categoryId,
       authorId: prismaRecipe.authorId,
       nutrition: {
-        calories: prismaRecipe.nutritionCalories ? Number(prismaRecipe.nutritionCalories) : undefined,
+        calories: prismaRecipe.nutritionCalories
+          ? Number(prismaRecipe.nutritionCalories)
+          : undefined,
         protein: prismaRecipe.nutritionProtein ? Number(prismaRecipe.nutritionProtein) : undefined,
-        carbohydrates: prismaRecipe.nutritionCarbohydrates ? Number(prismaRecipe.nutritionCarbohydrates) : undefined,
+        carbohydrates: prismaRecipe.nutritionCarbohydrates
+          ? Number(prismaRecipe.nutritionCarbohydrates)
+          : undefined,
         fat: prismaRecipe.nutritionFat ? Number(prismaRecipe.nutritionFat) : undefined,
         fiber: prismaRecipe.nutritionFiber ? Number(prismaRecipe.nutritionFiber) : undefined,
         sodium: prismaRecipe.nutritionSodium ? Number(prismaRecipe.nutritionSodium) : undefined,
@@ -48,6 +60,7 @@ export class RecipeRepository implements IRecipeRepository {
     return recipe;
   }
 
+  /** Project recipe fields and display names into a paginated summary DTO. */
   private toSummaryDto(recipe: Recipe, categoryName: string, authorName: string) {
     return {
       id: recipe.id,
@@ -68,6 +81,7 @@ export class RecipeRepository implements IRecipeRepository {
     };
   }
 
+  /** Find an active recipe by identifier and reconstruct its aggregate. */
   async findById(id: string): Promise<Recipe | null> {
     const recipe = await this.prisma.recipe.findUnique({
       where: { id, isDeleted: false },
@@ -80,6 +94,7 @@ export class RecipeRepository implements IRecipeRepository {
     return recipe ? this.toDomain(recipe) : null;
   }
 
+  /** Find an active recipe by slug and reconstruct its aggregate. */
   async findBySlug(slug: string): Promise<Recipe | null> {
     const recipe = await this.prisma.recipe.findUnique({
       where: { slug, isDeleted: false },
@@ -94,11 +109,12 @@ export class RecipeRepository implements IRecipeRepository {
     return recipe ? this.toDomain(recipe) : null;
   }
 
+  /** Load recipe summaries and pagination metadata matching repository filters. */
   async findMany(
     filters: RecipeFilters,
     sort: RecipeSortOptions,
     page: number,
-    pageSize: number
+    pageSize: number,
   ): Promise<PagedResult<Recipe>> {
     const where = this.buildWhereClause(filters);
     const orderBy = this.buildOrderBy(sort);
@@ -117,17 +133,24 @@ export class RecipeRepository implements IRecipeRepository {
       this.prisma.recipe.count({ where }),
     ]);
 
-    const recipes = items.map(r => this.toDomain(r));
-    const summaries = recipes.map(r => this.toSummaryDto(r, (r as any)._categoryName || r.categoryId, (r as any)._authorName || r.authorId));
-    
+    const recipes = items.map((r) => this.toDomain(r));
+    const summaries = recipes.map((r) =>
+      this.toSummaryDto(
+        r,
+        (r as any)._categoryName || r.categoryId,
+        (r as any)._authorName || r.authorId,
+      ),
+    );
+
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
 
+  /** Load published recipes in a category with pagination. */
   async findPublishedByCategory(
     categoryId: string,
     page: number,
     pageSize: number,
-    sort?: RecipeSortOptions
+    sort?: RecipeSortOptions,
   ): Promise<PagedResult<Recipe>> {
     const where: Prisma.RecipeWhereInput = {
       categoryId,
@@ -151,18 +174,25 @@ export class RecipeRepository implements IRecipeRepository {
       this.prisma.recipe.count({ where }),
     ]);
 
-    const recipes = items.map(r => this.toDomain(r));
-    const summaries = recipes.map(r => this.toSummaryDto(r, (r as any)._categoryName || r.categoryId, (r as any)._authorName || r.authorId));
-    
+    const recipes = items.map((r) => this.toDomain(r));
+    const summaries = recipes.map((r) =>
+      this.toSummaryDto(
+        r,
+        (r as any)._categoryName || r.categoryId,
+        (r as any)._authorName || r.authorId,
+      ),
+    );
+
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
 
+  /** Search published recipes using repository filtering and ordering. */
   async search(
     query: string,
     filters: RecipeFilters,
     sort: RecipeSortOptions,
     page: number,
-    pageSize: number
+    pageSize: number,
   ): Promise<PagedResult<Recipe>> {
     const where = this.buildWhereClause({ ...filters, searchQuery: query });
     const orderBy = this.buildOrderBy(sort);
@@ -181,15 +211,22 @@ export class RecipeRepository implements IRecipeRepository {
       this.prisma.recipe.count({ where }),
     ]);
 
-    const recipes = items.map(r => this.toDomain(r));
-    const summaries = recipes.map(r => this.toSummaryDto(r, (r as any)._categoryName || r.categoryId, (r as any)._authorName || r.authorId));
-    
+    const recipes = items.map((r) => this.toDomain(r));
+    const summaries = recipes.map((r) =>
+      this.toSummaryDto(
+        r,
+        (r as any)._categoryName || r.categoryId,
+        (r as any)._authorName || r.authorId,
+      ),
+    );
+
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
 
+  /** Persist recipe scalar fields and foreign keys without mixing relation writes. */
   async save(recipe: Recipe): Promise<Recipe> {
     const props = recipe.toPersistence();
-    
+
     const data: any = {
       id: props.id,
       title: props.title,
@@ -201,7 +238,7 @@ export class RecipeRepository implements IRecipeRepository {
       servings: props.servings,
       difficulty: props.difficulty,
       status: props.status,
-      category: { connect: { id: props.categoryId } },
+      categoryId: props.categoryId,
       authorId: props.authorId,
       nutritionCalories: props.nutrition?.calories,
       nutritionProtein: props.nutrition?.protein,
@@ -225,10 +262,12 @@ export class RecipeRepository implements IRecipeRepository {
     return this.toDomain(saved);
   }
 
+  /** Permanently remove a recipe row; lifecycle soft deletion is handled separately. */
   async delete(id: string): Promise<void> {
     await this.prisma.recipe.delete({ where: { id } });
   }
 
+  /** Check whether an active recipe already uses the supplied slug. */
   async existsBySlug(slug: string): Promise<boolean> {
     const count = await this.prisma.recipe.count({
       where: { slug, isDeleted: false },
@@ -236,11 +275,13 @@ export class RecipeRepository implements IRecipeRepository {
     return count > 0;
   }
 
+  /** Count recipes matching the supplied repository filters. */
   async count(filters: RecipeFilters): Promise<number> {
     const where = this.buildWhereClause(filters);
     return this.prisma.recipe.count({ where });
   }
 
+  /** Translate repository filters into a Prisma predicate excluding deleted recipes. */
   private buildWhereClause(filters: RecipeFilters): Prisma.RecipeWhereInput {
     const where: Prisma.RecipeWhereInput = { isDeleted: false };
 
@@ -268,6 +309,7 @@ export class RecipeRepository implements IRecipeRepository {
     return where;
   }
 
+  /** Translate requested sorting into Prisma ordering with repository defaults. */
   private buildOrderBy(sort: RecipeSortOptions): Prisma.RecipeOrderByWithRelationInput {
     const { field, order } = sort;
     const fieldMap: Record<string, string> = {

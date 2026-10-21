@@ -3,6 +3,7 @@ import { Queue } from 'bullmq';
 import { env } from '../../../config-middleware/config/env.js';
 
 export const imageResizeQueue = new Queue('image-resize', {
+  prefix: env.BULLMQ_PREFIX,
   connection: {
     host: new URL(env.REDIS_URL).hostname,
     port: parseInt(new URL(env.REDIS_URL).port) || 6379,
@@ -24,6 +25,7 @@ export interface ImageResizeJobData {
   originalUrl: string;
 }
 
+/** Enqueue image processing in the configured BullMQ namespace. */
 export async function addImageResizeJob(data: ImageResizeJobData): Promise<void> {
   await imageResizeQueue.add('resize-image', data);
 }

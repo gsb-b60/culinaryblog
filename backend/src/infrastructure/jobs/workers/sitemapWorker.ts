@@ -7,20 +7,21 @@ const worker = new Worker<SitemapJobData>(
   'sitemap',
   async (job: Job<SitemapJobData>) => {
     console.log(`Generating sitemap (trigger: ${job.data.trigger})`);
-    
+
     // TODO: Implement actual sitemap generation
     // This would fetch all published recipes and generate sitemap.xml
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
     console.log('Sitemap generation completed');
   },
   {
+    prefix: env.BULLMQ_PREFIX,
     connection: {
       host: new URL(env.REDIS_URL).hostname,
       port: parseInt(new URL(env.REDIS_URL).port) || 6379,
     },
     concurrency: 1,
-  }
+  },
 );
 
 worker.on('completed', (job) => {

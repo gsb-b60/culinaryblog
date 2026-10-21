@@ -35,7 +35,14 @@ import {
   DeleteRecipeIngredientCommandHandler,
   UpdateRecipeIngredientCommandHandler,
 } from '../../application/handlers/RecipeIngredientCommandHandlers.js';
-import { PublishRecipeCommandHandler, UnpublishRecipeCommandHandler } from '../../application/handlers/RecipeStatusCommandHandlers.js';
+import {
+  GetRecipeIngredientsQuery,
+  GetRecipeIngredientsQueryHandler,
+} from '../../application/handlers/RecipeIngredientQueryHandler.js';
+import {
+  PublishRecipeCommandHandler,
+  UnpublishRecipeCommandHandler,
+} from '../../application/handlers/RecipeStatusCommandHandlers.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
@@ -71,6 +78,7 @@ export interface Container {
 
 let container: Container | null = null;
 
+/** Wire repositories, services and command/query handlers for Express. */
 export function createContainer(): Container {
   if (container) return container;
 
@@ -113,9 +121,10 @@ export function createContainer(): Container {
   );
 
   commandBus.registerQueryHandler(
-    'GetCurrentUserQuery',
-    new GetCurrentUserQueryHandler(prisma),
+    GetRecipeIngredientsQuery.name,
+    new GetRecipeIngredientsQueryHandler(prisma),
   );
+  commandBus.registerQueryHandler('GetCurrentUserQuery', new GetCurrentUserQueryHandler(prisma));
 
   commandBus.registerCommandHandler(
     UpdateProfileCommand.name,
@@ -157,10 +166,7 @@ export function createContainer(): Container {
     }),
   );
 
-  commandBus.registerCommandHandler(
-    LogoutCommand.name,
-    new LogoutCommandHandler({ prisma }),
-  );
+  commandBus.registerCommandHandler(LogoutCommand.name, new LogoutCommandHandler({ prisma }));
 
   const googleAuthClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
@@ -206,6 +212,7 @@ export function createContainer(): Container {
   return container;
 }
 
+/** Return the shared dependency container, creating it on first access. */
 export function getContainer(): Container {
   if (!container) {
     return createContainer();
@@ -213,6 +220,7 @@ export function getContainer(): Container {
   return container;
 }
 
+/** Close resources owned by the dependency container at shutdown or test teardown. */
 export async function destroyContainer(): Promise<void> {
   if (container) {
     await container.prisma.$disconnect();
@@ -221,6 +229,7 @@ export async function destroyContainer(): Promise<void> {
   }
 }
 
+/** Attach the dependency container to each Express request. */
 export function containerMiddleware(req: Request, _res: Response, next: NextFunction): void {
   (req as any).container = getContainer();
   next();

@@ -8,7 +8,7 @@ on:
       - "frontend/**"
       - ".github/workflows/ci.yml"
   push:
-    branches: [master]
+    branches: [master, feat-frontend-add/delete/fix-ingredient-management]
     paths:
       - "backend/**"
       - "frontend/**"
@@ -91,6 +91,28 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Start MinIO and MailHog for integration tests
+        run: |
+          docker run -d --name ci-minio -p 9000:9000 --tmpfs /data:rw,mode=1777 \
+            -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin \
+            cgr.dev/chainguard/minio@sha256:f74600a1a46330cdbda1ef760d17a96bd6e0f4a6f0a2c49792ca3ee7e4c6fa18 server /data
+          docker run -d --name ci-mailhog -p 1025:1025 -p 8025:8025 mailhog/mailhog
+          for url in http://localhost:9000/minio/health/live http://localhost:8025/api/v2/messages; do
+            ready=false
+            for attempt in $(seq 1 30); do
+              if curl --fail --silent "$url" > /dev/null; then
+                ready=true
+                break
+              fi
+              sleep 2
+            done
+            if [ "$ready" != true ]; then
+              docker logs ci-minio
+              docker logs ci-mailhog
+              exit 1
+            fi
+          done
+
       - name: Prisma generate
         run: pnpm prisma:generate
 
@@ -103,11 +125,16 @@ jobs:
       - name: Build
         run: pnpm build
 
-      # tests/ is currently empty; --passWithNoTests keeps CI green until
-      # real tests land, and --coverage=false skips the 80% threshold.
-      # TODO: add real backend tests and switch back to `pnpm test`
-      - name: Test
-        run: pnpm exec vitest run --passWithNoTests --coverage=false
+      - name: Test with coverage (minimum 80% lines)
+        run: pnpm test
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage
+          if-no-files-found: ignore
 
       # Optional project rule check - informational only for now
       - name: Dependency-cruiser
@@ -152,4 +179,4 @@ jobs:
         run: pnpm build
 
       - name: Test
-        run: pnpm test
+        run: pnpm test --maxWorkers=2
