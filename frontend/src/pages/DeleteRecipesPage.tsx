@@ -71,7 +71,7 @@ function AccountDeleteRecipesPage({ session }: { session: AuthResponse }) {
           navigate('/auth/login', { replace: true })
           return
         }
-        setError(errorMessage(reason))
+        setError('Không thể tải danh sách công thức. Vui lòng thử lại.')
         setLoading(false)
       })
     return () => {
