@@ -1,0 +1,408 @@
+{
+  "capturedAt": "2026-10-21T12:10:12.699Z",
+  "startedAt": "2026-10-21T12:09:31.881Z",
+  "testedCommit": "70fdcb99639d25c30357a0e3e885c178b5813233",
+  "testedTrees": {
+    "frontend/src": "71e2c7a7d00f5a31b95d257187717903877b4e86",
+    "backend/src": "0294bcf546aca6af7bdc8c0e50121dad713bd830",
+    "backend/tests": "734c78061d82f5e78898e20d800e539580bd3ef3"
+  },
+  "testedSourceDirty": false,
+  "baseCommit": "1ed7022",
+  "feature": "FR-RCP-009",
+  "result": "passed",
+  "services": "Real PostgreSQL + real HTTP/JWT + real browser; no API interception",
+  "checks": [
+    "Dashboard integration",
+    "Delayed POST/PUT/DELETE results ignored after browser Back to another recipe",
+    "Real PostgreSQL writes stay bound to original recipe",
+    "Repeated retry with URL recipe and failed initial recipe list",
+    "Recipe link on page 2",
+    "Selection and page survive browser reload",
+    "Retry enabled after page change during offline ingredient loading",
+    "Real HTTP response screenshots (POST/PUT/DELETE)",
+    "Create 201",
+    "Update 200",
+    "Reload persistence",
+    "Delete 204 and soft-delete persistence",
+    "Mobile navigation",
+    "Refresh token"
+  ],
+  "responses": [
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/988a764f-bf05-4735-9e98-b84fdf7025a1/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/988a764f-bf05-4735-9e98-b84fdf7025a1/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/8201df9a-23cf-43fe-83d7-807cb8b202b6/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients/8d1b740d-70fb-435d-8d1f-1ee87d7ddaa7",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/b60e07c3-6fc7-4759-821b-7efee4df10d3/ingredients",
+      "status": 200
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients/7eb769cb-cf68-422b-b5d3-8d4f738cfe46",
+      "status": 204
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 201
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients/3c22bff5-f44d-456d-b7e1-63e909374d46",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients/3c22bff5-f44d-456d-b7e1-63e909374d46",
+      "status": 204
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/71f2c6e9-6da4-4872-a4f5-d2fca725f26d/ingredients",
+      "status": 200
+    }
+  ]
+}

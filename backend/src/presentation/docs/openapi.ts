@@ -11,6 +11,25 @@ const problemDetails = {
   },
 };
 
+const ingredientFields = {
+  name: { type: 'string', minLength: 1, maxLength: 200, example: 'Gạo' },
+  quantity: {
+    type: 'number',
+    exclusiveMinimum: true,
+    minimum: 0,
+    maximum: 999999.999,
+    example: 2.5,
+  },
+  unit: { type: 'string', maxLength: 50, example: 'kg' },
+  notes: { type: 'string', maxLength: 500, example: 'Vo sạch' },
+  orderIndex: { type: 'integer', minimum: 0, example: 0 },
+};
+const ingredientErrors = {
+  '401': { description: 'Authentication required' },
+  '403': { description: 'Not recipe owner/Admin' },
+  '404': { description: 'Recipe or ingredient not found' },
+  '422': { description: 'Invalid ingredient input' },
+};
 export const openApiSpec = {
   openapi: '3.0.3',
   info: {
@@ -182,7 +201,14 @@ export const openApiSpec = {
       },
       PageMeta: {
         type: 'object',
-        required: ['page', 'pageSize', 'totalCount', 'totalPages', 'hasNextPage', 'hasPreviousPage'],
+        required: [
+          'page',
+          'pageSize',
+          'totalCount',
+          'totalPages',
+          'hasNextPage',
+          'hasPreviousPage',
+        ],
         properties: {
           page: { type: 'integer', example: 1 },
           pageSize: { type: 'integer', example: 12 },
@@ -201,24 +227,34 @@ export const openApiSpec = {
         summary: 'Register a new account',
         requestBody: {
           required: true,
-          content: { 'application/json': { schema: { $ref: '#/components/schemas/RegisterInput' } } },
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/RegisterInput' } },
+          },
         },
         responses: {
           '201': {
             description: 'Created',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/AuthResponse' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/AuthResponse' } },
+            },
           },
           '409': {
             description: 'Email already exists',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
           '422': {
             description: 'Validation error',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
           '429': {
             description: 'Rate limited',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
         },
       },
@@ -234,19 +270,27 @@ export const openApiSpec = {
         responses: {
           '200': {
             description: 'OK',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/AuthResponse' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/AuthResponse' } },
+            },
           },
           '401': {
             description: 'Invalid credentials',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
           '403': {
             description: 'Disabled or locked',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
           '422': {
             description: 'Validation error',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
         },
       },
@@ -259,18 +303,26 @@ export const openApiSpec = {
           required: true,
           content: {
             'application/json': {
-              schema: { type: 'object', required: ['idToken'], properties: { idToken: { type: 'string' } } },
+              schema: {
+                type: 'object',
+                required: ['idToken'],
+                properties: { idToken: { type: 'string' } },
+              },
             },
           },
         },
         responses: {
           '200': {
             description: 'OK',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/AuthResponse' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/AuthResponse' } },
+            },
           },
           '400': {
             description: 'Invalid token',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
         },
       },
@@ -283,18 +335,26 @@ export const openApiSpec = {
           required: true,
           content: {
             'application/json': {
-              schema: { type: 'object', required: ['refreshToken'], properties: { refreshToken: { type: 'string' } } },
+              schema: {
+                type: 'object',
+                required: ['refreshToken'],
+                properties: { refreshToken: { type: 'string' } },
+              },
             },
           },
         },
         responses: {
           '200': {
             description: 'OK',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/AuthResponse' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/AuthResponse' } },
+            },
           },
           '401': {
             description: 'Expired/revoked',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
         },
       },
@@ -315,7 +375,9 @@ export const openApiSpec = {
           '204': { description: 'No Content' },
           '401': {
             description: 'Unauthorized',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
         },
       },
@@ -328,11 +390,15 @@ export const openApiSpec = {
         responses: {
           '200': {
             description: 'OK',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/UserProfile' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/UserProfile' } },
+            },
           },
           '401': {
             description: 'Unauthorized',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
         },
       },
@@ -357,11 +423,15 @@ export const openApiSpec = {
         responses: {
           '200': {
             description: 'OK',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/UserProfile' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/UserProfile' } },
+            },
           },
           '401': {
             description: 'Unauthorized',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
         },
       },
@@ -370,7 +440,10 @@ export const openApiSpec = {
       get: {
         tags: ['auth'],
         summary: 'Start Google OAuth redirect flow',
-        responses: { '302': { description: 'Redirect to Google' }, '503': { description: 'Google not configured' } },
+        responses: {
+          '302': { description: 'Redirect to Google' },
+          '503': { description: 'Google not configured' },
+        },
       },
     },
     '/auth/google/callback': {
@@ -381,7 +454,10 @@ export const openApiSpec = {
           { name: 'code', in: 'query', schema: { type: 'string' } },
           { name: 'state', in: 'query', schema: { type: 'string' } },
         ],
-        responses: { '302': { description: 'Redirect to frontend' }, '400': { description: 'Bad state/code' } },
+        responses: {
+          '302': { description: 'Redirect to frontend' },
+          '400': { description: 'Bad state/code' },
+        },
       },
     },
     '/categories': {
@@ -392,7 +468,9 @@ export const openApiSpec = {
           '200': {
             description: 'OK',
             content: {
-              'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/Category' } } },
+              'application/json': {
+                schema: { type: 'array', items: { $ref: '#/components/schemas/Category' } },
+              },
             },
           },
         },
@@ -422,7 +500,9 @@ export const openApiSpec = {
           '201': { description: 'Created' },
           '403': {
             description: 'Forbidden',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
         },
       },
@@ -436,7 +516,9 @@ export const openApiSpec = {
           '200': { description: 'OK' },
           '404': {
             description: 'Not found',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
         },
       },
@@ -446,15 +528,28 @@ export const openApiSpec = {
         tags: ['categories'],
         summary: 'Update category (Admin)',
         security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-        responses: { '200': { description: 'OK' }, '403': { description: 'Forbidden' }, '404': { description: 'Not found' } },
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
+        responses: {
+          '200': { description: 'OK' },
+          '403': { description: 'Forbidden' },
+          '404': { description: 'Not found' },
+        },
       },
       delete: {
         tags: ['categories'],
         summary: 'Delete category (Admin, only if empty)',
         security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-        responses: { '204': { description: 'No Content' }, '403': { description: 'Forbidden' }, '404': { description: 'Not found' }, '409': { description: 'Has recipes' } },
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
+        responses: {
+          '204': { description: 'No Content' },
+          '403': { description: 'Forbidden' },
+          '404': { description: 'Not found' },
+          '409': { description: 'Has recipes' },
+        },
       },
     },
     '/recipes': {
@@ -465,12 +560,18 @@ export const openApiSpec = {
           { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
           { name: 'pageSize', in: 'query', schema: { type: 'integer', default: 12, maximum: 50 } },
           { name: 'categoryId', in: 'query', schema: { type: 'string', format: 'uuid' } },
-          { name: 'difficulty', in: 'query', schema: { type: 'string', enum: ['EASY', 'MEDIUM', 'HARD', 'EXPERT'] } },
+          {
+            name: 'difficulty',
+            in: 'query',
+            schema: { type: 'string', enum: ['EASY', 'MEDIUM', 'HARD', 'EXPERT'] },
+          },
         ],
         responses: {
           '200': {
             description: 'OK',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/PagedRecipes' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/PagedRecipes' } },
+            },
           },
         },
       },
@@ -482,11 +583,15 @@ export const openApiSpec = {
           '201': { description: 'Created' },
           '401': {
             description: 'Unauthorized',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
           '403': {
             description: 'Forbidden (GUEST)',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
         },
       },
@@ -495,11 +600,15 @@ export const openApiSpec = {
       get: {
         tags: ['recipes'],
         summary: 'Full-text search',
-        parameters: [{ name: 'q', in: 'query', required: true, schema: { type: 'string', minLength: 2 } }],
+        parameters: [
+          { name: 'q', in: 'query', required: true, schema: { type: 'string', minLength: 2 } },
+        ],
         responses: {
           '200': {
             description: 'OK',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/PagedRecipes' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/PagedRecipes' } },
+            },
           },
         },
       },
@@ -512,11 +621,15 @@ export const openApiSpec = {
         responses: {
           '200': {
             description: 'OK',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/RecipeDetail' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/RecipeDetail' } },
+            },
           },
           '404': {
             description: 'Not found',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/ProblemDetails' } },
+            },
           },
         },
       },
@@ -530,13 +643,19 @@ export const openApiSpec = {
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
           { name: 'If-Match', in: 'header', schema: { type: 'integer' } },
         ],
-        responses: { '200': { description: 'OK' }, '401': { description: 'Unauthorized' }, '403': { description: 'Forbidden' } },
+        responses: {
+          '200': { description: 'OK' },
+          '401': { description: 'Unauthorized' },
+          '403': { description: 'Forbidden' },
+        },
       },
       delete: {
         tags: ['recipes'],
         summary: 'Delete recipe (Owner/Admin)',
         security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
         responses: { '204': { description: 'No Content' } },
       },
     },
@@ -545,7 +664,9 @@ export const openApiSpec = {
         tags: ['recipes'],
         summary: 'Publish (Draft -> Published)',
         security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
         responses: { '200': { description: 'OK' } },
       },
     },
@@ -554,7 +675,9 @@ export const openApiSpec = {
         tags: ['recipes'],
         summary: 'Unpublish (Published -> Draft)',
         security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
         responses: { '200': { description: 'OK' } },
       },
     },
@@ -563,7 +686,9 @@ export const openApiSpec = {
         tags: ['recipes'],
         summary: 'Archive recipe',
         security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
         responses: { '200': { description: 'OK' } },
       },
     },
@@ -572,7 +697,9 @@ export const openApiSpec = {
         tags: ['recipes'],
         summary: 'Add step (Owner/Admin)',
         security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
         responses: { '201': { description: 'Created' } },
       },
     },
@@ -583,7 +710,12 @@ export const openApiSpec = {
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
-          { name: 'stepId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+          {
+            name: 'stepId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string', format: 'uuid' },
+          },
         ],
         responses: { '200': { description: 'OK' } },
       },
@@ -593,40 +725,109 @@ export const openApiSpec = {
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
-          { name: 'stepId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+          {
+            name: 'stepId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string', format: 'uuid' },
+          },
         ],
         responses: { '204': { description: 'No Content' } },
       },
     },
     '/recipes/{id}/ingredients': {
+      get: {
+        tags: ['recipes'],
+        summary: 'List recipe ingredients (Owner/Admin)',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
+        responses: {
+          ...ingredientErrors,
+          '200': {
+            description: 'Ingredients ordered by orderIndex',
+            content: {
+              'application/json': {
+                schema: { type: 'array', items: { $ref: '#/components/schemas/RecipeIngredient' } },
+              },
+            },
+          },
+        },
+      },
       post: {
         tags: ['recipes'],
         summary: 'Add ingredient (Owner/Admin)',
         security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-        responses: { '201': { description: 'Created' } },
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { type: 'object', required: ['name'], properties: ingredientFields },
+            },
+          },
+        },
+        responses: {
+          ...ingredientErrors,
+          '201': {
+            description: 'Ingredient created',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/RecipeIngredient' } },
+            },
+          },
+        },
       },
     },
     '/recipes/{id}/ingredients/{ingredientId}': {
       put: {
         tags: ['recipes'],
-        summary: 'Update ingredient',
+        summary: 'Update ingredient (Owner/Admin)',
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
-          { name: 'ingredientId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+          {
+            name: 'ingredientId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string', format: 'uuid' },
+          },
         ],
-        responses: { '200': { description: 'OK' } },
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': { schema: { type: 'object', properties: ingredientFields } },
+          },
+        },
+        responses: {
+          ...ingredientErrors,
+          '200': {
+            description: 'Ingredient updated',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/RecipeIngredient' } },
+            },
+          },
+        },
       },
       delete: {
         tags: ['recipes'],
-        summary: 'Delete ingredient',
+        summary: 'Delete ingredient (Owner/Admin)',
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
-          { name: 'ingredientId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+          {
+            name: 'ingredientId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string', format: 'uuid' },
+          },
         ],
-        responses: { '204': { description: 'No Content' } },
+        responses: {
+          ...ingredientErrors,
+          '204': { description: 'Ingredient deleted; no response body' },
+        },
       },
     },
   },
@@ -641,6 +842,7 @@ const scalarHtml = `<!doctype html>
 </body>
 </html>`;
 
+/** Expose the OpenAPI JSON document and Scalar reference on Express. */
 export function setupOpenAPI(app: Express | Router): void {
   (app as Router).get('/api-docs.json', (_req, res) => {
     res.json(openApiSpec);
@@ -654,6 +856,7 @@ export function setupOpenAPI(app: Express | Router): void {
 }
 
 // Legacy export kept for backwards-compat imports.
+/** Register API reference routes on the supplied router. */
 export function setupRoutes(app: Router): void {
   setupOpenAPI(app as unknown as Express);
 }

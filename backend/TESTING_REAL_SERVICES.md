@@ -1,0 +1,89 @@
+# Kiểm thử backend với dịch vụ thật
+
+## Kết quả
+
+`pnpm test` đã chạy thành công: **202/202 test**, coverage dòng code **89,23%**, vượt ngưỡng **80%**. Ngưỡng và phạm vi coverage trong `vitest.config.ts` được giữ nguyên. Kết quả được chạy lại ngày 21/10/2026 trên nhánh `feat/integrate-ingredients-master`, dựa master `1ed7022`; không phải số liệu của snapshot cũ.
+
+## Cách chạy và chụp minh chứng
+
+Từ thư mục gốc dự án, bật các dịch vụ local:
+
+```powershell
+docker compose up -d postgres redis minio mailhog
+cd backend
+pnpm test
+```
+
+Chụp phần cuối terminal có `Test Files 18 passed`, `Tests 202 passed` và dòng `All files` trong bảng coverage. Số lượng có thể thay đổi nếu sau này dự án bổ sung test.
+
+Báo cáo HTML được tạo tại `backend/coverage/index.html`; có thể mở bằng trình duyệt để xem những dòng chưa được kiểm thử.
+
+Chỉ chạy nhóm mới:
+
+```powershell
+pnpm exec vitest run tests/domain-lifecycle.test.ts tests/real-services.integration.test.ts
+```
+
+## Các kiểm thử mới
+
+- `tests/domain-lifecycle.test.ts`: entity thật, vòng đời Draft/Published/Archived, phiên bản, soft delete, primary image, khóa tài khoản, email/slug. Không dùng mock.
+- `tests/real-services.integration.test.ts`: PostgreSQL, Redis, MinIO, SMTP MailHog và BullMQ thật. Không dùng mock hoặc spy để thay thế dịch vụ.
+- HTTP được chạy qua Express router, Command Bus, handler và Passport JWT thật; API nguyên liệu kiểm tra quyền owner/Admin, validation, CRUD và trạng thái dữ liệu sau xóa.
+- Đăng ký, đăng nhập, refresh token, phát hiện token bị sử dụng lại và đăng xuất được kiểm tra với dữ liệu PostgreSQL thật.
+- Redis kiểm tra JSON, TTL, cache hit, xóa key và invalidation.
+- MinIO kiểm tra upload ảnh, metadata, download bằng signed URL và delete object.
+- MailHog xác nhận nhận các email welcome, reset và verification qua SMTP; đăng ký còn kiểm tra gửi welcome email qua BullMQ worker.
+- Seed tạo 6 user, 20 category và 100 recipe trong schema thử nghiệm để kiểm tra repository, lọc, phân trang và dữ liệu liên quan.
+
+Những unit test cũ có mock vẫn được giữ nguyên. Yêu cầu không mô phỏng được áp dụng cho toàn bộ kiểm thử tích hợp mới.
+
+## Dịch vụ và cấu hình
+
+Khi chạy local, test đọc kết nối PostgreSQL, Redis, MinIO và credentials từ `backend/.env`. Khi không có file này (GitHub Actions), test dùng biến môi trường của tiến trình. Không cần commit hoặc tạo `.env` trên CI. PostgreSQL, Redis và MinIO phải là dịch vụ local; test từ chối URL remote.
+
+- PostgreSQL trong Docker Compose: localhost:5433.
+- Redis: localhost:6379.
+- MinIO: localhost:9000.
+- MailHog SMTP: 127.0.0.1:1025; API: 127.0.0.1:8025.
+
+Riêng tiến trình test sử dụng SMTP MailHog local thay cho SMTP trong `.env`; không gửi email ra người dùng thật. Tài khoản PostgreSQL cần quyền tạo/xóa schema; MinIO cần quyền tạo/xóa bucket. Thiếu dịch vụ hoặc credentials sai làm test fail, không tự skip.
+
+## Cách tách dữ liệu
+
+Mỗi lần chạy có UUID riêng:
+
+- Schema PostgreSQL: `codex_test_<uuid>`; Prisma db push chỉ áp dụng vào schema này.
+- Bucket MinIO và prefix BullMQ: `codex-test-<uuid>`.
+- Redis cache: key bắt đầu bằng prefix của lần chạy.
+- Email: địa chỉ `register-<uuid>@example.invalid` và `mail-<uuid>@example.invalid`.
+
+Sau khi chạy, test dọn schema, bucket/object, key Redis, queue/worker và những email đã nhận diện của chính lần chạy. Không truncate bảng ứng dụng, không flush Redis và không xóa inbox MailHog toàn bộ. Nếu tiến trình bị kill đột ngột trước teardown, có thể còn tài nguyên test mang prefix trên; cần kiểm tra đúng tên trước khi dọn.
+
+## Các lỗi thực tế được sửa
+
+- RecipeRepository.save: dùng `categoryId` cùng `authorId` thay vì trộn `category.connect` với khóa ngoại scalar, vốn bị Prisma từ chối.
+- NodemailerEmailService: chỉ cung cấp auth khi có SMTP_USER, giúp gửi được qua MailHog không yêu cầu đăng nhập.
+- Thêm cấu hình BULLMQ_PREFIX cho queue và worker để test dùng hàng đợi riêng. Mặc định vẫn là `bull`, giữ hành vi ứng dụng hiện tại.
+
+## Giới hạn
+
+Đây là kiểm thử tích hợp backend với các dịch vụ thật, chưa phải kiểm thử trình duyệt. Worker image resize và sitemap của dự án hiện còn TODO; test xác nhận xử lý job qua Redis thật, không khẳng định việc resize ảnh hay sinh sitemap đã hoàn thiện. Test có dịch vụ thật không đồng nghĩa toàn bộ code backend đã được kiểm thử: coverage hiện đạt 89,23%.
+## Tích hợp với master mới
+
+Bộ test dùng danh sách công thức `/api/v1/recipes/manage` và query/handler nguyên liệu đã đăng ký trong container của master mới. Suite gồm 18 test domain và 22 test dịch vụ thật được chuyển sang phiên bản này; 7 test `ingredients-master.integration.test.ts` tiếp tục kiểm tra API nguyên liệu riêng. Các test và ngưỡng coverage có sẵn được giữ nguyên.
+
+Lệnh `pnpm exec tsc --noEmit` thành công. Lint các file infrastructure/config vừa sửa có 0 errors và 42 warnings có sẵn về console/any; không coi đây là lint clean hoàn toàn.
+
+Test tích hợp mới không mô phỏng kết nối. Các unit test cũ có mock vẫn được giữ nguyên. Kết quả pnpm test hoàn tất với exit code 0.
+
+## GitHub Actions trên nhánh nguyên liệu
+
+Workflow `.github/workflows/ci.yml` chạy khi push `feat-frontend-add/delete/fix-ingredient-management` hoặc `master`, và khi tạo PR vào `master` có thay đổi backend/frontend/workflow. Backend chạy PostgreSQL, Redis, MinIO và MailHog thật; `pnpm test` kiểm tra coverage dòng code tối thiểu 80%, không tắt coverage. Image MinIO được ghim theo digest của image đã chạy thật và xác minh tải được từ registry. Báo cáo coverage được tải lên artifact `backend-coverage`. Frontend chạy lint, TypeScript, build và toàn bộ test với tối đa 2 workers.
+
+Sau khi push, mở GitHub → Actions → CI để xem kết quả từng job. Khi tạo PR vào master, kết quả hiện ở tab Checks của PR. Kết quả kiểm tra local không thay thế kết quả chạy trên GitHub.
+
+## Nguồn của minh chứng E2E
+
+Commit source được lưu trước khi chạy `pnpm test:e2e:ingredients`. Runner kiểm tra source/config/test không khác HEAD và ghi `testedCommit`, `testedTrees`, `startedAt`, `capturedAt`, `testedSourceDirty` vào result.json. Sau đó lưu ảnh và JSON bằng commit riêng; commit này chỉ chứa minh chứng/tài liệu. Không chỉnh thời gian chụp hoặc khai báo một commit chưa thực sự chạy test.
+
+E2E kiểm tra write đang chờ khi Back/Forward và tải lại khi danh sách lỗi bằng cách điều phối request thật tại Express fixture (giữ handler hoặc đóng kết nối). Cơ sở dữ liệu, JWT, handler sản phẩm và thao tác ghi vẫn chạy thật; hook kiểm thử không được đăng ký trong ứng dụng production.

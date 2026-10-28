@@ -4,6 +4,7 @@ import AppLayout from './components/layout/AppLayout'
 import DashboardLayout from './components/layout/DashboardLayout'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import RecipesPage from './pages/RecipesPage'
+import IngredientManagementPage from './pages/IngredientManagementPage'
 import RecipesBrowsePage from './pages/RecipesBrowsePage'
 import RecipeDetailPage from './pages/RecipeDetailPage'
 import DashboardPage from './pages/DashboardPage'
@@ -12,6 +13,7 @@ import ProfilePage from './pages/ProfilePage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
 
+/** Render the fallback for an unknown application route. */
 function NotFoundPage() {
   return (
     <main className="flex flex-1 items-center justify-center p-8">
@@ -26,6 +28,7 @@ function NotFoundPage() {
   )
 }
 
+/** Compose public, authentication and dashboard routes. */
 export default function App() {
   return (
     <Routes>
@@ -41,6 +44,7 @@ export default function App() {
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/recipes" element={<RecipesPage />} />
+        <Route path="/dashboard/ingredients" element={<IngredientManagementPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
 

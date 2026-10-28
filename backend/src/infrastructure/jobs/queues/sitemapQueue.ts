@@ -3,6 +3,7 @@ import { Queue } from 'bullmq';
 import { env } from '../../../config-middleware/config/env.js';
 
 export const sitemapQueue = new Queue('sitemap', {
+  prefix: env.BULLMQ_PREFIX,
   connection: {
     host: new URL(env.REDIS_URL).hostname,
     port: parseInt(new URL(env.REDIS_URL).port) || 6379,
@@ -22,11 +23,13 @@ export interface SitemapJobData {
   trigger: 'manual' | 'scheduled';
 }
 
+/** Enqueue sitemap generation in the configured BullMQ namespace. */
 export async function addSitemapJob(data: SitemapJobData = { trigger: 'manual' }): Promise<void> {
   await sitemapQueue.add('generate-sitemap', data);
 }
 
 // Recurring job - runs daily at 2 AM UTC
+/** Register recurring sitemap generation in the configured BullMQ namespace. */
 export async function scheduleSitemapJob(): Promise<void> {
   await sitemapQueue.add(
     'generate-sitemap',
@@ -34,6 +37,6 @@ export async function scheduleSitemapJob(): Promise<void> {
     {
       repeat: { pattern: '0 2 * * *' }, // Cron: daily at 2 AM
       jobId: 'daily-sitemap-generation',
-    }
+    },
   );
 }
