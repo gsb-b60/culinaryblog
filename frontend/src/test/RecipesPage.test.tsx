@@ -8,24 +8,54 @@ import { clearSession, loadSession, saveSession } from '../lib/tokenStorage'
 import type { Recipe, RecipePage } from '../types/recipe'
 
 const session = {
-  accessToken: 'access', refreshToken: 'refresh', expiresAt: '2099-01-01',
-  user: { id: 'owner-1', email: 'test@example.com', fullName: 'Owner', userName: 'owner', roles: ['AUTHOR'] },
+  accessToken: 'access',
+  refreshToken: 'refresh',
+  expiresAt: '2099-01-01',
+  user: {
+    id: 'owner-1',
+    email: 'test@example.com',
+    fullName: 'Owner',
+    userName: 'owner',
+    roles: ['AUTHOR'],
+  },
 }
 const draft: Recipe = {
-  id: 'recipe-1', title: 'Canh rau củ', description: 'Công thức canh rau củ thanh mát',
-  slug: 'canh-rau-cu', status: 'DRAFT', authorId: 'owner-1', updatedAt: '2026-01-01',
-  version: 1, steps: [{ id: 'step-1', stepNumber: 1, title: 'Nấu', description: 'Đun nước' }],
+  id: 'recipe-1',
+  title: 'Canh rau củ',
+  description: 'Công thức canh rau củ thanh mát',
+  slug: 'canh-rau-cu',
+  status: 'DRAFT',
+  authorId: 'owner-1',
+  updatedAt: '2026-01-01',
+  version: 1,
+  steps: [{ id: 'step-1', stepNumber: 1, title: 'Nấu', description: 'Đun nước' }],
 }
 function recipePage(items: Recipe[] = [draft], page = 1, totalPages = 1): RecipePage {
-  return { items, meta: { page, pageSize: 12, totalCount: items.length * totalPages,
-    totalPages, hasNextPage: page < totalPages, hasPreviousPage: page > 1 } }
+  return {
+    items,
+    meta: {
+      page,
+      pageSize: 12,
+      totalCount: items.length * totalPages,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    },
+  }
 }
 function response(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  })
 }
 const fetchMock = vi.fn()
 function openPage(path = '/dashboard/recipes') {
-  render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>)
+  render(
+    <MemoryRouter initialEntries={[path]}>
+      <App />
+    </MemoryRouter>,
+  )
 }
 
 beforeEach(() => {
@@ -36,14 +66,23 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock)
   fetchMock.mockResolvedValue(response(recipePage()))
 })
-afterEach(() => { vi.unstubAllGlobals() })
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 describe('Recipe management through UI and API client', () => {
   it('navigates from Dashboard, publishes, unpublishes and preserves the status after reload', async () => {
     let stored = { ...draft }
     fetchMock.mockImplementation(async (url: string, init: RequestInit) => {
       expect(init.headers).toMatchObject({ Authorization: 'Bearer access' })
-      if (url.endsWith('/publish')) stored = { ...stored, status: 'PUBLISHED', version: 2, updatedAt: '2026-02-01', publishedAt: '2026-02-01' }
+      if (url.endsWith('/publish'))
+        stored = {
+          ...stored,
+          status: 'PUBLISHED',
+          version: 2,
+          updatedAt: '2026-02-01',
+          publishedAt: '2026-02-01',
+        }
       if (url.endsWith('/unpublish')) stored = { ...stored, status: 'DRAFT', version: 3 }
       return response(init.method === 'PATCH' ? stored : recipePage([stored]))
     })
@@ -63,32 +102,50 @@ describe('Recipe management through UI and API client', () => {
   })
 
   it('explains why drafts without steps cannot be published and hides actions for archived recipes', async () => {
-    fetchMock.mockResolvedValue(response(recipePage([
-      { ...draft, steps: [] },
-      { ...draft, id: 'archived', title: 'Món đã lưu trữ', status: 'ARCHIVED' },
-    ])))
+    fetchMock.mockResolvedValue(
+      response(
+        recipePage([
+          { ...draft, steps: [] },
+          { ...draft, id: 'archived', title: 'Món đã lưu trữ', status: 'ARCHIVED' },
+        ]),
+      ),
+    )
     openPage()
     expect(await screen.findByRole('button', { name: 'Xuất bản' })).toBeDisabled()
-    expect(screen.getByText('Cần ít nhất một bước thực hiện trước khi xuất bản.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Cần ít nhất một bước thực hiện trước khi xuất bản.'),
+    ).toBeInTheDocument()
     const archivedArticle = within(screen.getByRole('article', { name: 'Món đã lưu trữ' }))
     expect(archivedArticle.queryByRole('button', { name: 'Xuất bản' })).not.toBeInTheDocument()
-    expect(archivedArticle.queryByRole('button', { name: 'Chuyển về bản nháp' })).not.toBeInTheDocument()
+    expect(
+      archivedArticle.queryByRole('button', { name: 'Chuyển về bản nháp' }),
+    ).not.toBeInTheDocument()
     expect(archivedArticle.queryByRole('button', { name: 'Xóa' })).not.toBeInTheDocument()
   })
 
-  it.each([403, 404, 409, 422, 500])('keeps the previous status and shows an error for HTTP %s', async status => {
-    fetchMock.mockResolvedValueOnce(response(recipePage())).mockResolvedValueOnce(response({ errors: { steps: ['Missing steps'] } }, status))
-    openPage()
-    await userEvent.click(await screen.findByRole('button', { name: 'Xuất bản' }))
-    expect(await screen.findByRole('alert')).not.toBeEmptyDOMElement()
-    expect(screen.getByText('Bản nháp')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Xuất bản' })).toBeEnabled()
-    expect(screen.queryByText('Đã xuất bản công thức.')).not.toBeInTheDocument()
-  })
+  it.each([403, 404, 409, 422, 500])(
+    'keeps the previous status and shows an error for HTTP %s',
+    async (status) => {
+      fetchMock
+        .mockResolvedValueOnce(response(recipePage()))
+        .mockResolvedValueOnce(response({ errors: { steps: ['Missing steps'] } }, status))
+      openPage()
+      await userEvent.click(await screen.findByRole('button', { name: 'Xuất bản' }))
+      expect(await screen.findByRole('alert')).not.toBeEmptyDOMElement()
+      expect(screen.getByText('Bản nháp')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Xuất bản' })).toBeEnabled()
+      expect(screen.queryByText('Đã xuất bản công thức.')).not.toBeInTheDocument()
+    },
+  )
 
   it('disables repeat clicks until the mutation finishes', async () => {
     let finish!: (value: Response) => void
-    fetchMock.mockResolvedValueOnce(response(recipePage())).mockImplementationOnce(() => new Promise<Response>(resolve => { finish = resolve }))
+    fetchMock.mockResolvedValueOnce(response(recipePage())).mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          finish = resolve
+        }),
+    )
     openPage()
     await userEvent.click(await screen.findByRole('button', { name: 'Xuất bản' }))
     expect(screen.getByRole('button', { name: 'Đang cập nhật...' })).toBeDisabled()
@@ -98,7 +155,11 @@ describe('Recipe management through UI and API client', () => {
   })
 
   it('paginates using the protected management API', async () => {
-    fetchMock.mockResolvedValueOnce(response(recipePage([draft], 1, 2))).mockResolvedValueOnce(response(recipePage([{ ...draft, id: 'recipe-2', title: 'Canh trang hai' }], 2, 2)))
+    fetchMock
+      .mockResolvedValueOnce(response(recipePage([draft], 1, 2)))
+      .mockResolvedValueOnce(
+        response(recipePage([{ ...draft, id: 'recipe-2', title: 'Canh trang hai' }], 2, 2)),
+      )
     openPage()
     await userEvent.click(await screen.findByRole('button', { name: 'Trang sau' }))
     expect(await screen.findByText('Canh trang hai')).toBeInTheDocument()
@@ -106,7 +167,9 @@ describe('Recipe management through UI and API client', () => {
   })
 
   it('offers retry after a network failure', async () => {
-    fetchMock.mockRejectedValueOnce(new TypeError('network')).mockResolvedValueOnce(response(recipePage()))
+    fetchMock
+      .mockRejectedValueOnce(new TypeError('network'))
+      .mockResolvedValueOnce(response(recipePage()))
     openPage()
     expect(await screen.findByRole('alert')).toHaveTextContent('Không thể kết nối')
     await userEvent.click(screen.getByRole('button', { name: 'Tải lại' }))
@@ -145,7 +208,8 @@ describe('Recipe management through UI and API client', () => {
   })
 
   it('refreshes an expired token and retries the protected list', async () => {
-    fetchMock.mockResolvedValueOnce(response({}, 401))
+    fetchMock
+      .mockResolvedValueOnce(response({}, 401))
       .mockResolvedValueOnce(response({ ...session, accessToken: 'rotated' }))
       .mockResolvedValueOnce(response(recipePage()))
     openPage()
@@ -158,11 +222,14 @@ describe('Recipe management through UI and API client', () => {
   it('redirects to login when refresh fails', async () => {
     fetchMock.mockResolvedValueOnce(response({}, 401)).mockResolvedValueOnce(response({}, 401))
     openPage()
-    await waitFor(() => expect(screen.getByRole('heading', { name: /Đăng nhập/ })).toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /Đăng nhập/ })).toBeInTheDocument(),
+    )
     expect(loadSession()).toBeNull()
   })
   it('keeps the refreshed session when a publish retry returns a business error', async () => {
-    fetchMock.mockResolvedValueOnce(response(recipePage()))
+    fetchMock
+      .mockResolvedValueOnce(response(recipePage()))
       .mockResolvedValueOnce(response({}, 401))
       .mockResolvedValueOnce(response({ ...session, accessToken: 'rotated' }))
       .mockResolvedValueOnce(response({ errors: { steps: ['Missing steps'] } }, 422))
@@ -172,64 +239,133 @@ describe('Recipe management through UI and API client', () => {
     expect(loadSession()?.accessToken).toBe('rotated')
     expect(screen.getByRole('heading', { name: 'Công thức của tôi' })).toBeInTheDocument()
   })
-
 })
 
 describe('Archive through recipe management', () => {
-  it.each(['DRAFT', 'PUBLISHED'] as const)('archives a %s recipe and keeps the badge after reload', async status => {
-    let stored: Recipe = { ...draft, status, steps: [] };
-    fetchMock.mockImplementation(async (url: string, init: RequestInit) => {
-      if (url.endsWith('/archive')) {
-        expect(init.method).toBe('PATCH');
-        expect(init.headers).toMatchObject({ Authorization: 'Bearer access' });
-        stored = { ...stored, status: 'ARCHIVED', version: 2 };
-        return response(stored);
-      }
-      return response(recipePage([stored]));
-    });
-    openPage();
-    await userEvent.click(await screen.findByRole('button', { name: 'Lưu trữ' }));
-    expect(await screen.findByRole('status')).toHaveTextContent('Đã lưu trữ công thức.');
-    expect(screen.getByText('Đã lưu trữ')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Lưu trữ' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Xuất bản' })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Tải lại' }));
-    expect(await screen.findByText('Đã lưu trữ')).toBeInTheDocument();
-  });
+  it.each(['DRAFT', 'PUBLISHED'] as const)(
+    'archives a %s recipe and keeps the badge after reload',
+    async (status) => {
+      let stored: Recipe = { ...draft, status, steps: [] }
+      fetchMock.mockImplementation(async (url: string, init: RequestInit) => {
+        if (url.endsWith('/archive')) {
+          expect(init.method).toBe('PATCH')
+          expect(init.headers).toMatchObject({ Authorization: 'Bearer access' })
+          stored = { ...stored, status: 'ARCHIVED', version: 2 }
+          return response(stored)
+        }
+        return response(recipePage([stored]))
+      })
+      openPage('/dashboard/recipes/archive')
+      await userEvent.click(await screen.findByRole('button', { name: 'Lưu trữ' }))
+      expect(await screen.findByRole('status')).toHaveTextContent('Đã lưu trữ công thức.')
+      expect(screen.getByText('Đã lưu trữ')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Lưu trữ' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Xuất bản' })).not.toBeInTheDocument()
+      await userEvent.click(screen.getByRole('button', { name: 'Tải lại' }))
+      expect(await screen.findByText('Đã lưu trữ')).toBeInTheDocument()
+    },
+  )
 
-  it.each([403, 404, 409, 500])('keeps the recipe unchanged after archive fails with %s', async status => {
-    fetchMock.mockResolvedValueOnce(response(recipePage())).mockResolvedValueOnce(response({}, status));
-    openPage();
-    await userEvent.click(await screen.findByRole('button', { name: 'Lưu trữ' }));
-    expect(await screen.findByRole('alert')).not.toBeEmptyDOMElement();
-    expect(screen.getByText('Bản nháp')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Lưu trữ' })).toBeEnabled();
-  });
+  it.each([403, 404, 409, 500])(
+    'keeps the recipe unchanged after archive fails with %s',
+    async (status) => {
+      fetchMock
+        .mockResolvedValueOnce(response(recipePage()))
+        .mockResolvedValueOnce(response({}, status))
+      openPage('/dashboard/recipes/archive')
+      await userEvent.click(await screen.findByRole('button', { name: 'Lưu trữ' }))
+      expect(await screen.findByRole('alert')).not.toBeEmptyDOMElement()
+      expect(screen.getByText('Bản nháp')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Lưu trữ' })).toBeEnabled()
+    },
+  )
 
   it('allows Admin to archive another author recipe', async () => {
-    saveSession({ ...session, user: { ...session.user, id: 'admin-1', roles: ['ADMIN'] } });
-    fetchMock.mockResolvedValueOnce(response(recipePage())).mockResolvedValueOnce(response({ ...draft, status: 'ARCHIVED' }));
-    openPage();
-    await userEvent.click(await screen.findByRole('button', { name: 'Lưu trữ' }));
-    expect(await screen.findByText('Đã lưu trữ')).toBeInTheDocument();
-  });
+    saveSession({ ...session, user: { ...session.user, id: 'admin-1', roles: ['ADMIN'] } })
+    fetchMock
+      .mockResolvedValueOnce(response(recipePage()))
+      .mockResolvedValueOnce(response({ ...draft, status: 'ARCHIVED' }))
+    openPage('/dashboard/recipes/archive')
+    await userEvent.click(await screen.findByRole('button', { name: 'Lưu trữ' }))
+    expect(await screen.findByText('Đã lưu trữ')).toBeInTheDocument()
+  })
 
   it('prevents duplicate archive submissions and competing status changes', async () => {
-    let finish!: (value: Response) => void;
-    fetchMock.mockResolvedValueOnce(response(recipePage())).mockImplementationOnce(() => new Promise<Response>(resolve => { finish = resolve }));
-    openPage();
-    const button = await screen.findByRole('button', { name: 'Lưu trữ' });
-    await userEvent.dblClick(button);
-    expect(button).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Đang cập nhật...' })).toBeDisabled();
-    expect(fetchMock.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1);
-    finish(response({ ...draft, status: 'ARCHIVED' }));
-    expect(await screen.findByText('Đã lưu trữ')).toBeInTheDocument();
-  });
-});
+    let finish!: (value: Response) => void
+    fetchMock.mockResolvedValueOnce(response(recipePage())).mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          finish = resolve
+        }),
+    )
+    openPage('/dashboard/recipes/archive')
+    const button = await screen.findByRole('button', { name: 'Lưu trữ' })
+    await userEvent.dblClick(button)
+    expect(button).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Đang lưu trữ...' })).toBeDisabled()
+    expect(fetchMock.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
+    finish(response({ ...draft, status: 'ARCHIVED' }))
+    expect(await screen.findByText('Đã lưu trữ')).toBeInTheDocument()
+  })
+})
 
 it('links archived recipes to their live detail page', async () => {
   fetchMock.mockResolvedValue(response(recipePage([{ ...draft, status: 'ARCHIVED' }])))
   openPage()
-  expect(await screen.findByRole('link', { name: 'Xem chi tiết' })).toHaveAttribute('href', '/recipes/' + draft.slug)
+  expect(await screen.findByRole('link', { name: 'Xem chi tiết' })).toHaveAttribute(
+    'href',
+    '/recipes/' + draft.slug,
+  )
+})
+
+describe('Separate archive destination in Dashboard', () => {
+  it('opens the archive page from the button below the overview', async () => {
+    openPage('/dashboard')
+    const shortcut = screen.getByRole('region', { name: 'Lưu trữ công thức' })
+    await userEvent.click(within(shortcut).getByRole('link', { name: 'Lưu trữ công thức' }))
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Lưu trữ công thức' }),
+    ).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Lưu trữ' })).toBeEnabled()
+    expect(screen.queryByRole('button', { name: 'Xuất bản' })).not.toBeInTheDocument()
+    const menu = within(screen.getByRole('navigation', { name: 'Dashboard menu' }))
+    expect(menu.getByRole('link', { name: 'Lưu trữ công thức' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(menu.getByRole('link', { name: 'Xóa công thức' }).nextElementSibling).toHaveTextContent(
+      'Lưu trữ công thức',
+    )
+  })
+
+  it('keeps archive actions out of the publish/unpublish list', async () => {
+    openPage()
+    await screen.findByRole('article', { name: draft.title })
+    expect(screen.queryByRole('button', { name: 'Lưu trữ' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Xuất bản' })).toBeInTheDocument()
+    const mobile = within(screen.getByRole('navigation', { name: 'Mobile navigation' }))
+    expect(mobile.getByRole('link', { name: 'Lưu trữ công thức' })).toHaveAttribute(
+      'href',
+      '/dashboard/recipes/archive',
+    )
+  })
+
+  it('retains the Dashboard auth guard for the archive route', () => {
+    clearSession()
+    openPage('/dashboard/recipes/archive')
+    expect(screen.getByRole('heading', { name: /Đăng nhập/ })).toBeInTheDocument()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('paginates independently on the archive page', async () => {
+    fetchMock
+      .mockResolvedValueOnce(response(recipePage([draft], 1, 2)))
+      .mockResolvedValueOnce(
+        response(recipePage([{ ...draft, title: 'Công thức trang hai' }], 2, 2)),
+      )
+    openPage('/dashboard/recipes/archive')
+    await userEvent.click(await screen.findByRole('button', { name: 'Trang sau' }))
+    expect(await screen.findByRole('article', { name: 'Công thức trang hai' })).toBeInTheDocument()
+    expect(fetchMock.mock.calls[1][0]).toContain('/recipes/manage?page=2&pageSize=12')
+  })
 })

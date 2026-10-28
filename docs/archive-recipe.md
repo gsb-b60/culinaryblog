@@ -13,7 +13,7 @@ Archive retains ingredients, steps, images and publication history. A successful
 
 Recipes and categories cache namespaces are invalidated after persistence. Public recipe list, search and category queries enforce PUBLISHED regardless of supplied status filters. Detail permits private recipes only for owner/Admin. The protected management list continues to show archived recipes.
 
-Dashboard → Công thức → Danh sách công thức provides Lưu trữ for owner/Admin on Draft and Published recipes, including recipes without steps. The status badge changes after success and survives reload. Failures preserve the previous status. Pending requests disable competing actions.
+Dashboard → Công thức → Lưu trữ công thức (below Xóa công thức) opens the dedicated /dashboard/recipes/archive page and provides Lưu trữ for owner/Admin on Draft and Published recipes, including recipes without steps. The status badge changes after success and survives reload. Failures preserve the previous status. Pending requests disable competing actions. The Dashboard overview also has a Lưu trữ công thức button below its recent-recipes section. The regular management list retains publish/unpublish actions.
 
 The public recipe list still uses static demonstration data. Recipe detail now uses the live API with the current account credentials and is linked from recipe management, including archived recipes. It clears private content on account changes and distinguishes forbidden/not-found responses from retryable network/server failures. Numeric pagination and time filters are parsed from URL strings with empty, repeated and invalid values rejected.
 

@@ -4,11 +4,11 @@ $ vitest run
 
 
  Test Files  22 passed (22)
-      Tests  209 passed (209)
-   Start at  12:51:36
-   Duration  105.58s (import 33%, environment 32%, tests 20%, setup 11%, transform 3%)
+      Tests  213 passed (213)
+   Start at  13:24:04
+   Duration  56.36s (environment 36%, import 28%, tests 24%, setup 10%, transform 2%)
 
-Environment  jsdom was created 22 times · 93.85s total, 32% of tracked time
+Environment  jsdom was created 22 times · 55.42s total, 36% of tracked time
              create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
              learn more: https://vitest.dev/guide/improving-performance#test-environments
 

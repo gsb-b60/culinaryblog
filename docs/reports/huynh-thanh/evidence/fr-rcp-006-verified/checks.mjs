@@ -1,10 +1,13 @@
 ﻿import { spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 const root = process.cwd();
 const out = resolve(root, 'docs/reports/huynh-thanh/evidence/fr-rcp-006-verified');
 mkdirSync(out, { recursive: true });
-const results = {};
+const requested = process.argv.slice(2);
+if (requested.some(project => !['backend', 'frontend'].includes(project))) throw new Error('Unknown project');
+const projects = requested.length ? requested : ['backend', 'frontend'];
+const results = requested.length ? JSON.parse(readFileSync(resolve(out, 'checks.json'), 'utf8').replace(/^\uFEFF/, '')) : {};
 function run(project, name, command) {
   return new Promise(resolveRun => {
     const child = spawn('powershell.exe', ['-NoProfile', '-Command', command], {
@@ -25,7 +28,7 @@ function run(project, name, command) {
     });
   });
 }
-await Promise.all(['backend', 'frontend'].map(async project => {
+await Promise.all(projects.map(async project => {
   for (const [name, command] of [['test', 'pnpm test'], ['lint', 'pnpm lint'], ['build', 'pnpm build']]) {
     await run(project, name, command);
   }

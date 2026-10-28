@@ -28,7 +28,7 @@ Tên requirement trong bảng SRS là “Archive Recipe (Archive / Unarchive)”
 
 Branch: `feat/issue-32-archive-recipe`.
 
-Source kiểm chứng: working tree dựa trên commit `64f9a249e174bfd3136b97bbd3117033fee75e8f`, có chỉnh format ở `RecipeQueryHandlers.ts` và `RecipeDetailPage.test.tsx`. Hash từng file source được lưu trong `source-manifest.json`.
+Source kiểm chứng: working tree dựa trên commit `22ea59ec4d5dfc602452cce38a87ff389f58439b`, bổ sung trang Lưu trữ riêng và nút truy cập trong Dashboard. Hash từng file source được lưu trong `source-manifest.json`.
 
 Ngày kiểm chứng: **28/10/2026**, múi giờ America/Los_Angeles.
 
@@ -36,7 +36,7 @@ Ngày kiểm chứng: **28/10/2026**, múi giờ America/Los_Angeles.
 
 ## 4. Mô tả thay đổi
 
-Hoàn thiện lưu trữ công thức cho chủ sở hữu/Admin: chuyển Draft hoặc Published sang ARCHIVED, giữ nguyên dữ liệu và ẩn khỏi các API danh sách công khai, danh mục và tìm kiếm. Bổ sung thao tác Lưu trữ, badge trạng thái và xem chi tiết có xác thực; sửa lỗi phân trang/lọc thời gian trả 422 với query số hợp lệ.
+Hoàn thiện lưu trữ công thức cho chủ sở hữu/Admin: chuyển Draft hoặc Published sang ARCHIVED, giữ nguyên dữ liệu và ẩn khỏi các API danh sách công khai, danh mục và tìm kiếm. Tách trang Lưu trữ riêng trong Dashboard, có nút truy cập bên dưới phần Công thức gần đây và mục menu bên dưới Xóa công thức; giữ badge trạng thái và xem chi tiết có xác thực; sửa lỗi phân trang/lọc thời gian trả 422 với query số hợp lệ.
 
 Các file chính thay đổi:
 
@@ -48,7 +48,8 @@ Các file chính thay đổi:
 | `backend/src/application/validators/recipeValidators.ts` | Parse số từ URL; từ chối giá trị rỗng, lặp và không hợp lệ. |
 | `backend/src/presentation/di/container.ts`, `routes/recipeRoutes.ts`, `routes/categoryRoutes.ts` | Đăng ký handler và nối endpoint với quyền lấy từ phiên đăng nhập. |
 | `backend/src/presentation/docs/openapi.ts` | Cập nhật response và mã lỗi Archive. |
-| `frontend/src/pages/RecipesPage.tsx` | Nút Lưu trữ, cập nhật badge, khóa thao tác khi đang gửi và link Xem chi tiết. |
+| `frontend/src/pages/RecipesPage.tsx` | Dùng chung xử lý dữ liệu nhưng tách chế độ Publish/Unpublish và Archive theo route riêng; cập nhật badge, khóa thao tác và link chi tiết. |
+| `frontend/src/pages/DashboardPage.tsx`, `components/DashboardSidebar.tsx`, `components/layout/DashboardLayout.tsx`, `App.tsx` | Nút Lưu trữ phía dưới Tổng quan, menu desktop/mobile dưới Xóa công thức và route `/dashboard/recipes/archive`; tự mở submenu cho trang đang chọn. |
 | `frontend/src/pages/RecipeDetailPage.tsx` | Đọc API thật với token, phân biệt 403/404/lỗi kết nối, hỗ trợ retry và bỏ phản hồi cũ khi đổi tài khoản/slug. |
 | `frontend/src/lib/api.ts`, `hooks/useRecipes.ts`, `types/recipe.ts` | API Archive/Detail, hủy request và khai báo bộ lọc. |
 | `backend/tests/recipe-status.test.ts`, `frontend/src/test/RecipeDetailPage.test.tsx`, `RecipesPage.test.tsx`, `static-blog.test.tsx` | Test quyền, chuyển trạng thái, public visibility, query số và luồng UI. |
@@ -82,7 +83,7 @@ Các file chính thay đổi:
 1. Nếu chưa có hạ tầng, chạy `docker compose up -d`. Máy kiểm chứng dùng PostgreSQL Docker publish cổng **5433**, Redis **6379**; điều chỉnh cấu hình local theo môi trường thực tế.
 2. Backend: vào `backend`, chạy `pnpm install`, `pnpm prisma:generate`, chuẩn bị DB phát triển nếu cần bằng `pnpm db:push`, rồi `pnpm dev`. PR này không thay đổi schema.
 3. Frontend: vào `frontend`, chạy `pnpm install`, cấu hình `VITE_API_BASE_URL` trỏ tới backend rồi `pnpm dev`.
-4. Đăng nhập Author → Dashboard → Công thức → Danh sách công thức → Lưu trữ một công thức. Mong đợi HTTP **200**, badge **Đã lưu trữ**, trạng thái vẫn đúng sau tải lại.
+4. Đăng nhập Author → Dashboard → nút Lưu trữ công thức bên dưới Công thức gần đây, hoặc Công thức → Lưu trữ công thức (dưới Xóa công thức), rồi lưu trữ một công thức. Mong đợi HTTP **200**, badge **Đã lưu trữ**, trạng thái vẫn đúng sau tải lại.
 5. Bấm **Xem chi tiết**: owner/Admin vẫn xem được nguyên liệu, bước thực hiện. API list/search/category không trả công thức vừa lưu trữ; Author khác nhận 403 khi archive hoặc xem chi tiết riêng tư.
 6. Trong từng thư mục `backend` và `frontend`, chạy `pnpm test`, `pnpm lint`, `pnpm build`. Scalar UI nằm tại `/scalar` trên origin backend đang cấu hình; mặc định frontend API client trỏ tới `http://localhost:5000/api/v1`.
 7. Tái hiện đúng bộ ảnh này từ root:
@@ -98,7 +99,7 @@ Script minh chứng sử dụng helper tích hợp có sẵn, tạo **schema Pos
 
 | Kiểm tra | Backend | Frontend |
 |---|---|---|
-| `pnpm test` | **264 tests / 22 files PASS**, gồm integration thật; coverage lines **90.63%** | **209 tests / 22 files PASS** |
+| `pnpm test` | **264 tests / 22 files PASS**, gồm integration thật; coverage lines **90.63%** | **213 tests / 22 files PASS** |
 | `pnpm lint` | **PASS — 0 errors, 196 warnings** | **PASS — không có lỗi/cảnh báo ESLint** |
 | `pnpm build` | **PASS — TypeScript** | **PASS — TypeScript + Vite** |
 
@@ -129,27 +130,31 @@ Chi tiết tích hợp: [result.json](https://raw.githubusercontent.com/gsb-b60/
 
 Ảnh chụp từ UI/API thật và báo cáo tổng hợp log thực thi. Các ảnh và log dùng URL raw trên branch `feat/issue-32-archive-recipe`; file PNG gốc được lưu kèm trong thư mục evidence.
 
-**Ảnh 1. Trước khi lưu trữ: công thức Published và nút Lưu trữ.**
+**Ảnh 1. Nút Lưu trữ công thức bên dưới phần Công thức gần đây trên Dashboard.**
+
+![Nút lưu trữ trong Dashboard](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/00-dashboard-shortcut.png)
+
+**Ảnh 2. Trước khi lưu trữ: công thức Published và nút Lưu trữ.**
 
 ![Trước khi lưu trữ](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/01-before-archive.png)
 
-**Ảnh 2. Sau thao tác thật: HTTP 200, thông báo thành công và badge Đã lưu trữ.**
+**Ảnh 3. Sau thao tác thật: HTTP 200, thông báo thành công và badge Đã lưu trữ.**
 
 ![Lưu trữ thành công](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/02-archive-success.png)
 
-**Ảnh 3. Owner xem chi tiết công thức đã lưu trữ, giữ nguyên nguyên liệu và bước thực hiện.**
+**Ảnh 4. Owner xem chi tiết công thức đã lưu trữ, giữ nguyên nguyên liệu và bước thực hiện.**
 
 ![Owner xem chi tiết](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/03-owner-archived-detail.png)
 
-**Ảnh 4. Response JSON thật từ GET chi tiết: ARCHIVED và dữ liệu liên quan.**
+**Ảnh 5. Response JSON thật từ GET chi tiết: ARCHIVED và dữ liệu liên quan.**
 
 ![Response API thật](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/04-live-api-response.png)
 
-**Ảnh 5. Báo cáo kiểm tra HTTP, PostgreSQL và Redis thật.**
+**Ảnh 6. Báo cáo kiểm tra HTTP, PostgreSQL và Redis thật.**
 
 ![Kiểm tra tích hợp thật](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/05-http-database-cache-checks.png)
 
-**Ảnh 6. Ảnh tổng hợp output test/lint/build đã thực thi; log gốc được đính kèm ở mục 6.**
+**Ảnh 7. Ảnh tổng hợp output test/lint/build đã thực thi; log gốc được đính kèm ở mục 6.**
 
 ![Kết quả test lint build](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/06-tests-lint-build.png)
 
@@ -162,7 +167,7 @@ Chi tiết tích hợp: [result.json](https://raw.githubusercontent.com/gsb-b60/
 - [x] `pnpm test` pass, gồm bộ integration backend thật.
 - [ ] `pnpm prisma:generate` đã chạy nếu đổi `prisma/schema.prisma` — không áp dụng, schema không đổi.
 - [x] Không đưa file `.env`, secrets, keys hoặc giá trị token vào artifact minh chứng.
-- [ ] Code đã format toàn bộ bằng `pnpm format` — chưa chạy toàn backend; lượt minh chứng chỉ format `RecipeQueryHandlers.ts` và `RecipeDetailPage.test.tsx` bằng Prettier.
+- [ ] Code đã format toàn bộ bằng `pnpm format` — chưa chạy toàn backend; đã dùng Prettier cho các file frontend thay đổi và hai file format ở lượt minh chứng trước.
 - [x] Đã tự review code và bổ sung test cho hai lỗi được phát hiện.
 - [x] Không thêm `console.log` / debug code thừa trong mã ứng dụng; script evidence có in kết quả chạy.
 - [x] Documentation / comment đã cập nhật.
