@@ -36,7 +36,8 @@ function errorMessage(reason: unknown): string {
  * Recipe management list. Shell (sidebar, mobile navigation, sign-out dialog,
  * auth guard) is provided by DashboardLayout.
  */
-export default function RecipesPage() {
+export default function RecipesPage({ mode = 'publish' }: { mode?: 'publish' | 'archive' }) {
+  const archiveMode = mode === 'archive'
   const navigate = useNavigate()
   const session = useAuthStore((state) => state.session)
   const isAuthenticated = useAuthStore((state) => state.session !== null)
@@ -119,10 +120,9 @@ export default function RecipesPage() {
     setSuccess('')
     try {
       const token = useAuthStore.getState().session?.accessToken ?? session.accessToken
-      const updated = await (archive ? archiveRecipe : recipe.status === 'DRAFT' ? publishRecipe : unpublishRecipe)(
-        token,
-        recipe.id,
-      )
+      const updated = await (
+        archive ? archiveRecipe : recipe.status === 'DRAFT' ? publishRecipe : unpublishRecipe
+      )(token, recipe.id)
       if (!mounted.current) return
       setData((current) =>
         current
@@ -136,8 +136,8 @@ export default function RecipesPage() {
         updated.status === 'ARCHIVED'
           ? 'Đã lưu trữ công thức. Công thức đã được ẩn khỏi trang công khai.'
           : updated.status === 'PUBLISHED'
-          ? 'Đã xuất bản công thức.'
-          : 'Đã chuyển công thức về bản nháp.',
+            ? 'Đã xuất bản công thức.'
+            : 'Đã chuyển công thức về bản nháp.',
       )
     } catch (reason) {
       if (!mounted.current) return
@@ -160,11 +160,16 @@ export default function RecipesPage() {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">
-            {isAdmin ? 'Quản lý công thức' : 'Công thức của tôi'}
+            {archiveMode
+              ? 'Lưu trữ công thức'
+              : isAdmin
+                ? 'Quản lý công thức'
+                : 'Công thức của tôi'}
           </h1>
           <p className="mt-2 text-sm text-surface-500">
-            Xuất bản công thức khi đã có bước thực hiện, hoặc chuyển về bản nháp để tiếp tục chỉnh
-            sửa.
+            {archiveMode
+              ? 'Lưu trữ để ẩn công thức khỏi trang công khai và giữ nguyên dữ liệu. Bạn vẫn có thể xem chi tiết sau khi lưu trữ.'
+              : 'Xuất bản công thức khi đã có bước thực hiện, hoặc chuyển về bản nháp để tiếp tục chỉnh sửa.'}
           </p>
         </div>
         <button
@@ -235,8 +240,10 @@ export default function RecipesPage() {
                       {new Date(recipe.updatedAt).toLocaleString('vi-VN')}
                     </p>
                     {canManage && (
-                      <Link to={'/recipes/' + encodeURIComponent(recipe.slug)}
-                        className="rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold text-brand-700">
+                      <Link
+                        to={'/recipes/' + encodeURIComponent(recipe.slug)}
+                        className="rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold text-brand-700"
+                      >
                         Xem chi tiết
                       </Link>
                     )}
@@ -248,7 +255,7 @@ export default function RecipesPage() {
                         Nguyên liệu
                       </Link>
                     )}
-                    {canManage && !archived && (
+                    {!archiveMode && canManage && !archived && (
                       <button
                         type="button"
                         disabled={pending !== null || noSteps}
@@ -265,14 +272,17 @@ export default function RecipesPage() {
                       </button>
                     )}
                   </div>
-                  {canManage && !archived && (
-                    <button type="button" disabled={pending !== null}
+                  {archiveMode && canManage && !archived && (
+                    <button
+                      type="button"
+                      disabled={pending !== null}
                       onClick={() => void changeStatus(recipe, true)}
-                      className="mt-3 rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold disabled:opacity-50">
-                      Lưu trữ
+                      className="mt-3 rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                    >
+                      {pending === recipe.id ? 'Đang lưu trữ...' : 'Lưu trữ'}
                     </button>
                   )}
-                  {noSteps && (
+                  {!archiveMode && noSteps && (
                     <p className="mt-3 text-sm text-amber-700">
                       Cần ít nhất một bước thực hiện trước khi xuất bản.
                     </p>

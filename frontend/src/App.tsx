@@ -45,7 +45,11 @@ export default function App() {
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/recipes/delete" element={<DeleteRecipesPage />} />
-        <Route path="/dashboard/recipes" element={<RecipesPage />} />
+        <Route
+          path="/dashboard/recipes/archive"
+          element={<RecipesPage key="archive" mode="archive" />}
+        />
+        <Route path="/dashboard/recipes" element={<RecipesPage key="publish" />} />
         <Route path="/dashboard/ingredients" element={<IngredientManagementPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>

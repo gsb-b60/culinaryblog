@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-type Section = 'overview' | 'recipes' | 'delete-recipes' | 'ingredients' | 'profile'
+type Section =
+  'overview' | 'recipes' | 'delete-recipes' | 'archive-recipes' | 'ingredients' | 'profile'
 
 /** Render dashboard destinations and indicate the active page. */
 export default function DashboardSidebar({
@@ -11,11 +12,17 @@ export default function DashboardSidebar({
   onLogout: () => void
   active?: Section
 }) {
-  const [recipesExpanded, setRecipesExpanded] = useState(
-    active === 'recipes' || active === 'delete-recipes' || active === 'ingredients',
+  const [recipesMenu, setRecipesMenu] = useState<{ section: Section; expanded: boolean } | null>(
+    null,
   )
   const recipesActive =
-    active === 'recipes' || active === 'delete-recipes' || active === 'ingredients'
+    active === 'recipes' ||
+    active === 'delete-recipes' ||
+    active === 'archive-recipes' ||
+    active === 'ingredients'
+  // A destination opened from the overview must reveal its active submenu.
+  const recipesExpanded = recipesMenu?.section === active ? recipesMenu.expanded : recipesActive
+  const toggleRecipes = () => setRecipesMenu({ section: active, expanded: !recipesExpanded })
   const itemClass = (selected: boolean) =>
     'flex items-center gap-2 rounded-lg px-3 py-2 text-sm ' +
     (selected ? 'bg-brand-500 font-medium text-white' : 'hover:bg-surface-700')
@@ -45,14 +52,17 @@ export default function DashboardSidebar({
             aria-label="Công thức"
             aria-expanded={recipesExpanded}
             aria-controls="dashboard-recipes-submenu"
-            onClick={() => setRecipesExpanded((expanded) => !expanded)}
+            onClick={toggleRecipes}
             className={itemClass(recipesActive) + ' w-full justify-between'}
           >
             Công thức
             <span aria-hidden="true">{recipesExpanded ? '−' : '+'}</span>
           </button>
           {recipesExpanded && (
-            <div id="dashboard-recipes-submenu" className="ml-3 space-y-1 border-l border-surface-600 pl-2">
+            <div
+              id="dashboard-recipes-submenu"
+              className="ml-3 space-y-1 border-l border-surface-600 pl-2"
+            >
               <Link
                 to="/dashboard/recipes"
                 aria-current={active === 'recipes' ? 'page' : undefined}
@@ -73,6 +83,13 @@ export default function DashboardSidebar({
                 className={submenuClass(active === 'delete-recipes')}
               >
                 Xóa công thức
+              </Link>
+              <Link
+                to="/dashboard/recipes/archive"
+                aria-current={active === 'archive-recipes' ? 'page' : undefined}
+                className={submenuClass(active === 'archive-recipes')}
+              >
+                Lưu trữ công thức
               </Link>
             </div>
           )}
@@ -125,6 +142,13 @@ export default function DashboardSidebar({
             >
               Xóa công thức
             </Link>
+            <Link
+              to="/dashboard/recipes/archive"
+              aria-current={active === 'archive-recipes' ? 'page' : undefined}
+              className={submenuClass(active === 'archive-recipes')}
+            >
+              Lưu trữ công thức
+            </Link>
           </div>
         )}
         <Link
@@ -142,7 +166,7 @@ export default function DashboardSidebar({
           aria-label="Công thức"
           aria-expanded={recipesExpanded}
           aria-controls="mobile-dashboard-recipes-submenu"
-          onClick={() => setRecipesExpanded((expanded) => !expanded)}
+          onClick={toggleRecipes}
           className={
             'flex-1 text-center text-xs ' +
             (recipesActive ? 'font-medium text-brand-600' : 'text-surface-400')
