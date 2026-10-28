@@ -20,7 +20,11 @@ export function getRecipeFileKey(url: string, recipeId: string, baseUrl: string)
   } catch {
     return null;
   }
-  if (!key.startsWith(`recipes/${recipeId}/`) || key.includes('..') || key.includes('\\')) {
+  if (
+    !key.startsWith(`recipes/${recipeId}/`) ||
+    key.split('/').some((segment) => segment === '.' || segment === '..') ||
+    key.includes('\\')
+  ) {
     return null;
   }
   return key;

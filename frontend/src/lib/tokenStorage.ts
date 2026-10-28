@@ -67,3 +67,8 @@ export function clearSession(): void {
   sessionStorage.removeItem(SESSION_KEY)
   notifySessionChanged()
 }
+
+/** Replace rotated credentials without changing the remember-me choice. */
+export function replaceSession(auth: AuthResponse): void {
+  saveSession(auth, localStorage.getItem(SESSION_KEY) !== null)
+}
