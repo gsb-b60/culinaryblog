@@ -6,6 +6,7 @@ import { PageLoading } from '../components/common/PageLoading'
 import { Pagination } from '../components/common/Pagination'
 import { ApiError, deleteRecipe, getManagedRecipes } from '../lib/api'
 import { useAuthStore } from '../store'
+import type { AuthResponse } from '../types/auth'
 import type { RecipePage } from '../types/recipe'
 
 const labels = { DRAFT: 'Bản nháp', PUBLISHED: 'Đã xuất bản', ARCHIVED: 'Đã lưu trữ' }
@@ -19,9 +20,15 @@ function errorMessage(reason: unknown): string {
 }
 
 export default function DeleteRecipesPage() {
-  const navigate = useNavigate()
   const session = useAuthStore((state) => state.session)
-  const isAuthenticated = useAuthStore((state) => state.session !== null)
+  if (!session) return null
+  // A different account or permission set must never inherit the previous list or requests.
+  const accountKey = JSON.stringify([session.user.id, session.user.roles])
+  return <AccountDeleteRecipesPage key={accountKey} session={session} />
+}
+
+function AccountDeleteRecipesPage({ session }: { session: AuthResponse }) {
+  const navigate = useNavigate()
   const signOut = useAuthStore((state) => state.signOut)
   const [page, setPage] = useState(1)
   const [revision, setRevision] = useState(0)
@@ -42,35 +49,36 @@ export default function DeleteRecipesPage() {
   }, [])
 
   useEffect(() => {
-    if (!isAuthenticated) return
     const token = useAuthStore.getState().session?.accessToken
     if (!token) return
     let active = true
     const controller = new AbortController()
     getManagedRecipes(token, page, controller.signal)
       .then((result) => {
-        if (active) setData(result)
-      })
-      .catch((reason: unknown) => {
-        if (reason instanceof ApiError && reason.status === 401) {
-          if (mounted.current) {
-            signOut()
-            navigate('/auth/login', { replace: true })
-          }
+        if (!active) return
+        const lastPage = Math.max(1, result.meta.totalPages)
+        if (page > lastPage) {
+          setPage(lastPage)
           return
         }
-        if (active) setError(errorMessage(reason))
+        setData(result)
+        setLoading(false)
       })
-      .finally(() => {
-        if (active) setLoading(false)
+      .catch((reason: unknown) => {
+        if (!active) return
+        if (reason instanceof ApiError && reason.status === 401) {
+          signOut()
+          navigate('/auth/login', { replace: true })
+          return
+        }
+        setError(errorMessage(reason))
+        setLoading(false)
       })
     return () => {
       active = false
       controller.abort()
     }
-  }, [isAuthenticated, page, revision, navigate, signOut])
-
-  if (!session) return null
+  }, [page, revision, navigate, signOut])
 
   const reload = () => {
     setLoading(true)
@@ -83,7 +91,10 @@ export default function DeleteRecipesPage() {
     setLoading(true)
     setError('')
     setSuccess('')
+    setConfirming(null)
     setPage(next)
+    // Retry even when the requested page already matches a previous failed request.
+    setRevision((value) => value + 1)
   }
 
   const remove = async (id: string) => {
@@ -98,26 +109,13 @@ export default function DeleteRecipesPage() {
       if (!mounted.current) return
       setConfirming(null)
       setSuccess('Đã xóa công thức.')
+      // Refetch offset pages so items on later pages remain reachable after a deletion.
+      setData(null)
+      setLoading(true)
       if (data && data.items.length === 1 && page > 1) {
         setPage((value) => value - 1)
-        setLoading(true)
-      } else {
-        setData((current) =>
-          current
-            ? {
-                ...current,
-                items: current.items.filter((recipe) => recipe.id !== id),
-                meta: {
-                  ...current.meta,
-                  totalCount: Math.max(0, current.meta.totalCount - 1),
-                  totalPages: Math.ceil(
-                    Math.max(0, current.meta.totalCount - 1) / current.meta.pageSize,
-                  ),
-                },
-              }
-            : current,
-        )
       }
+      setRevision((value) => value + 1)
     } catch (reason) {
       if (!mounted.current) return
       if (reason instanceof ApiError && reason.status === 401) {
