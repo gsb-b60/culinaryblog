@@ -7,7 +7,8 @@ import { PageLoading } from '../components/common/PageLoading'
 import { Badge } from '../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Separator } from '../components/ui/separator'
-import { getStaticRecipeBySlug } from '../data/blog-static'
+import { ApiError, getRecipeBySlug } from '../lib/api'
+import { useAuthStore } from '../store'
 import { formatDate } from '../lib/formatDate'
 import type { RecipeDetail } from '../types/recipe'
 
@@ -18,40 +19,53 @@ const DIFFICULTY_LABELS: Record<RecipeDetail['difficulty'], string> = {
   EXPERT: 'Chuyên sâu',
 }
 
-type DetailState = { key: string; status: 'loading' } | { key: string; status: 'ready'; recipe: RecipeDetail | null }
+type DetailState =
+  | { key: string; status: 'loading' }
+  | { key: string; status: 'ready'; recipe: RecipeDetail }
+  | { key: string; status: 'error'; code: number }
+
+function failureMessage(code: number): { title: string; message: string } {
+  if (code === 404) return { title: 'Không tìm thấy công thức', message: 'Công thức này không tồn tại hoặc đã ngừng xuất bản.' }
+  if (code === 403) return { title: 'Không có quyền truy cập', message: 'Chỉ tác giả hoặc quản trị viên mới được xem công thức này.' }
+  if (code === 401) return { title: 'Phiên đăng nhập đã hết hạn', message: 'Vui lòng đăng nhập lại để xem công thức này.' }
+  return { title: 'Không thể tải công thức', message: code === 0 ? 'Không thể kết nối máy chủ. Vui lòng thử lại.' : 'Máy chủ gặp lỗi. Vui lòng thử lại sau.' }
+}
 
 function formatQuantity(ingredient: RecipeDetail['ingredients'][number]): string {
   if (ingredient.quantity === undefined) return ''
   return `${ingredient.quantity} ${ingredient.unit ?? ''}`.trim()
 }
 
-/**
- * Public recipe detail. Served by the static sample data for now; swapping in
- * the real API (issue #21) only means replacing `getStaticRecipeBySlug`.
- */
+/** Load recipe details using the current account; never retain private content across sessions. */
 export default function RecipeDetailPage() {
   const { slug } = useParams()
+  const accessToken = useAuthStore(state => state.session?.accessToken)
   const [response, setResponse] = useState<DetailState | null>(null)
+  const [revision, setRevision] = useState(0)
+  const requestKey = JSON.stringify([slug, accessToken, revision])
 
   useEffect(() => {
     let active = true
-    const key = slug ?? ''
-    getStaticRecipeBySlug(key)
-      .then(found => {
-        if (active) setResponse({ key, status: 'ready', recipe: found })
+    const controller = new AbortController()
+    getRecipeBySlug(slug ?? '', accessToken, controller.signal)
+      .then(recipe => {
+        if (active) setResponse({ key: requestKey, status: 'ready', recipe })
       })
-      .catch(() => {
-        // The sample data cannot fail; a rejection is treated as "not found".
-        if (active) setResponse({ key, status: 'ready', recipe: null })
+      .catch((reason: unknown) => {
+        if (!active || controller.signal.aborted) return
+        // A session change aborts the old request; the new session fetches independently.
+        if (reason instanceof DOMException && reason.name === 'AbortError') return
+        setResponse({ key: requestKey, status: 'error', code: reason instanceof ApiError ? reason.status : 500 })
       })
     return () => {
       active = false
+      controller.abort()
     }
-  }, [slug])
+  }, [slug, accessToken, revision, requestKey])
 
-  const view: DetailState = response && response.key === (slug ?? '')
+  const view: DetailState = response?.key === requestKey
     ? response
-    : { key: slug ?? '', status: 'loading' }
+    : { key: requestKey, status: 'loading' }
 
   if (view.status === 'loading') {
     return (
@@ -61,14 +75,14 @@ export default function RecipeDetailPage() {
     )
   }
 
-  const recipe = view.recipe
-
-  if (recipe === null) {
+  if (view.status === 'error') {
+    const failure = failureMessage(view.code)
     return (
       <main className="mx-auto w-full max-w-3xl px-4 py-16 text-center">
         <ErrorState
-          title="Không tìm thấy công thức"
-          message="Công thức này không tồn tại hoặc đã ngừng xuất bản."
+          title={failure.title}
+          message={failure.message}
+          onRetry={view.code === 0 || view.code >= 500 ? () => setRevision(value => value + 1) : undefined}
         />
         <Link
           to="/recipes"
@@ -81,6 +95,7 @@ export default function RecipeDetailPage() {
     )
   }
 
+  const recipe = view.recipe
   const totalMinutes = recipe.prepTime + recipe.cookTime
 
   return (
@@ -103,6 +118,9 @@ export default function RecipeDetailPage() {
             {recipe.categoryName ?? 'Khác'}
           </Badge>
           <Badge variant="outline">{DIFFICULTY_LABELS[recipe.difficulty]}</Badge>
+          {recipe.status !== 'PUBLISHED' && (
+            <Badge variant="outline">{recipe.status === 'ARCHIVED' ? 'Đã lưu trữ' : 'Bản nháp'}</Badge>
+          )}
         </div>
         <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-surface-900 sm:text-4xl">
           {recipe.title}

@@ -59,15 +59,21 @@ export const updateRecipeSchema = z.object({
   }).optional(),
 });
 
+// Express query values are strings; reject empty values and arrays rather than coercing them to zero.
+const queryNumber = (schema: z.ZodNumber) => z.preprocess(
+  value => typeof value === 'string' && value.trim() !== '' ? Number(value) : value,
+  schema,
+);
+
 export const recipeFiltersSchema = z.object({
   categoryId: z.string().uuid().optional(),
   difficulty: z.nativeEnum(RecipeDifficulty).optional(),
   status: z.nativeEnum(RecipeStatus).optional(),
   authorId: z.string().uuid().optional(),
-  minPrepTime: z.number().int().nonnegative().optional(),
-  maxPrepTime: z.number().int().nonnegative().optional(),
-  minCookTime: z.number().int().nonnegative().optional(),
-  maxCookTime: z.number().int().nonnegative().optional(),
+  minPrepTime: queryNumber(z.number().int().nonnegative()).optional(),
+  maxPrepTime: queryNumber(z.number().int().nonnegative()).optional(),
+  minCookTime: queryNumber(z.number().int().nonnegative()).optional(),
+  maxCookTime: queryNumber(z.number().int().nonnegative()).optional(),
   searchQuery: z.string().min(2).optional(),
 });
 
@@ -77,8 +83,8 @@ export const recipeSortSchema = z.object({
 });
 
 export const paginationSchema = z.object({
-  page: z.number().int().positive().default(1),
-  pageSize: z.number().int().positive().max(50).default(12),
+  page: queryNumber(z.number().int().positive()).default(1),
+  pageSize: queryNumber(z.number().int().positive().max(50)).default(12),
 });
 
 export type CreateRecipeInput = z.infer<typeof createRecipeSchema>;

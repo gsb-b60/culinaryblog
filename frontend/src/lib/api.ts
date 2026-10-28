@@ -270,8 +270,9 @@ export function searchRecipes(
 }
 
 /** Fetch recipe details by slug, optionally including account credentials. */
-export function getRecipeBySlug(slug: string, accessToken?: string): Promise<RecipeDetail> {
+export function getRecipeBySlug(slug: string, accessToken?: string, signal?: AbortSignal): Promise<RecipeDetail> {
   return request<RecipeDetail>(`/recipes/${encodeURIComponent(slug)}`, {
+    signal,
     headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
   })
 }
@@ -306,8 +307,8 @@ export function updateRecipe(
 }
 
 /** Archive an authorized recipe through its lifecycle endpoint. */
-export function archiveRecipe(accessToken: string, id: string): Promise<{ message: string }> {
-  return request<{ message: string }>(`/recipes/${encodeURIComponent(id)}/archive`, {
+export function archiveRecipe(accessToken: string, id: string): Promise<Recipe> {
+  return request<Recipe>(`/recipes/${encodeURIComponent(id)}/archive`, {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${accessToken}` },
   })

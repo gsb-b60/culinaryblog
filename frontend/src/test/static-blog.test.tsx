@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Link, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { getStaticRecipeBySlug } from '../data/blog-static'
 
 import HomePage from '../pages/HomePage'
 import RecipeDetailPage from '../pages/RecipeDetailPage'
@@ -159,6 +160,15 @@ describe('RecipesBrowsePage', () => {
 })
 
 describe('RecipeDetailPage', () => {
+  beforeEach(() => {
+    // The detail page now uses HTTP; sample data is only a fixture for these rendering tests.
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      const recipe = await getStaticRecipeBySlug(decodeURIComponent(url.split('/').at(-1) ?? ''))
+      return new Response(JSON.stringify(recipe ?? {}), { status: recipe ? 200 : 404 })
+    }))
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
   it('renders the recipe with its ingredients and steps', async () => {
     renderDetailPage('pho-bo-tai-nam')
 

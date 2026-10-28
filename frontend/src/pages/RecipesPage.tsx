@@ -6,6 +6,7 @@ import { PageLoading } from '../components/common/PageLoading'
 import { Pagination } from '../components/common/Pagination'
 import {
   ApiError,
+  archiveRecipe,
   getManagedRecipes,
   publishRecipe,
   unpublishRecipe,
@@ -110,7 +111,7 @@ export default function RecipesPage() {
     setPage(next)
   }
 
-  const changeStatus = async (recipe: Recipe) => {
+  const changeStatus = async (recipe: Recipe, archive = false) => {
     if (busy.current) return
     busy.current = true
     setPending(recipe.id)
@@ -118,7 +119,7 @@ export default function RecipesPage() {
     setSuccess('')
     try {
       const token = useAuthStore.getState().session?.accessToken ?? session.accessToken
-      const updated = await (recipe.status === 'DRAFT' ? publishRecipe : unpublishRecipe)(
+      const updated = await (archive ? archiveRecipe : recipe.status === 'DRAFT' ? publishRecipe : unpublishRecipe)(
         token,
         recipe.id,
       )
@@ -132,7 +133,9 @@ export default function RecipesPage() {
           : current,
       )
       setSuccess(
-        updated.status === 'PUBLISHED'
+        updated.status === 'ARCHIVED'
+          ? 'Đã lưu trữ công thức. Công thức đã được ẩn khỏi trang công khai.'
+          : updated.status === 'PUBLISHED'
           ? 'Đã xuất bản công thức.'
           : 'Đã chuyển công thức về bản nháp.',
       )
@@ -232,6 +235,12 @@ export default function RecipesPage() {
                       {new Date(recipe.updatedAt).toLocaleString('vi-VN')}
                     </p>
                     {canManage && (
+                      <Link to={'/recipes/' + encodeURIComponent(recipe.slug)}
+                        className="rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold text-brand-700">
+                        Xem chi tiết
+                      </Link>
+                    )}
+                    {canManage && (
                       <Link
                         to={`/dashboard/ingredients?recipeId=${encodeURIComponent(recipe.id)}&page=${page}`}
                         className="rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold text-brand-700"
@@ -256,6 +265,13 @@ export default function RecipesPage() {
                       </button>
                     )}
                   </div>
+                  {canManage && !archived && (
+                    <button type="button" disabled={pending !== null}
+                      onClick={() => void changeStatus(recipe, true)}
+                      className="mt-3 rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold disabled:opacity-50">
+                      Lưu trữ
+                    </button>
+                  )}
                   {noSteps && (
                     <p className="mt-3 text-sm text-amber-700">
                       Cần ít nhất một bước thực hiện trước khi xuất bản.
@@ -263,7 +279,7 @@ export default function RecipesPage() {
                   )}
                   {archived && (
                     <p className="mt-3 text-sm text-surface-500">
-                      Công thức đã lưu trữ không thể đổi trạng thái tại đây.
+                      Công thức đã lưu trữ được ẩn khỏi trang công khai và vẫn giữ nguyên dữ liệu.
                     </p>
                   )}
                 </article>
