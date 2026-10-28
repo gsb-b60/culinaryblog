@@ -651,12 +651,17 @@ export const openApiSpec = {
       },
       delete: {
         tags: ['recipes'],
-        summary: 'Delete recipe (Owner/Admin)',
+        summary: 'Permanently delete recipe (Owner/Admin); image cleanup is asynchronous',
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
         ],
-        responses: { '204': { description: 'No Content' } },
+        responses: {
+          '204': { description: 'No Content' },
+          '401': { description: 'Unauthorized' },
+          '403': { description: 'Forbidden' },
+          '404': { description: 'Recipe not found' },
+        },
       },
     },
     '/recipes/{id}/publish': {

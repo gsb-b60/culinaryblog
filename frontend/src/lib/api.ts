@@ -1,5 +1,5 @@
 import type { RecipeIngredient } from '../types/recipe'
-import { loadSession, saveSession, clearSession } from './tokenStorage'
+import { loadSession, replaceSession, clearSession, subscribeSession } from './tokenStorage'
 import type { Recipe, RecipePage } from '../types/recipe'
 import type {
   AuthResponse,
@@ -41,22 +41,85 @@ export class ApiError extends Error {
   }
 }
 
-/** Send JSON requests, translate problem responses and retry once after token refresh. */
+interface SessionScope {
+  session: AuthResponse
+  refreshing?: Promise<AuthResponse>
+}
+
+let sessionScope: SessionScope | null = null
+
+/** Keep a stable identity across our own token rotation, but never across sign-ins. */
+function currentSessionScope(): SessionScope | null {
+  const session = loadSession()
+  if (!session) {
+    sessionScope = null
+  } else if (!sessionScope || JSON.stringify(sessionScope.session) !== JSON.stringify(session)) {
+    sessionScope = { session }
+  }
+  return sessionScope
+}
+
+subscribeSession(currentSessionScope)
+
+function assertCurrentSession(scope: SessionScope): void {
+  if (currentSessionScope() !== scope) {
+    throw new DOMException('Phiên đăng nhập đã thay đổi. Vui lòng thử lại.', 'AbortError')
+  }
+}
+
+/** Every expired request in this session awaits the same rotation. */
+function refreshSession(scope: SessionScope): Promise<AuthResponse> {
+  assertCurrentSession(scope)
+  if (!scope.refreshing) {
+    scope.refreshing = refresh(scope.session.refreshToken)
+      .then((rotated) => {
+        assertCurrentSession(scope)
+        if (rotated.user.id !== scope.session.user.id) {
+          throw new DOMException('Tài khoản của phiên làm mới không khớp.', 'AbortError')
+        }
+        scope.session = rotated
+        replaceSession(rotated)
+        return rotated
+      })
+      .catch((reason: unknown) => {
+        assertCurrentSession(scope)
+        if (reason instanceof ApiError && (reason.status === 401 || reason.status === 403)) {
+          clearSession()
+        }
+        throw reason
+      })
+      .finally(() => {
+        scope.refreshing = undefined
+      })
+  }
+  return scope.refreshing
+}
+
+/** Send JSON requests and retry once using credentials from the original session only. */
 async function request<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
   let res: Response
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(init?.headers as Record<string, string> | undefined),
   }
+  const scope = 'Authorization' in headers ? currentSessionScope() : null
+  if (scope && headers.Authorization !== `Bearer ${scope.session.accessToken}`) {
+    throw new DOMException('Thông tin đăng nhập của yêu cầu không còn hiệu lực.', 'AbortError')
+  }
 
+  let text: string
   try {
     res = await fetch(`${API_BASE}${path}`, { ...init, headers })
-  } catch {
+    text = await res.text()
+  } catch (reason) {
+    if (reason instanceof DOMException && reason.name === 'AbortError') throw reason
     throw new ApiError(0, 'Không thể kết nối máy chủ. Vui lòng thử lại.', null)
   }
 
+  if (scope) assertCurrentSession(scope)
+  init?.signal?.throwIfAborted()
+
   let body: unknown = null
-  const text = await res.text()
   if (text) {
     try {
       body = JSON.parse(text)
@@ -69,20 +132,22 @@ async function request<T>(path: string, init?: RequestInit, retried = false): Pr
     const problem = (body ?? null) as ProblemDetails | null
     const detail = problem?.detail ?? `Yêu cầu thất bại (HTTP ${res.status})`
 
-    if (res.status === 401 && 'Authorization' in headers && !retried && path !== '/auth/refresh') {
-      const session = loadSession()
-      if (session) {
-        try {
-          const rotated = await refresh(session.refreshToken)
-          saveSession(rotated)
-          headers.Authorization = `Bearer ${rotated.accessToken}`
-        } catch {
-          clearSession()
-          throw new ApiError(res.status, detail, problem)
-        }
-        // A business error from the retried request must not clear a refreshed session.
-        return request<T>(path, { ...init, headers }, true)
-      }
+    if (res.status === 401 && scope && !retried && path !== '/auth/refresh') {
+      // Another request may already have rotated this session while this response was in flight.
+      const rotated =
+        headers.Authorization === `Bearer ${scope.session.accessToken}`
+          ? await refreshSession(scope)
+          : scope.session
+      assertCurrentSession(scope)
+      init?.signal?.throwIfAborted()
+      return request<T>(
+        path,
+        {
+          ...init,
+          headers: { ...headers, Authorization: `Bearer ${rotated.accessToken}` },
+        },
+        true,
+      )
     }
 
     throw new ApiError(res.status, detail, problem)
@@ -248,7 +313,7 @@ export function archiveRecipe(accessToken: string, id: string): Promise<{ messag
   })
 }
 
-/** Request soft deletion of an authorized recipe. */
+/** Permanently delete an authorized recipe and enqueue its image cleanup. */
 export function deleteRecipe(accessToken: string, id: string): Promise<null> {
   return request<null>(`/recipes/${encodeURIComponent(id)}`, {
     method: 'DELETE',
