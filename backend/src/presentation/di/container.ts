@@ -13,7 +13,9 @@ import {
   UpdateProfileCommand,
 } from '../../application/commands/auth/AuthCommands.js';
 import {
+  ArchiveRecipeCommand,
   AddRecipeIngredientCommand,
+  DeleteRecipeCommand,
   PublishRecipeCommand,
   UnpublishRecipeCommand,
   DeleteRecipeIngredientCommand,
@@ -29,6 +31,7 @@ import {
   type GoogleProfile,
 } from '../../application/handlers/AuthCommandHandlers.js';
 import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
+import { DeleteRecipeCommandHandler } from '../../application/handlers/DeleteRecipeCommandHandler.js';
 import { ManagedRecipeQueryHandler } from '../../application/handlers/ManagedRecipeQueryHandler.js';
 import {
   AddRecipeIngredientCommandHandler,
@@ -39,7 +42,9 @@ import {
   GetRecipeIngredientsQuery,
   GetRecipeIngredientsQueryHandler,
 } from '../../application/handlers/RecipeIngredientQueryHandler.js';
+import { GetRecipesQueryHandler, SearchRecipesQueryHandler, GetRecipeBySlugQueryHandler, GetCategoriesQueryHandler, GetCategoryBySlugQueryHandler } from '../../application/handlers/RecipeQueryHandlers.js';
 import {
+  ArchiveRecipeCommandHandler,
   PublishRecipeCommandHandler,
   UnpublishRecipeCommandHandler,
 } from '../../application/handlers/RecipeStatusCommandHandlers.js';
@@ -107,6 +112,16 @@ export function createContainer(): Container {
   );
 
   commandBus.registerCommandHandler(
+    DeleteRecipeCommand.name,
+    new DeleteRecipeCommandHandler(prisma, async () => {
+      await cacheService.deletePattern('recipes:*');
+      await cacheService.deletePattern('categories:*');
+    }),
+  );
+
+  commandBus.registerCommandHandler(ArchiveRecipeCommand.name, new ArchiveRecipeCommandHandler(prisma, cacheService));
+
+  commandBus.registerCommandHandler(
     PublishRecipeCommand.name,
     new PublishRecipeCommandHandler(prisma, cacheService),
   );
@@ -114,6 +129,12 @@ export function createContainer(): Container {
     UnpublishRecipeCommand.name,
     new UnpublishRecipeCommandHandler(prisma, cacheService),
   );
+
+  commandBus.registerQueryHandler('GetRecipesQuery', new GetRecipesQueryHandler(recipeRepository));
+  commandBus.registerQueryHandler('SearchRecipesQuery', new SearchRecipesQueryHandler(recipeRepository));
+  commandBus.registerQueryHandler('GetRecipeBySlugQuery', new GetRecipeBySlugQueryHandler(prisma));
+  commandBus.registerQueryHandler('GetCategoriesQuery', new GetCategoriesQueryHandler(categoryRepository));
+  commandBus.registerQueryHandler('GetCategoryBySlugQuery', new GetCategoryBySlugQueryHandler(categoryRepository, recipeRepository));
 
   commandBus.registerQueryHandler(
     GetManagedRecipesQuery.name,

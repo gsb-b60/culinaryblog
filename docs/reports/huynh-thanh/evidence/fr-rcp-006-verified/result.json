@@ -1,0 +1,190 @@
+{
+  "branch": "feat/issue-32-archive-recipe",
+  "baseCommit": "22ea59ec4d5dfc602452cce38a87ff389f58439b",
+  "sourceState": "working tree (uncommitted Archive Recipe changes)",
+  "startedAt": "2026-10-28T20:25:29.323Z",
+  "requests": [
+    {
+      "method": "PATCH",
+      "path": "/api/v1/recipes/4d140cc0-7e1d-4e66-918f-dcca2599654e/publish",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes?page=1&pageSize=12",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/search?q=canh&page=1&pageSize=12",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/categories/ingredient-test-3d73bc10-122e-4b62-8e04-319e8b7c0ec3?page=1&pageSize=12",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes?minCookTime=5&maxCookTime=60&page=1",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes?page=abc",
+      "status": 422
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/recipes/4d140cc0-7e1d-4e66-918f-dcca2599654e/archive",
+      "status": 401
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/recipes/4d140cc0-7e1d-4e66-918f-dcca2599654e/archive",
+      "status": 403
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/recipes/9f043483-6d51-4ad0-8656-7bc5207da036/archive",
+      "status": 404
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/recipes/4d140cc0-7e1d-4e66-918f-dcca2599654e/archive",
+      "status": 200,
+      "source": "real UI interaction"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes?page=1&pageSize=12",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/search?q=canh&page=1&pageSize=12",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/categories/ingredient-test-3d73bc10-122e-4b62-8e04-319e8b7c0ec3?page=1&pageSize=12",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/recipes/4d140cc0-7e1d-4e66-918f-dcca2599654e/archive",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/ingredients-3d73bc10-122e-4b62-8e04-319e8b7c0ec3-13",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/ingredients-3d73bc10-122e-4b62-8e04-319e8b7c0ec3-13",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/ingredients-3d73bc10-122e-4b62-8e04-319e8b7c0ec3-13",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/ingredients-3d73bc10-122e-4b62-8e04-319e8b7c0ec3-13",
+      "status": 403
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/recipes/c9e3dae3-53bb-476b-96da-a56202d97fb2/archive",
+      "status": 200
+    }
+  ],
+  "checks": {
+    "dashboardShortcutOpensArchivePage": true,
+    "redisRecipeAndCategoryCacheInvalidated": true,
+    "statusSurvivesReload": true,
+    "databaseContentPreserved": {
+      "status": "ARCHIVED",
+      "isDeleted": false,
+      "ingredients": 3,
+      "steps": 1,
+      "images": 1
+    },
+    "/recipes?page=1&pageSize=12": "Archived recipe absent",
+    "/recipes/search?q=canh&page=1&pageSize=12": "Archived recipe absent",
+    "/categories/ingredient-test-3d73bc10-122e-4b62-8e04-319e8b7c0ec3?page=1&pageSize=12": "Archived recipe absent",
+    "idempotentArchive": true,
+    "detail_owner": 200,
+    "detail_admin": 200,
+    "detail_other": 403,
+    "detail_guest": 403,
+    "adminArchivesOtherAuthorRecipe": true
+  },
+  "archiveResponse": {
+    "status": 200,
+    "body": {
+      "id": "4d140cc0-7e1d-4e66-918f-dcca2599654e",
+      "title": "Canh rau củ — Minh chứng lưu trữ",
+      "slug": "ingredients-3d73bc10-122e-4b62-8e04-319e8b7c0ec3-13",
+      "description": "Công thức kiểm thử FR-RCP-006: giữ nguyên nguyên liệu, các bước và hình ảnh sau khi lưu trữ.",
+      "prepTime": 10,
+      "cookTime": 20,
+      "servings": 2,
+      "difficulty": "EASY",
+      "status": "ARCHIVED",
+      "categoryId": "96008d91-52b4-4870-901e-878591101ce7",
+      "categoryName": "Món canh",
+      "authorId": "61b98bba-5ed7-44b2-acb2-bb58bac50af1",
+      "authorName": "Huỳnh Thành",
+      "publishedAt": "2026-10-28T20:25:48.900Z",
+      "createdAt": "2026-10-28T20:26:00.824Z",
+      "updatedAt": "2026-10-28T20:25:56.361Z",
+      "version": 3,
+      "nutrition": {},
+      "steps": [
+        {
+          "id": "a7311e0d-3b05-4f82-a5f7-76a469f2d511",
+          "stepNumber": 1,
+          "title": "Nấu canh rau củ",
+          "description": "Đun sôi nước, thêm rau củ và nấu chín trong 20 phút.",
+          "timerMinutes": 20
+        }
+      ],
+      "ingredients": [
+        {
+          "id": "6cbb26f1-cff8-48af-9787-1db08a0421b2",
+          "name": "Rau cải",
+          "quantity": 200,
+          "unit": "g",
+          "orderIndex": 0
+        },
+        {
+          "id": "6be64305-bf9a-4025-9ea2-161695fc781c",
+          "name": "Cà rốt",
+          "quantity": 1,
+          "unit": "củ",
+          "orderIndex": 1
+        },
+        {
+          "id": "c3e559bf-f3f3-4276-a622-ae8ee9d8ea76",
+          "name": "Nước",
+          "quantity": 1,
+          "unit": "lít",
+          "orderIndex": 2
+        }
+      ],
+      "images": [
+        {
+          "id": "ed1c1a38-68ba-4410-8140-2ce1a58363b0",
+          "originalUrl": "https://example.invalid/archive-evidence.jpg",
+          "isPrimary": true,
+          "orderIndex": 0
+        }
+      ]
+    }
+  },
+  "finishedAt": "2026-10-28T20:25:58.418Z",
+  "status": "PASS"
+}

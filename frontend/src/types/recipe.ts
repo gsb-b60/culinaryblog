@@ -89,6 +89,8 @@ export interface RecipeFilters {
   authorId?: string
   minPrepTime?: number
   maxPrepTime?: number
+  minCookTime?: number
+  maxCookTime?: number
   searchQuery?: string
 }
 

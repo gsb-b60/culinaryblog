@@ -22,13 +22,17 @@ export function DashboardLayout() {
   // below decides where to go, so the two never race each other.
   const [enteredSignedIn] = useState(() => useAuthStore.getState().session !== null)
 
-  const active = location.pathname.startsWith('/dashboard/ingredients')
-    ? 'ingredients'
-    : location.pathname.startsWith('/dashboard/recipes')
-      ? 'recipes'
-      : location.pathname.startsWith('/profile')
-        ? 'profile'
-        : 'overview'
+  const active = location.pathname.startsWith('/dashboard/recipes/delete')
+    ? 'delete-recipes'
+    : location.pathname.startsWith('/dashboard/recipes/archive')
+      ? 'archive-recipes'
+      : location.pathname.startsWith('/dashboard/ingredients')
+        ? 'ingredients'
+        : location.pathname.startsWith('/dashboard/recipes')
+          ? 'recipes'
+          : location.pathname.startsWith('/profile')
+            ? 'profile'
+            : 'overview'
 
   const handleLogout = () => {
     setShowLogoutModal(false)

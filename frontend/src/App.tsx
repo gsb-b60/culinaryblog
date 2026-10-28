@@ -4,6 +4,7 @@ import AppLayout from './components/layout/AppLayout'
 import DashboardLayout from './components/layout/DashboardLayout'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import RecipesPage from './pages/RecipesPage'
+import DeleteRecipesPage from './pages/DeleteRecipesPage'
 import IngredientManagementPage from './pages/IngredientManagementPage'
 import RecipesBrowsePage from './pages/RecipesBrowsePage'
 import RecipeDetailPage from './pages/RecipeDetailPage'
@@ -43,7 +44,12 @@ export default function App() {
       {/* Authenticated area shell: sidebar, mobile navigation, sign-out dialog. */}
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/dashboard/recipes" element={<RecipesPage />} />
+        <Route path="/dashboard/recipes/delete" element={<DeleteRecipesPage />} />
+        <Route
+          path="/dashboard/recipes/archive"
+          element={<RecipesPage key="archive" mode="archive" />}
+        />
+        <Route path="/dashboard/recipes" element={<RecipesPage key="publish" />} />
         <Route path="/dashboard/ingredients" element={<IngredientManagementPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>

@@ -108,7 +108,7 @@ router.get('/:slug', generalRateLimiter, optionalAuth, async (req, res, next) =>
     const query = new GetRecipeBySlugQuery(
       req.params.slug!,
       (req as AuthenticatedRequest).user?.id,
-      (req as AuthenticatedRequest).user?.roles[0],
+      (req as AuthenticatedRequest).user?.roles.includes(UserRole.ADMIN) ? UserRole.ADMIN : undefined,
     );
     const recipe = await commandBus.executeQuery(query);
 
@@ -190,28 +190,25 @@ router.patch('/:id/unpublish', authenticateJwt, async (req: AuthenticatedRequest
   }
 });
 
-router.patch(
-  '/:id/archive',
-  authenticateJwt,
-  authorizeOwnerOrAdmin(async (req) => req.params.id!),
-  async (req: AuthenticatedRequest, res, next) => {
-    try {
-      const command = new ArchiveRecipeCommand(req.params.id!, req.user!.id);
-      await commandBus.executeCommand(command);
-      res.json({ message: 'Recipe archived successfully' });
-    } catch (error) {
-      next(error);
-    }
-  },
-);
+router.patch('/:id/archive', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const command = new ArchiveRecipeCommand(req.params.id!, req.user!.id, req.user!.roles.includes(UserRole.ADMIN));
+    res.status(200).json(await commandBus.executeCommand(command));
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.delete(
   '/:id',
   authenticateJwt,
-  authorizeOwnerOrAdmin(async (req) => req.params.id!),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const command = new DeleteRecipeCommand(req.params.id!, req.user!.id);
+      const command = new DeleteRecipeCommand(
+        req.params.id!,
+        req.user!.id,
+        req.user!.roles.includes(UserRole.ADMIN),
+      );
       await commandBus.executeCommand(command);
       res.status(204).send();
     } catch (error) {

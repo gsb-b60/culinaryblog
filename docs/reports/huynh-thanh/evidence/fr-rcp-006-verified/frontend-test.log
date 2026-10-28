@@ -1,0 +1,14 @@
+$ vitest run
+
+ RUN  v5.0.2 D:/udptwnc/culinaryblog/frontend
+
+
+ Test Files  22 passed (22)
+      Tests  213 passed (213)
+   Start at  13:24:04
+   Duration  56.36s (environment 36%, import 28%, tests 24%, setup 10%, transform 2%)
+
+Environment  jsdom was created 22 times · 55.42s total, 36% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
