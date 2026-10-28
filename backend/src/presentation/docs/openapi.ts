@@ -689,12 +689,18 @@ export const openApiSpec = {
     '/recipes/{id}/archive': {
       patch: {
         tags: ['recipes'],
-        summary: 'Archive recipe',
+        summary: 'Archive recipe (Owner/Admin; idempotent)',
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
         ],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'Archived recipe, including status, version and content', content: { 'application/json': { schema: { $ref: '#/components/schemas/RecipeDetail' } } } },
+          '401': { description: 'Authentication required' },
+          '403': { description: 'Only owner or Admin may archive' },
+          '404': { description: 'Recipe not found or deleted' },
+          '409': { description: 'Recipe changed; reload and retry' },
+        },
       },
     },
     '/recipes/{id}/steps': {

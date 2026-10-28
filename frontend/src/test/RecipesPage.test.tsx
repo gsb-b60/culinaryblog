@@ -174,3 +174,62 @@ describe('Recipe management through UI and API client', () => {
   })
 
 })
+
+describe('Archive through recipe management', () => {
+  it.each(['DRAFT', 'PUBLISHED'] as const)('archives a %s recipe and keeps the badge after reload', async status => {
+    let stored: Recipe = { ...draft, status, steps: [] };
+    fetchMock.mockImplementation(async (url: string, init: RequestInit) => {
+      if (url.endsWith('/archive')) {
+        expect(init.method).toBe('PATCH');
+        expect(init.headers).toMatchObject({ Authorization: 'Bearer access' });
+        stored = { ...stored, status: 'ARCHIVED', version: 2 };
+        return response(stored);
+      }
+      return response(recipePage([stored]));
+    });
+    openPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Lưu trữ' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Đã lưu trữ công thức.');
+    expect(screen.getByText('Đã lưu trữ')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Lưu trữ' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Xuất bản' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Tải lại' }));
+    expect(await screen.findByText('Đã lưu trữ')).toBeInTheDocument();
+  });
+
+  it.each([403, 404, 409, 500])('keeps the recipe unchanged after archive fails with %s', async status => {
+    fetchMock.mockResolvedValueOnce(response(recipePage())).mockResolvedValueOnce(response({}, status));
+    openPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Lưu trữ' }));
+    expect(await screen.findByRole('alert')).not.toBeEmptyDOMElement();
+    expect(screen.getByText('Bản nháp')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Lưu trữ' })).toBeEnabled();
+  });
+
+  it('allows Admin to archive another author recipe', async () => {
+    saveSession({ ...session, user: { ...session.user, id: 'admin-1', roles: ['ADMIN'] } });
+    fetchMock.mockResolvedValueOnce(response(recipePage())).mockResolvedValueOnce(response({ ...draft, status: 'ARCHIVED' }));
+    openPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Lưu trữ' }));
+    expect(await screen.findByText('Đã lưu trữ')).toBeInTheDocument();
+  });
+
+  it('prevents duplicate archive submissions and competing status changes', async () => {
+    let finish!: (value: Response) => void;
+    fetchMock.mockResolvedValueOnce(response(recipePage())).mockImplementationOnce(() => new Promise<Response>(resolve => { finish = resolve }));
+    openPage();
+    const button = await screen.findByRole('button', { name: 'Lưu trữ' });
+    await userEvent.dblClick(button);
+    expect(button).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Đang cập nhật...' })).toBeDisabled();
+    expect(fetchMock.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1);
+    finish(response({ ...draft, status: 'ARCHIVED' }));
+    expect(await screen.findByText('Đã lưu trữ')).toBeInTheDocument();
+  });
+});
+
+it('links archived recipes to their live detail page', async () => {
+  fetchMock.mockResolvedValue(response(recipePage([{ ...draft, status: 'ARCHIVED' }])))
+  openPage()
+  expect(await screen.findByRole('link', { name: 'Xem chi tiết' })).toHaveAttribute('href', '/recipes/' + draft.slug)
+})

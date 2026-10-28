@@ -50,8 +50,8 @@ router.get('/', generalRateLimiter, async (req, res, next) => {
 router.get('/:slug', generalRateLimiter, optionalAuth, async (req, res, next) => {
   try {
     const paginationSchema = z.object({
-      page: z.number().int().positive().default(1),
-      pageSize: z.number().int().positive().max(50).default(12),
+      page: z.coerce.number().int().positive().default(1),
+      pageSize: z.coerce.number().int().positive().max(50).default(12),
     });
     
     const pagination = paginationSchema.parse(req.query);
