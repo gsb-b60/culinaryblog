@@ -86,7 +86,14 @@ try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1050 } });
   await context.addInitScript(value => localStorage.setItem('culinary_session', JSON.stringify(value)), session);
   const page = await context.newPage();
-  await page.goto('http://127.0.0.1:5187/dashboard/recipes');
+  await page.goto('http://127.0.0.1:5187/dashboard');
+  const shortcut = page.getByRole('region', { name: 'Lưu trữ công thức', exact: true });
+  await expect(shortcut).toBeVisible();
+  await page.screenshot({ path: resolve(out, '00-dashboard-shortcut.png'), fullPage: false });
+  await shortcut.getByRole('link', { name: 'Lưu trữ công thức', exact: true }).click();
+  await expect(page).toHaveURL('http://127.0.0.1:5187/dashboard/recipes/archive');
+  await expect(page.getByRole('heading', { level: 1, name: 'Lưu trữ công thức', exact: true })).toBeVisible();
+  result.checks.dashboardShortcutOpensArchivePage = true;
   const article = page.getByRole('article', { name: title, exact: true });
   await expect(article).toBeVisible();
   await expect(article.getByText('Đã xuất bản', { exact: true })).toBeVisible();
@@ -158,7 +165,7 @@ try {
   await report.setContent(html + '</body></html>');
   await report.screenshot({ path: resolve(out, '06-tests-lint-build.png'), fullPage: true });
   await context.close();
-  console.log(JSON.stringify({ status: result.status, screenshots: 6, checks: result.checks }, null, 2));
+  console.log(JSON.stringify({ status: result.status, screenshots: 7, checks: result.checks }, null, 2));
 } catch (error) {
   result.error = String(error);
   writeFileSync(resolve(out, 'failure.json'), JSON.stringify(result, null, 2));

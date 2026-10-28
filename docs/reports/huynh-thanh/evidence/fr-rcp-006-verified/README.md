@@ -1,8 +1,14 @@
 # FR-RCP-006 — Snapshot evidence
 
+Trang Lưu trữ riêng: /dashboard/recipes/archive. Nút truy cập nằm dưới Công thức gần đây trong Dashboard và dưới Xóa công thức trong menu desktop/mobile.
+
 Ảnh từ UI/API thật với PostgreSQL và Redis local; không mock response.
 
-Backend: 264 tests PASS, coverage lines 90.63%. Frontend: 209 tests PASS. Sáu lệnh test/lint/build exit 0; backend lint còn 196 warnings, 0 errors. Schema thử đã được dọn.
+Backend: 264 tests PASS, coverage lines 90.63% (backend không thay đổi). Frontend đã chạy lại: 213 tests PASS, lint/build PASS. Sáu kết quả test/lint/build exit 0; backend lint còn 196 warnings, 0 errors. Schema thử đã được dọn.
+
+## 00-dashboard-shortcut.png
+
+![00-dashboard-shortcut.png](00-dashboard-shortcut.png)
 
 ## 01-before-archive.png
 
