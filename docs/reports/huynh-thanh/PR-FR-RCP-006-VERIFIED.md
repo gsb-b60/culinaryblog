@@ -119,39 +119,39 @@ Frontend build còn cảnh báo bundle lớn hơn 500 kB. Backend lint pass theo
 | Redis | Marker cache recipes và categories đã bị invalidated |
 | Query số hợp lệ / không hợp lệ | 200 / 422 |
 
-Log gốc: [checks.json](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/checks.json), [backend-test.log](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/backend-test.log), [frontend-test.log](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/frontend-test.log), [backend-lint.log](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/backend-lint.log), [frontend-lint.log](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/frontend-lint.log), [backend-build.log](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/backend-build.log), [frontend-build.log](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/frontend-build.log).
+Log gốc: [checks.json](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/checks.json), [backend-test.log](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/backend-test.log), [frontend-test.log](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/frontend-test.log), [backend-lint.log](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/backend-lint.log), [frontend-lint.log](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/frontend-lint.log), [backend-build.log](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/backend-build.log), [frontend-build.log](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/frontend-build.log).
 
-Chi tiết tích hợp: [result.json](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/result.json). Hash source: [source-manifest.json](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/source-manifest.json).
+Chi tiết tích hợp: [result.json](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/result.json). Hash source: [source-manifest.json](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/source-manifest.json).
 
 ---
 
 ## 7. Screenshot minh chứng thành công (BẮT BUỘC)
 
-Ảnh chụp từ UI/API thật và báo cáo tổng hợp log thực thi. Link GitHub sẽ hoạt động sau khi thư mục evidence được commit/push lên branch `feat/issue-32-archive-recipe`; file PNG local đã có sẵn.
+Ảnh chụp từ UI/API thật và báo cáo tổng hợp log thực thi. Các ảnh và log dùng URL raw trên branch `feat/issue-32-archive-recipe`; file PNG gốc được lưu kèm trong thư mục evidence.
 
 **Ảnh 1. Trước khi lưu trữ: công thức Published và nút Lưu trữ.**
 
-![Trước khi lưu trữ](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/01-before-archive.png?raw=true)
+![Trước khi lưu trữ](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/01-before-archive.png)
 
 **Ảnh 2. Sau thao tác thật: HTTP 200, thông báo thành công và badge Đã lưu trữ.**
 
-![Lưu trữ thành công](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/02-archive-success.png?raw=true)
+![Lưu trữ thành công](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/02-archive-success.png)
 
 **Ảnh 3. Owner xem chi tiết công thức đã lưu trữ, giữ nguyên nguyên liệu và bước thực hiện.**
 
-![Owner xem chi tiết](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/03-owner-archived-detail.png?raw=true)
+![Owner xem chi tiết](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/03-owner-archived-detail.png)
 
 **Ảnh 4. Response JSON thật từ GET chi tiết: ARCHIVED và dữ liệu liên quan.**
 
-![Response API thật](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/04-live-api-response.png?raw=true)
+![Response API thật](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/04-live-api-response.png)
 
 **Ảnh 5. Báo cáo kiểm tra HTTP, PostgreSQL và Redis thật.**
 
-![Kiểm tra tích hợp thật](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/05-http-database-cache-checks.png?raw=true)
+![Kiểm tra tích hợp thật](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/05-http-database-cache-checks.png)
 
 **Ảnh 6. Ảnh tổng hợp output test/lint/build đã thực thi; log gốc được đính kèm ở mục 6.**
 
-![Kết quả test lint build](https://github.com/gsb-b60/culinaryblog/blob/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/06-tests-lint-build.png?raw=true)
+![Kết quả test lint build](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat/issue-32-archive-recipe/docs/reports/huynh-thanh/evidence/fr-rcp-006-verified/06-tests-lint-build.png)
 
 ---
 
@@ -167,4 +167,4 @@ Chi tiết tích hợp: [result.json](https://github.com/gsb-b60/culinaryblog/bl
 - [x] Không thêm `console.log` / debug code thừa trong mã ứng dụng; script evidence có in kết quả chạy.
 - [x] Documentation / comment đã cập nhật.
 
-Báo cáo và ảnh được chuẩn bị local; chưa tạo/publish PR và chưa push các artifact minh chứng.
+Báo cáo, ảnh và log được lưu trên branch `feat/issue-32-archive-recipe` để nộp bài. Chưa tự động tạo/publish pull request.
