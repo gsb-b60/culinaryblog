@@ -10,7 +10,7 @@
 
 **FR-RCP-007 - Permanently Delete Recipe**
 
-Nguồn: [docs/03-fr-recipes.md](../../03-fr-recipes.md#fr-rcp-007-delete-recipe-author-owneradmin).
+Nguồn: [docs/03-fr-recipes.md](https://github.com/gsb-b60/culinaryblog/blob/50506fe54126713a12009a3f8e440b8e58efde5e/docs/03-fr-recipes.md#fr-rcp-007-delete-recipe-author-owneradmin).
 
 ---
 
@@ -18,7 +18,7 @@ Nguồn: [docs/03-fr-recipes.md](../../03-fr-recipes.md#fr-rcp-007-delete-recipe
 
 **Issue #24 — FR-RCP-007: Delete Recipe**
 
-**Link:** [docs/issues/person-3.md#issue-24--fr-rcp-007-delete-recipe](../../issues/person-3.md#issue-24--fr-rcp-007-delete-recipe)
+**Link:** [docs/issues/person-3.md#issue-24--fr-rcp-007-delete-recipe](https://github.com/gsb-b60/culinaryblog/blob/50506fe54126713a12009a3f8e440b8e58efde5e/docs/issues/person-3.md#issue-24--fr-rcp-007-delete-recipe)
 
 **Closes:** #33 — [GitHub issue](https://github.com/gsb-b60/culinaryblog/issues/33)
 
@@ -96,7 +96,7 @@ Script sử dụng cấu hình local từ `backend/.env`, schema PostgreSQL tạ
 | `pnpm build` | **PASS — TypeScript** | **PASS — TypeScript + Vite** |
 | Prisma | **Generate PASS; Validate PASS** | Không áp dụng |
 
-Frontend build còn cảnh báo chunk lớn hơn 500 kB. Log PowerShell có thể hiện `NativeCommandError` khi pnpm ghi banner vào stderr; exit code của cả sáu lệnh test/lint/build đều bằng **0**, được lưu trong [checks.json](./evidence/fr-rcp-007-verified/checks.json).
+Frontend build còn cảnh báo chunk lớn hơn 500 kB. Log PowerShell có thể hiện `NativeCommandError` khi pnpm ghi banner vào stderr; exit code của cả sáu lệnh test/lint/build đều bằng **0**, được lưu trong [checks.json](https://github.com/gsb-b60/culinaryblog/blob/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/checks.json).
 
 | Kịch bản tích hợp thật | Kết quả |
 |---|---|
@@ -110,9 +110,9 @@ Frontend build còn cảnh báo chunk lớn hơn 500 kB. Log PowerShell có th�
 | Xóa lại ID vừa xóa | DELETE trả **404**. |
 | Admin xóa công thức của Author khác | DELETE trả **204**. |
 
-Dữ liệu gốc: [result.json](./evidence/fr-rcp-007-verified/result.json).
+Dữ liệu gốc: [result.json](https://github.com/gsb-b60/culinaryblog/blob/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/result.json).
 
-Log đầy đủ: [backend test](./evidence/fr-rcp-007-verified/backend-test.log), [frontend test](./evidence/fr-rcp-007-verified/frontend-test.log), [backend lint](./evidence/fr-rcp-007-verified/backend-lint.log), [frontend lint](./evidence/fr-rcp-007-verified/frontend-lint.log), [backend build](./evidence/fr-rcp-007-verified/backend-build.log), [frontend build](./evidence/fr-rcp-007-verified/frontend-build.log), [Prisma generate](./evidence/fr-rcp-007-verified/prisma-generate.log), [Prisma validate](./evidence/fr-rcp-007-verified/prisma-validate.log).
+Log đầy đủ: [backend test](https://github.com/gsb-b60/culinaryblog/blob/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/backend-test.log), [frontend test](https://github.com/gsb-b60/culinaryblog/blob/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/frontend-test.log), [backend lint](https://github.com/gsb-b60/culinaryblog/blob/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/backend-lint.log), [frontend lint](https://github.com/gsb-b60/culinaryblog/blob/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/frontend-lint.log), [backend build](https://github.com/gsb-b60/culinaryblog/blob/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/backend-build.log), [frontend build](https://github.com/gsb-b60/culinaryblog/blob/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/frontend-build.log), [Prisma generate](https://github.com/gsb-b60/culinaryblog/blob/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/prisma-generate.log), [Prisma validate](https://github.com/gsb-b60/culinaryblog/blob/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/prisma-validate.log).
 
 ---
 
@@ -122,23 +122,23 @@ Ba ảnh đầu là screenshot trực tiếp từ trình duyệt chạy frontend
 
 **Ảnh 1 — Trang xóa công thức, fixture thật của Huỳnh Thành 2312748:**
 
-![Danh sách công thức từ API và PostgreSQL thật](./evidence/fr-rcp-007-verified/01-real-delete-list.png)
+![Danh sách công thức từ API và PostgreSQL thật](https://raw.githubusercontent.com/gsb-b60/culinaryblog/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/01-real-delete-list.png)
 
 **Ảnh 2 — Bấm Xóa, hiển thị xác nhận và nút Hủy:**
 
-![Xác nhận xóa vĩnh viễn công thức](./evidence/fr-rcp-007-verified/02-real-confirmation.png)
+![Xác nhận xóa vĩnh viễn công thức](https://raw.githubusercontent.com/gsb-b60/culinaryblog/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/02-real-confirmation.png)
 
 **Ảnh 3 — Xóa thành công, thông báo xanh và công thức đã biến mất:**
 
-![UI thông báo Đã xóa công thức sau HTTP 204](./evidence/fr-rcp-007-verified/03-real-delete-success.png)
+![UI thông báo Đã xóa công thức sau HTTP 204](https://raw.githubusercontent.com/gsb-b60/culinaryblog/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/03-real-delete-success.png)
 
 **Ảnh 4 — Kết quả HTTP 401/403/204/404, cascade DB và 4 job dọn ảnh thật:**
 
-![Kết quả tích hợp API PostgreSQL Redis BullMQ và MinIO](./evidence/fr-rcp-007-verified/04-api-database-cleanup-results.png)
+![Kết quả tích hợp API PostgreSQL Redis BullMQ và MinIO](https://raw.githubusercontent.com/gsb-b60/culinaryblog/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/04-api-database-cleanup-results.png)
 
 **Ảnh 5 — Output thực tế của test, lint và build; exit code đều bằng 0:**
 
-![Log kiểm thử backend frontend lint và build](./evidence/fr-rcp-007-verified/05-checks-output.png)
+![Log kiểm thử backend frontend lint và build](https://raw.githubusercontent.com/gsb-b60/culinaryblog/50506fe54126713a12009a3f8e440b8e58efde5e/docs/reports/huynh-thanh/evidence/fr-rcp-007-verified/05-checks-output.png)
 
 ---
 
