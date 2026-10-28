@@ -4,7 +4,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { EmptyState } from '../components/common/EmptyState'
 import { PageLoading } from '../components/common/PageLoading'
 import { Pagination } from '../components/common/Pagination'
-import { ApiError, getManagedRecipes, publishRecipe, unpublishRecipe } from '../lib/api'
+import {
+  ApiError,
+  getManagedRecipes,
+  publishRecipe,
+  unpublishRecipe,
+} from '../lib/api'
 import { useAuthStore } from '../store'
 import type { Recipe, RecipePage } from '../types/recipe'
 

@@ -248,7 +248,7 @@ export function archiveRecipe(accessToken: string, id: string): Promise<{ messag
   })
 }
 
-/** Request soft deletion of an authorized recipe. */
+/** Permanently delete an authorized recipe and enqueue its image cleanup. */
 export function deleteRecipe(accessToken: string, id: string): Promise<null> {
   return request<null>(`/recipes/${encodeURIComponent(id)}`, {
     method: 'DELETE',

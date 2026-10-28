@@ -14,6 +14,7 @@ import {
 } from '../../application/commands/auth/AuthCommands.js';
 import {
   AddRecipeIngredientCommand,
+  DeleteRecipeCommand,
   PublishRecipeCommand,
   UnpublishRecipeCommand,
   DeleteRecipeIngredientCommand,
@@ -29,6 +30,7 @@ import {
   type GoogleProfile,
 } from '../../application/handlers/AuthCommandHandlers.js';
 import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
+import { DeleteRecipeCommandHandler } from '../../application/handlers/DeleteRecipeCommandHandler.js';
 import { ManagedRecipeQueryHandler } from '../../application/handlers/ManagedRecipeQueryHandler.js';
 import {
   AddRecipeIngredientCommandHandler,
@@ -104,6 +106,14 @@ export function createContainer(): Container {
   commandBus.registerCommandHandler(
     DeleteRecipeIngredientCommand.name,
     new DeleteRecipeIngredientCommandHandler(prisma),
+  );
+
+  commandBus.registerCommandHandler(
+    DeleteRecipeCommand.name,
+    new DeleteRecipeCommandHandler(prisma, async () => {
+      await cacheService.deletePattern('recipes:*');
+      await cacheService.deletePattern('categories:*');
+    }),
   );
 
   commandBus.registerCommandHandler(
