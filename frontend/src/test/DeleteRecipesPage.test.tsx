@@ -76,6 +76,12 @@ describe('Dashboard recipe deletion page', () => {
     fetchMock.mockResolvedValueOnce(response(recipePage))
     fetchMock.mockResolvedValueOnce(response(recipePage))
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }))
+    fetchMock.mockResolvedValueOnce(
+      response({
+        items: [],
+        meta: { ...recipePage.meta, totalCount: 0, totalPages: 0 },
+      }),
+    )
     openDashboard()
     const user = userEvent.setup()
 
@@ -88,7 +94,9 @@ describe('Dashboard recipe deletion page', () => {
     )
     const article = await screen.findByRole('article', { name: recipe.title })
     await user.click(within(article).getByRole('button', { name: 'Xóa' }))
-    expect(within(article).getByRole('group', { name: `Xác nhận xóa ${recipe.title}` })).toBeInTheDocument()
+    expect(
+      within(article).getByRole('group', { name: `Xác nhận xóa ${recipe.title}` }),
+    ).toBeInTheDocument()
     expect(fetchMock.mock.calls.filter(([, init]) => init.method === 'DELETE')).toHaveLength(0)
 
     await user.click(within(article).getByRole('button', { name: 'Xác nhận xóa' }))
