@@ -48,7 +48,8 @@ describe('Recipe management through UI and API client', () => {
       return response(init.method === 'PATCH' ? stored : recipePage([stored]))
     })
     openPage('/dashboard')
-    await userEvent.click(screen.getAllByRole('link', { name: 'Công thức' })[0])
+    await userEvent.click(screen.getAllByRole('button', { name: 'Công thức' })[0])
+    await userEvent.click(screen.getAllByRole('link', { name: 'Danh sách công thức' })[0])
     const article = await screen.findByRole('article', { name: draft.title })
     await userEvent.click(within(article).getByRole('button', { name: 'Xuất bản' }))
     expect(await screen.findByText('Đã xuất bản công thức.')).toBeInTheDocument()
@@ -69,7 +70,10 @@ describe('Recipe management through UI and API client', () => {
     openPage()
     expect(await screen.findByRole('button', { name: 'Xuất bản' })).toBeDisabled()
     expect(screen.getByText('Cần ít nhất một bước thực hiện trước khi xuất bản.')).toBeInTheDocument()
-    expect(within(screen.getByRole('article', { name: 'Món đã lưu trữ' })).queryByRole('button')).not.toBeInTheDocument()
+    const archivedArticle = within(screen.getByRole('article', { name: 'Món đã lưu trữ' }))
+    expect(archivedArticle.queryByRole('button', { name: 'Xuất bản' })).not.toBeInTheDocument()
+    expect(archivedArticle.queryByRole('button', { name: 'Chuyển về bản nháp' })).not.toBeInTheDocument()
+    expect(archivedArticle.queryByRole('button', { name: 'Xóa' })).not.toBeInTheDocument()
   })
 
   it.each([403, 404, 409, 422, 500])('keeps the previous status and shows an error for HTTP %s', async status => {
@@ -120,6 +124,17 @@ describe('Recipe management through UI and API client', () => {
     openPage()
     expect(await screen.findByRole('button', { name: 'Xuất bản' })).toBeEnabled()
     expect(screen.getByRole('heading', { name: 'Quản lý công thức' })).toBeInTheDocument()
+  })
+
+  it('provides a separate Dashboard destination for recipe deletion', async () => {
+    openPage()
+    const article = await screen.findByRole('article', { name: draft.title })
+
+    expect(within(article).queryByRole('button', { name: 'Xóa' })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Xóa công thức' })[0]).toHaveAttribute(
+      'href',
+      '/dashboard/recipes/delete',
+    )
   })
 
   it('redirects signed-out visitors without requesting private data', () => {

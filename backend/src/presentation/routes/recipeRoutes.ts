@@ -208,10 +208,13 @@ router.patch(
 router.delete(
   '/:id',
   authenticateJwt,
-  authorizeOwnerOrAdmin(async (req) => req.params.id!),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const command = new DeleteRecipeCommand(req.params.id!, req.user!.id);
+      const command = new DeleteRecipeCommand(
+        req.params.id!,
+        req.user!.id,
+        req.user!.roles.includes(UserRole.ADMIN),
+      );
       await commandBus.executeCommand(command);
       res.status(204).send();
     } catch (error) {
