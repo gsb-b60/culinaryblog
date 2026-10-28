@@ -52,6 +52,8 @@ This chapter lists all API endpoints of the Culinary Blog system. Base URL: /api
 | PATCH  | /recipes/{id}/archive   | Archive recipe                                                      | Bearer (Owner/Admin)       | —                                                                                                              |
 | DELETE | /recipes/{id}           | Delete recipe (soft delete)                                         | Bearer (Owner/Admin)       | —                                                                                                              |
 
+> The `soft delete` label in the table above is stale: `DELETE /recipes/{id}` permanently deletes the recipe and cascade-deletes its children. Image objects are cleaned up asynchronously with retries.
+
 ## 8.4. Recipe Images (/recipes/{id}/images)
 
 | Method | Endpoint                       | Description                                            | Auth                 | Request                                                 | Response                                                                                 |
