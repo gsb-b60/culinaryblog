@@ -49,12 +49,13 @@ export class UnpublishRecipeCommand extends Command<RecipeDto> {
   }
 }
 
-export class ArchiveRecipeCommand extends Command<void> {
+export class ArchiveRecipeCommand extends Command<RecipeDto> {
   readonly type = 'ArchiveRecipeCommand';
 
   constructor(
     public readonly recipeId: string,
-    public readonly authorId: string
+    public readonly authorId: string,
+    public readonly isAdmin = false
   ) {
     super();
   }
@@ -65,7 +66,8 @@ export class DeleteRecipeCommand extends Command<void> {
 
   constructor(
     public readonly recipeId: string,
-    public readonly authorId: string
+    public readonly authorId: string,
+    public readonly isAdmin = false
   ) {
     super();
   }

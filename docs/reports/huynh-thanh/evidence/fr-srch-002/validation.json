@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-29",
+  "feature": "FR-SRCH-002",
+  "issue": 35,
+  "results": [
+    {
+      "command": "backend: npx vitest run tests/recipe-filtering.test.ts",
+      "exitCode": 0,
+      "testsPassed": 23
+    },
+    {
+      "command": "backend: npm run test:e2e:filtering",
+      "exitCode": 0,
+      "checkGroupsPassed": 25
+    },
+    {
+      "command": "backend: npx vitest run",
+      "exitCode": 0,
+      "testFilesPassed": 25,
+      "testsPassed": 313
+    },
+    {
+      "command": "frontend: npx vitest run",
+      "exitCode": 0,
+      "testFilesPassed": 25,
+      "testsPassed": 240
+    },
+    {
+      "command": "backend: npm run build",
+      "exitCode": 0
+    },
+    {
+      "command": "frontend: npm run build",
+      "exitCode": 0,
+      "warnings": [
+        "JavaScript chunk larger than 500 kB after minification"
+      ]
+    },
+    {
+      "command": "backend: npm run lint",
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 196
+    },
+    {
+      "command": "frontend: npm run lint",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "limits": [
+    "No coverage measurement",
+    "No performance/load testing",
+    "Local test app mounts production routes, not full production/Nginx deployment"
+  ]
+}

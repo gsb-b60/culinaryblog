@@ -82,6 +82,11 @@ export interface Recipe {
   steps: { id: string; stepNumber: number; title: string; description: string }[]
 }
 
+export interface RecipeOverview {
+  stats: { total: number; published: number; draft: number; archived: number }
+  recentRecipes: Recipe[]
+}
+
 export interface RecipeFilters {
   categoryId?: string
   difficulty?: RecipeDifficulty
@@ -89,10 +94,26 @@ export interface RecipeFilters {
   authorId?: string
   minPrepTime?: number
   maxPrepTime?: number
+  minCookTime?: number
+  maxCookTime?: number
+  minServings?: number
   searchQuery?: string
 }
 
-export type RecipeListQuery = PaginationParams & SortParams & RecipeFilters
+export const RECIPE_SORT_OPTIONS = [
+  { value: '-createdAt', label: 'Mới nhất' },
+  { value: 'createdAt', label: 'Cũ nhất' },
+  { value: 'title', label: 'Tên A–Z' },
+  { value: '-title', label: 'Tên Z–A' },
+  { value: 'cookTime', label: 'Thời gian nấu tăng dần' },
+  { value: '-cookTime', label: 'Thời gian nấu giảm dần' },
+  { value: 'prepTime', label: 'Thời gian chuẩn bị tăng dần' },
+  { value: '-prepTime', label: 'Thời gian chuẩn bị giảm dần' },
+  { value: 'publishedAt', label: 'Xuất bản cũ nhất' },
+  { value: '-publishedAt', label: 'Xuất bản mới nhất' },
+] as const
+export type RecipeSort = typeof RECIPE_SORT_OPTIONS[number]['value']
+export type RecipeListQuery = PaginationParams & SortParams & RecipeFilters & { sort?: RecipeSort }
 
 export type PagedRecipes = PagedResult<RecipeSummary>
 

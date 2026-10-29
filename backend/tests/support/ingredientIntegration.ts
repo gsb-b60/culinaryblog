@@ -128,6 +128,7 @@ export async function startIngredientIntegration(
       await import('../../src/infrastructure/auth/strategies/JwtStrategy.js');
     configureJwtStrategy(passport);
     const { default: recipeRoutes } = await import('../../src/presentation/routes/recipeRoutes.js');
+    const { default: categoryRoutes } = await import('../../src/presentation/routes/categoryRoutes.js');
     const { default: authRoutes } = await import('../../src/presentation/routes/authRoutes.js');
     const { setupOpenAPI } = await import('../../src/presentation/docs/openapi.js');
     const { globalErrorHandler } =
@@ -139,6 +140,7 @@ export async function startIngredientIntegration(
     if (options.beforeRecipeRequest) app.use('/api/v1/recipes', options.beforeRecipeRequest);
     app.use('/api/v1/recipes', recipeRoutes);
     app.use('/api/v1/auth', authRoutes);
+    app.use('/api/v1/categories', categoryRoutes);
     setupOpenAPI(app);
     app.use(globalErrorHandler);
     function accessToken(user: typeof owner) {

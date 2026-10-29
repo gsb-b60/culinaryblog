@@ -1,0 +1,26 @@
+{
+  "backend-test": {
+    "command": "pnpm test",
+    "exitCode": 0
+  },
+  "frontend-test": {
+    "command": "pnpm test",
+    "exitCode": 0
+  },
+  "frontend-lint": {
+    "command": "pnpm lint",
+    "exitCode": 0
+  },
+  "backend-lint": {
+    "command": "pnpm lint",
+    "exitCode": 0
+  },
+  "backend-build": {
+    "command": "pnpm build",
+    "exitCode": 0
+  },
+  "frontend-build": {
+    "command": "pnpm build",
+    "exitCode": 0
+  }
+}
