@@ -1,0 +1,35 @@
+{
+  "capturedAt": "2026-10-29T12:14:57.871Z",
+  "method": "GET",
+  "url": "http://localhost:3000/api/v1/recipes?difficulty=Easy&maxCookTime=30&minServings=2&page=1&pageSize=1",
+  "status": 200,
+  "body": {
+    "items": [
+      {
+        "id": "0809a0e2-10da-41de-ba50-c3ecd46d8c86",
+        "title": "Bánh canh cua",
+        "slug": "banh-canh-cua-1",
+        "description": "Cogo calcar corpus coniecto conservo crux dignissimos comes sursum. Decumbo videlicet viridis rerum curia. Artificiose debitis quibusdam adinventitias tero angulus deripio cimentarius aperio confero.",
+        "prepTime": 51,
+        "cookTime": 13,
+        "servings": 7,
+        "difficulty": "EASY",
+        "status": "PUBLISHED",
+        "categoryId": "fddbdadb-dc60-4218-9e5b-57dbbb1dcf4c",
+        "categoryName": "Món hấp",
+        "authorId": "8478a5e8-30be-4838-86a9-e18aa1c74621",
+        "authorName": "Chef Phạm",
+        "publishedAt": "2026-10-05T09:47:26.694Z",
+        "createdAt": "2026-10-05T09:47:26.696Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "pageSize": 1,
+      "totalCount": 10,
+      "totalPages": 10,
+      "hasNextPage": true,
+      "hasPreviousPage": false
+    }
+  }
+}
