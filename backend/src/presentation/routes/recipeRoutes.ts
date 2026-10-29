@@ -28,7 +28,7 @@ import {
   createRecipeSchema,
   updateRecipeSchema,
   recipeFiltersSchema,
-  recipeSortSchema,
+  recipeSortQuerySchema,
   paginationSchema,
 } from '../../application/validators/recipeValidators.js';
 import { UserRole } from '../../domain/index.js';
@@ -73,7 +73,7 @@ router.get('/manage', authenticateJwt, async (req: AuthenticatedRequest, res, ne
 router.get('/', generalRateLimiter, async (req, res, next) => {
   try {
     const filters = recipeFiltersSchema.parse(req.query);
-    const sort = recipeSortSchema.parse(req.query);
+    const sort = recipeSortQuerySchema.parse(req.query);
     const pagination = paginationSchema.parse(req.query);
 
     const query = new GetRecipesQuery(filters, sort, pagination.page, pagination.pageSize);
@@ -91,14 +91,12 @@ router.get('/search', generalRateLimiter, async (req, res, next) => {
         q: z.string().min(2),
       })
       .merge(recipeFiltersSchema)
-      .merge(recipeSortSchema)
       .merge(paginationSchema);
 
     const input = searchSchema.parse(req.query);
 
-    const { q, field, order, page, pageSize, ...filters } = input;
-
-    const sortObj = { field: field || 'createdAt', order: order || 'desc' };
+    const { q, page, pageSize, ...filters } = input;
+    const sortObj = recipeSortQuerySchema.parse(req.query);
 
     const query = new SearchRecipesQuery(q, filters, sortObj, page, pageSize);
     const result = await commandBus.executeQuery(query);
