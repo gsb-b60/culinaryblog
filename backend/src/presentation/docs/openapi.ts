@@ -577,6 +577,7 @@ export const openApiSpec = {
             in: 'query',
             schema: { type: 'string', enum: ['Easy', 'Medium', 'Hard', 'Expert', 'EASY', 'MEDIUM', 'HARD', 'EXPERT'] },
           },
+          { name: 'sort', in: 'query', description: 'Prefix - for descending, otherwise ascending. Overrides legacy field/order. Equal values use id ascending for stable pagination. Invalid values return 422.', schema: { type: 'string', default: '-createdAt', enum: ['createdAt', '-createdAt', 'title', '-title', 'prepTime', '-prepTime', 'cookTime', '-cookTime', 'publishedAt', '-publishedAt'] } },
           { name: 'maxCookTime', in: 'query', description: 'Inclusive maximum cookTime in minutes, excluding prepTime', schema: { type: 'integer', minimum: 0, maximum: 2147483647 } },
           { name: 'minServings', in: 'query', description: 'Inclusive minimum servings', schema: { type: 'integer', minimum: 1, maximum: 2147483647 } },
         ],

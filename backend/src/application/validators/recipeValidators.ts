@@ -88,6 +88,14 @@ export const recipeSortSchema = z.object({
   order: z.enum(['asc', 'desc']).default('desc'),
 });
 
+// sort takes precedence over legacy field/order.
+export const recipeSortQuerySchema = recipeSortSchema.extend({
+  sort: z.enum(['createdAt', '-createdAt', 'title', '-title', 'prepTime', '-prepTime', 'cookTime', '-cookTime', 'publishedAt', '-publishedAt']).optional(),
+}).transform(({ sort, field, order }) => sort === undefined ? { field, order } : {
+  field: (sort.startsWith('-') ? sort.slice(1) : sort) as RecipeSortInput['field'],
+  order: sort.startsWith('-') ? 'desc' as const : 'asc' as const,
+});
+
 export { paginationSchema };
 
 export type CreateRecipeInput = z.infer<typeof createRecipeSchema>;

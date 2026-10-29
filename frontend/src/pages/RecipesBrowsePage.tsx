@@ -10,7 +10,7 @@ import { RecipeCard } from '../components/common/RecipeCard'
 import { Input } from '../components/ui/input'
 import { usePublicCategories } from '../hooks/usePublicCategories'
 import { listRecipes } from '../lib/api'
-import type { PagedRecipes, RecipeDifficulty } from '../types/recipe'
+import { RECIPE_SORT_OPTIONS, type PagedRecipes, type RecipeDifficulty } from '../types/recipe'
 
 const PAGE_SIZE = 12
 type QueryState =
@@ -34,6 +34,8 @@ export default function RecipesBrowsePage() {
     catalog.data.find(item => item.name === legacyCategory)?.id
   const unresolvedCategory = Boolean(legacyCategory) && catalog.loading && !categoryId
   const unknownCategory = Boolean(legacyCategory) && !catalog.loading && !catalog.error && !categoryId
+  const requestedSort = params.get('sort') ?? '-createdAt'
+  const sort = RECIPE_SORT_OPTIONS.find(option => option.value === requestedSort)?.value ?? '-createdAt'
   const difficulty = params.get('difficulty') ?? ''
   const maxCookTime = params.get('maxCookTime') ?? ''
   const minServings = params.get('minServings') ?? ''
@@ -44,14 +46,14 @@ export default function RecipesBrowsePage() {
   const shortSearch = search.trim().length === 1
   const [revision, setRevision] = useState(0)
   const [response, setResponse] = useState<QueryState | null>(null)
-  const queryKey = JSON.stringify([search.trim(), categoryId, difficulty, maxCookTime, minServings, page, revision])
+  const queryKey = JSON.stringify([search.trim(), categoryId, difficulty, maxCookTime, minServings, sort, page, revision])
 
   useEffect(() => {
     if (shortSearch || unresolvedCategory || unknownCategory || invalidFilters) return
     const controller = new AbortController()
     let active = true
     const timer = window.setTimeout(() => {
-      listRecipes({ page, pageSize: PAGE_SIZE, categoryId, searchQuery: search.trim() || undefined,
+      listRecipes({ page, sort, pageSize: PAGE_SIZE, categoryId, searchQuery: search.trim() || undefined,
         difficulty: difficulty ? difficulty.toUpperCase() as RecipeDifficulty : undefined,
         maxCookTime: maxCookTime === '' ? undefined : Number(maxCookTime),
         minServings: minServings === '' ? undefined : Number(minServings),
@@ -72,7 +74,7 @@ export default function RecipesBrowsePage() {
         .catch(() => { if (active) setResponse({ key: queryKey, status: 'error' }) })
     }, search.trim() ? 250 : 0)
     return () => { active = false; window.clearTimeout(timer); controller.abort() }
-  }, [search, categoryId, difficulty, maxCookTime, minServings, invalidFilters, page, queryKey, shortSearch, unresolvedCategory, unknownCategory, setParams])
+  }, [search, categoryId, sort, difficulty, maxCookTime, minServings, invalidFilters, page, queryKey, shortSearch, unresolvedCategory, unknownCategory, setParams])
 
   const view = response?.key === queryKey ? response : null
   function updateFilter(key: string, value: string | null) {
@@ -85,7 +87,7 @@ export default function RecipesBrowsePage() {
       return next
     })
   }
-  function clearFilters() { setParams({}) }
+  function clearFilters() { setParams(sort === '-createdAt' ? {} : { sort }) }
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
@@ -129,6 +131,13 @@ export default function RecipesBrowsePage() {
               onChange={event => updateFilter('minServings', event.target.value)} />
           </label>
           <button type="button" className={chipClasses(false)} onClick={clearFilters}>Xóa bộ lọc</button>
+        </div>
+        <div className="flex flex-col items-start gap-1 text-sm">
+          <label htmlFor="recipe-sort">Sắp xếp</label>
+          <select id="recipe-sort" className="h-9 w-full rounded-md border bg-white px-3 sm:w-auto" value={sort}
+            onChange={event => updateFilter('sort', event.target.value)}>
+            {RECIPE_SORT_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
         </div>
         {catalog.error && <ErrorState message="Không thể tải danh mục." onRetry={catalog.reload} />}
       </div>
