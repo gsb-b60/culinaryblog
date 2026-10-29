@@ -83,6 +83,7 @@ export function useArchiveRecipe(accessToken: string, id: string) {
     mutationFn: () => archiveRecipe(accessToken, id),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ['recipes'] })
+      void client.invalidateQueries({ queryKey: ['categories'] })
     },
   })
 }

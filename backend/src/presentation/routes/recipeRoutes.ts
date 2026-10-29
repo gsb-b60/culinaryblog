@@ -18,6 +18,7 @@ import {
 } from '../../application/commands/recipes/RecipeCommands.js';
 import { GetRecipeIngredientsQuery } from '../../application/handlers/RecipeIngredientQueryHandler.js';
 import { GetManagedRecipesQuery } from '../../application/queries/recipes/GetManagedRecipesQuery.js';
+import { GetRecipeOverviewQuery } from '../../application/queries/recipes/GetRecipeOverviewQuery.js';
 import {
   GetRecipesQuery,
   GetRecipeBySlugQuery,
@@ -43,15 +44,19 @@ import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
 const router: RouterType = Router();
 
+// Authenticated overview scope comes exclusively from verified JWT claims.
+router.get('/manage/overview', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    res.json(await commandBus.executeQuery(new GetRecipeOverviewQuery(
+      req.user!.id, req.user!.roles.includes(UserRole.ADMIN),
+    )));
+  } catch (error) { next(error); }
+});
+
 // Protected management list must precede the public /:slug route.
 router.get('/manage', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const input = z
-      .object({
-        page: z.coerce.number().int().positive().default(1),
-        pageSize: z.coerce.number().int().positive().max(50).default(12),
-      })
-      .parse(req.query);
+    const input = paginationSchema.parse(req.query);
     const query = new GetManagedRecipesQuery(
       req.user!.id,
       req.user!.roles.includes(UserRole.ADMIN),
@@ -108,7 +113,7 @@ router.get('/:slug', generalRateLimiter, optionalAuth, async (req, res, next) =>
     const query = new GetRecipeBySlugQuery(
       req.params.slug!,
       (req as AuthenticatedRequest).user?.id,
-      (req as AuthenticatedRequest).user?.roles[0],
+      (req as AuthenticatedRequest).user?.roles.includes(UserRole.ADMIN) ? UserRole.ADMIN : undefined,
     );
     const recipe = await commandBus.executeQuery(query);
 
@@ -190,28 +195,25 @@ router.patch('/:id/unpublish', authenticateJwt, async (req: AuthenticatedRequest
   }
 });
 
-router.patch(
-  '/:id/archive',
-  authenticateJwt,
-  authorizeOwnerOrAdmin(async (req) => req.params.id!),
-  async (req: AuthenticatedRequest, res, next) => {
-    try {
-      const command = new ArchiveRecipeCommand(req.params.id!, req.user!.id);
-      await commandBus.executeCommand(command);
-      res.json({ message: 'Recipe archived successfully' });
-    } catch (error) {
-      next(error);
-    }
-  },
-);
+router.patch('/:id/archive', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const command = new ArchiveRecipeCommand(req.params.id!, req.user!.id, req.user!.roles.includes(UserRole.ADMIN));
+    res.status(200).json(await commandBus.executeCommand(command));
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.delete(
   '/:id',
   authenticateJwt,
-  authorizeOwnerOrAdmin(async (req) => req.params.id!),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const command = new DeleteRecipeCommand(req.params.id!, req.user!.id);
+      const command = new DeleteRecipeCommand(
+        req.params.id!,
+        req.user!.id,
+        req.user!.roles.includes(UserRole.ADMIN),
+      );
       await commandBus.executeCommand(command);
       res.status(204).send();
     } catch (error) {

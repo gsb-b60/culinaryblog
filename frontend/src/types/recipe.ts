@@ -82,6 +82,11 @@ export interface Recipe {
   steps: { id: string; stepNumber: number; title: string; description: string }[]
 }
 
+export interface RecipeOverview {
+  stats: { total: number; published: number; draft: number; archived: number }
+  recentRecipes: Recipe[]
+}
+
 export interface RecipeFilters {
   categoryId?: string
   difficulty?: RecipeDifficulty
@@ -89,6 +94,8 @@ export interface RecipeFilters {
   authorId?: string
   minPrepTime?: number
   maxPrepTime?: number
+  minCookTime?: number
+  maxCookTime?: number
   searchQuery?: string
 }
 

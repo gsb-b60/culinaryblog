@@ -1,0 +1,53 @@
+{
+  "startedAt": "2026-10-28T18:08:57.763Z",
+  "checks": {
+    "permissionAndNormalCleanup": "PASS",
+    "transactionRollsBackRecipeAndOutbox": "PASS",
+    "concurrentDelete": {
+      "status": "PASS",
+      "httpStatuses": [
+        204,
+        404
+      ],
+      "outboxTasks": 1
+    },
+    "concurrentRelayDeduplicatesInRealRedis": "PASS"
+  },
+  "observations": {
+    "storageFilenameCases": [
+      {
+        "filename": "normal.png",
+        "processorKey": "recipes/79ca1fd7-bc3c-47c0-a3b5-6957c8e1ee46/normal.png",
+        "remainsAfterProcessor": false
+      },
+      {
+        "filename": "100%fresh.png",
+        "processorKey": null,
+        "remainsAfterProcessor": true
+      },
+      {
+        "filename": "meal..png",
+        "processorKey": null,
+        "remainsAfterProcessor": true
+      },
+      {
+        "filename": "literal%20name.png",
+        "processorKey": "recipes/79ca1fd7-bc3c-47c0-a3b5-6957c8e1ee46/literal name.png",
+        "remainsAfterProcessor": true
+      },
+      {
+        "filename": "meal#1.png",
+        "processorKey": "recipes/79ca1fd7-bc3c-47c0-a3b5-6957c8e1ee46/meal",
+        "remainsAfterProcessor": true
+      }
+    ],
+    "outboxAfterProcessors": 0,
+    "refreshReuseOnRealBackend": {
+      "first": 200,
+      "reuse": 401,
+      "reuseType": "AUTH_REFRESH_REUSED",
+      "newTokenAfterReuse": 401
+    }
+  },
+  "finishedAt": "2026-10-28T18:09:10.341Z"
+}

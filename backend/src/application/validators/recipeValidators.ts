@@ -1,7 +1,10 @@
 import { z } from 'zod';
 
+
 import { RecipeDifficulty } from '../../domain/enums/RecipeDifficulty.js';
 import { RecipeStatus } from '../../domain/enums/RecipeStatus.js';
+
+import { paginationSchema } from './paginationValidators.js';
 
 export const createRecipeStepSchema = z.object({
   stepNumber: z.number().int().positive(),
@@ -59,15 +62,21 @@ export const updateRecipeSchema = z.object({
   }).optional(),
 });
 
+// Express query values are strings; reject empty values and arrays rather than coercing them to zero.
+const queryNumber = (schema: z.ZodNumber) => z.preprocess(
+  value => typeof value === 'string' && value.trim() !== '' ? Number(value) : value,
+  schema,
+);
+
 export const recipeFiltersSchema = z.object({
   categoryId: z.string().uuid().optional(),
   difficulty: z.nativeEnum(RecipeDifficulty).optional(),
   status: z.nativeEnum(RecipeStatus).optional(),
   authorId: z.string().uuid().optional(),
-  minPrepTime: z.number().int().nonnegative().optional(),
-  maxPrepTime: z.number().int().nonnegative().optional(),
-  minCookTime: z.number().int().nonnegative().optional(),
-  maxCookTime: z.number().int().nonnegative().optional(),
+  minPrepTime: queryNumber(z.number().int().nonnegative()).optional(),
+  maxPrepTime: queryNumber(z.number().int().nonnegative()).optional(),
+  minCookTime: queryNumber(z.number().int().nonnegative()).optional(),
+  maxCookTime: queryNumber(z.number().int().nonnegative()).optional(),
   searchQuery: z.string().min(2).optional(),
 });
 
@@ -76,10 +85,7 @@ export const recipeSortSchema = z.object({
   order: z.enum(['asc', 'desc']).default('desc'),
 });
 
-export const paginationSchema = z.object({
-  page: z.number().int().positive().default(1),
-  pageSize: z.number().int().positive().max(50).default(12),
-});
+export { paginationSchema };
 
 export type CreateRecipeInput = z.infer<typeof createRecipeSchema>;
 export type UpdateRecipeInput = z.infer<typeof updateRecipeSchema>;

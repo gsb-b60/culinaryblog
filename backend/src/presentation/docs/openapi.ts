@@ -552,6 +552,17 @@ export const openApiSpec = {
         },
       },
     },
+    '/recipes/manage/overview': {
+      get: {
+        tags: ['recipes'],
+        summary: 'Account-scoped recipe statistics and five recently updated recipes',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': { description: 'Statistics (total, published, draft, archived) and recentRecipes; Admin sees all, Author sees own' },
+          '401': { description: 'Unauthorized' },
+        },
+      },
+    },
     '/recipes': {
       get: {
         tags: ['recipes'],
@@ -651,12 +662,17 @@ export const openApiSpec = {
       },
       delete: {
         tags: ['recipes'],
-        summary: 'Delete recipe (Owner/Admin)',
+        summary: 'Permanently delete recipe (Owner/Admin); image cleanup is asynchronous',
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
         ],
-        responses: { '204': { description: 'No Content' } },
+        responses: {
+          '204': { description: 'No Content' },
+          '401': { description: 'Unauthorized' },
+          '403': { description: 'Forbidden' },
+          '404': { description: 'Recipe not found' },
+        },
       },
     },
     '/recipes/{id}/publish': {
@@ -684,12 +700,18 @@ export const openApiSpec = {
     '/recipes/{id}/archive': {
       patch: {
         tags: ['recipes'],
-        summary: 'Archive recipe',
+        summary: 'Archive recipe (Owner/Admin; idempotent)',
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
         ],
-        responses: { '200': { description: 'OK' } },
+        responses: {
+          '200': { description: 'Archived recipe, including status, version and content', content: { 'application/json': { schema: { $ref: '#/components/schemas/RecipeDetail' } } } },
+          '401': { description: 'Authentication required' },
+          '403': { description: 'Only owner or Admin may archive' },
+          '404': { description: 'Recipe not found or deleted' },
+          '409': { description: 'Recipe changed; reload and retry' },
+        },
       },
     },
     '/recipes/{id}/steps': {
