@@ -90,7 +90,7 @@ describe('Recipe management through UI and API client', () => {
     })
     openPage('/dashboard')
     await userEvent.click(screen.getAllByRole('button', { name: 'Công thức' })[0])
-    await userEvent.click(screen.getAllByRole('link', { name: 'Danh sách công thức' })[0])
+    await userEvent.click(screen.getAllByRole('link', { name: 'Quản lý công thức' })[0])
     const article = await screen.findByRole('article', { name: draft.title })
     await userEvent.click(within(article).getByRole('button', { name: 'Xuất bản' }))
     expect(await screen.findByText('Đã xuất bản công thức.')).toBeInTheDocument()

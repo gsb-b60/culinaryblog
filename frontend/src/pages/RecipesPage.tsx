@@ -190,7 +190,7 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
           <p className="mt-2 text-sm text-surface-500">
             {archiveMode
               ? 'Lưu trữ để ẩn công thức khỏi trang công khai và giữ nguyên dữ liệu. Bạn vẫn có thể xem chi tiết sau khi lưu trữ.'
-              : 'Xuất bản công thức khi đã có bước thực hiện, hoặc chuyển về bản nháp để tiếp tục chỉnh sửa.'}
+              : 'Xem danh sách, xuất bản hoặc chuyển công thức về bản nháp. Công thức cần có ít nhất một bước thực hiện để xuất bản.'}
           </p>
         </div>
         <button
