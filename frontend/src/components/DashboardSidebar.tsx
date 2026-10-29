@@ -78,7 +78,7 @@ export default function DashboardSidebar({
                 aria-current={active === 'recipes' ? 'page' : undefined}
                 className={submenuClass(active === 'recipes')}
               >
-                Danh sách công thức
+                Quản lý công thức
               </Link>
               <Link
                 to="/dashboard/ingredients"
@@ -158,7 +158,7 @@ export default function DashboardSidebar({
               aria-current={active === 'recipes' ? 'page' : undefined}
               className={submenuClass(active === 'recipes')}
             >
-              Danh sách công thức
+              Quản lý công thức
             </Link>
             <Link
               to="/dashboard/ingredients"
