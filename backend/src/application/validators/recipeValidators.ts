@@ -70,13 +70,16 @@ const queryNumber = (schema: z.ZodNumber) => z.preprocess(
 
 export const recipeFiltersSchema = z.object({
   categoryId: z.string().uuid().optional(),
-  difficulty: z.nativeEnum(RecipeDifficulty).optional(),
+  // Accept issue examples and preserve uppercase API clients.
+  difficulty: z.enum(['Easy', 'Medium', 'Hard', 'Expert', 'EASY', 'MEDIUM', 'HARD', 'EXPERT'])
+    .transform(value => value.toUpperCase() as RecipeDifficulty).optional(),
   status: z.nativeEnum(RecipeStatus).optional(),
   authorId: z.string().uuid().optional(),
   minPrepTime: queryNumber(z.number().int().nonnegative()).optional(),
   maxPrepTime: queryNumber(z.number().int().nonnegative()).optional(),
   minCookTime: queryNumber(z.number().int().nonnegative()).optional(),
-  maxCookTime: queryNumber(z.number().int().nonnegative()).optional(),
+  maxCookTime: queryNumber(z.number().int().nonnegative().max(2147483647)).optional(),
+  minServings: queryNumber(z.number().int().positive().max(2147483647)).optional(),
   searchQuery: z.string().min(2).optional(),
 });
 

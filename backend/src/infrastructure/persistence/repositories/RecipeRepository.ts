@@ -289,6 +289,7 @@ export class RecipeRepository implements IRecipeRepository {
     if (filters.difficulty) where.difficulty = filters.difficulty;
     if (filters.status) where.status = filters.status;
     if (filters.authorId) where.authorId = filters.authorId;
+    if (filters.minServings !== undefined) where.servings = { gte: filters.minServings };
     if (filters.minPrepTime !== undefined || filters.maxPrepTime !== undefined) {
       where.prepTime = {};
       if (filters.minPrepTime !== undefined) where.prepTime.gte = filters.minPrepTime;
