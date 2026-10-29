@@ -63,7 +63,9 @@ beforeEach(() => {
   sessionStorage.clear()
   saveSession(session)
   fetchMock.mockReset()
-  vi.stubGlobal('fetch', fetchMock)
+  vi.stubGlobal('fetch', (url: string, init?: RequestInit) => String(url).endsWith('/recipes/manage/overview')
+    ? Promise.resolve(response({ stats: { total: 1, published: 0, draft: 1, archived: 0 }, recentRecipes: [draft] }))
+    : fetchMock(url, init))
   fetchMock.mockResolvedValue(response(recipePage()))
 })
 afterEach(() => {
@@ -164,6 +166,101 @@ describe('Recipe management through UI and API client', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Trang sau' }))
     expect(await screen.findByText('Canh trang hai')).toBeInTheDocument()
     expect(fetchMock.mock.calls[1][0]).toContain('/recipes/manage?page=2&pageSize=12')
+  })
+
+  it('resets to the first page when page size changes and keeps that size for subsequent pages', async () => {
+    const result = (page: number, size: number, title: string) => {
+      const data = recipePage([{ ...draft, title }], page, 3)
+      data.meta.pageSize = size
+      data.meta.totalCount = 60
+      return response(data)
+    }
+    fetchMock
+      .mockResolvedValueOnce(result(1, 12, draft.title))
+      .mockResolvedValueOnce(result(2, 12, 'Trang hai ban đầu'))
+      .mockResolvedValueOnce(result(1, 24, 'Trang đầu 24 mục'))
+      .mockResolvedValueOnce(result(2, 24, 'Trang hai 24 mục'))
+    openPage()
+    await userEvent.click(await screen.findByRole('button', { name: 'Trang sau' }))
+    await screen.findByRole('article', { name: 'Trang hai ban đầu' })
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Số công thức mỗi trang' }), '24')
+    await screen.findByRole('article', { name: 'Trang đầu 24 mục' })
+    expect(fetchMock.mock.calls[2][0]).toContain('/recipes/manage?page=1&pageSize=24')
+    expect(screen.getByRole('button', { name: 'Trang trước' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
+    await screen.findByRole('article', { name: 'Trang hai 24 mục' })
+    expect(fetchMock.mock.calls[3][0]).toContain('/recipes/manage?page=2&pageSize=24')
+    expect(screen.getByRole('combobox', { name: 'Số công thức mỗi trang' })).toHaveValue('24')
+  })
+
+  it.each(['network', 'server'])('retries the same next page after a %s failure', async (failure) => {
+    fetchMock.mockResolvedValueOnce(response(recipePage([draft], 1, 2)))
+    if (failure === 'network') fetchMock.mockRejectedValueOnce(new TypeError('network'))
+    else fetchMock.mockResolvedValueOnce(response({ detail: 'Server error' }, 500))
+    fetchMock.mockResolvedValueOnce(response(recipePage([{ ...draft, title: 'Trang hai sau thử lại' }], 2, 2)))
+    openPage()
+    await userEvent.click(await screen.findByRole('button', { name: 'Trang sau' }))
+    await screen.findByRole('alert')
+    await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
+    expect(await screen.findByRole('article', { name: 'Trang hai sau thử lại' })).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(fetchMock.mock.calls[1][0]).toContain('page=2&pageSize=12')
+    expect(fetchMock.mock.calls[2][0]).toContain('page=2&pageSize=12')
+    expect(screen.queryByText('Đang tải công thức...')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tải lại' })).toBeEnabled()
+  })
+
+  it.each(['/dashboard/recipes', '/dashboard/recipes/archive'])(
+    'returns to the first page after all recipes disappear on %s', async (path) => {
+      fetchMock.mockResolvedValueOnce(response(recipePage([draft], 1, 2)))
+        .mockResolvedValueOnce(response(recipePage([{ ...draft, title: 'Công thức cuối' }], 2, 2)))
+        .mockResolvedValueOnce(response(recipePage([], 2, 0)))
+        .mockResolvedValueOnce(response(recipePage([], 1, 0)))
+      openPage(path)
+      await userEvent.click(await screen.findByRole('button', { name: 'Trang sau' }))
+      await screen.findByRole('article', { name: 'Công thức cuối' })
+      await userEvent.click(screen.getByRole('button', { name: 'Tải lại' }))
+      expect(await screen.findByText('Chưa có công thức')).toBeInTheDocument()
+      expect(screen.getByText('Trang 1/1 · 0 công thức')).toBeInTheDocument()
+      expect(screen.queryByText('Trang 2/1 · 0 công thức')).not.toBeInTheDocument()
+      expect(fetchMock.mock.calls[3][0]).toContain('page=1&pageSize=12')
+      expect(screen.queryByRole('navigation', { name: 'Phân trang công thức' })).not.toBeInTheDocument()
+    },
+  )
+
+  it('moves to the last available recipe page when the page count decreases', async () => {
+    const lastPage = recipePage([{ ...draft, title: 'Trang hợp lệ cuối' }], 2, 2)
+    fetchMock.mockResolvedValueOnce(response(recipePage([draft], 1, 3)))
+      .mockResolvedValueOnce(response(recipePage([{ ...draft, title: 'Trang hai' }], 2, 3)))
+      .mockResolvedValueOnce(response(recipePage([{ ...draft, title: 'Trang ba' }], 3, 3)))
+      .mockResolvedValueOnce(response(recipePage([], 3, 2)))
+      .mockResolvedValueOnce(response(lastPage))
+    openPage()
+    await userEvent.click(await screen.findByRole('button', { name: 'Trang sau' }))
+    await screen.findByRole('article', { name: 'Trang hai' })
+    await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
+    await screen.findByRole('article', { name: 'Trang ba' })
+    await userEvent.click(screen.getByRole('button', { name: 'Tải lại' }))
+    expect(await screen.findByRole('article', { name: 'Trang hợp lệ cuối' })).toBeInTheDocument()
+    expect(fetchMock.mock.calls[4][0]).toContain('page=2&pageSize=12')
+    expect(screen.getByRole('button', { name: 'Trang sau' })).toBeDisabled()
+  })
+
+  it('allows reload after fetching a corrected recipe page fails', async () => {
+    fetchMock.mockResolvedValueOnce(response(recipePage([draft], 1, 2)))
+      .mockResolvedValueOnce(response(recipePage([{ ...draft, title: 'Trang hai' }], 2, 2)))
+      .mockResolvedValueOnce(response(recipePage([], 2, 0)))
+      .mockRejectedValueOnce(new TypeError('network'))
+      .mockResolvedValueOnce(response(recipePage()))
+    openPage()
+    await userEvent.click(await screen.findByRole('button', { name: 'Trang sau' }))
+    await screen.findByRole('article', { name: 'Trang hai' })
+    await userEvent.click(screen.getByRole('button', { name: 'Tải lại' }))
+    await screen.findByRole('alert')
+    expect(screen.getByRole('button', { name: 'Tải lại' })).toBeEnabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Tải lại' }))
+    expect(await screen.findByRole('article', { name: draft.title })).toBeInTheDocument()
+    expect(fetchMock.mock.calls[4][0]).toContain('page=1&pageSize=12')
   })
 
   it('offers retry after a network failure', async () => {

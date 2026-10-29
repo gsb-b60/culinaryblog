@@ -1,4 +1,6 @@
-import type { PagedResult } from './api'
+import type { PagedResult, PaginationParams } from './api'
+
+export type CategoryListQuery = PaginationParams & { searchQuery?: string }
 import type { RecipeSummary } from './recipe'
 
 export interface Category {

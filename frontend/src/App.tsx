@@ -9,6 +9,7 @@ import IngredientManagementPage from './pages/IngredientManagementPage'
 import RecipesBrowsePage from './pages/RecipesBrowsePage'
 import RecipeDetailPage from './pages/RecipeDetailPage'
 import DashboardPage from './pages/DashboardPage'
+import CategoriesPage from './pages/CategoriesPage'
 import HomePage from './pages/HomePage'
 import ProfilePage from './pages/ProfilePage'
 import RegisterPage from './pages/RegisterPage'
@@ -44,6 +45,7 @@ export default function App() {
       {/* Authenticated area shell: sidebar, mobile navigation, sign-out dialog. */}
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/dashboard/categories" element={<CategoriesPage />} />
         <Route path="/dashboard/recipes/delete" element={<DeleteRecipesPage />} />
         <Route
           path="/dashboard/recipes/archive"

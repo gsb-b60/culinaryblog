@@ -2,13 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { createCategory, deleteCategory, getCategoryBySlug, listCategories, updateCategory } from '../lib/api'
 import { queryKeys } from '../lib/queryClient'
-import type { CreateCategoryPayload, UpdateCategoryPayload } from '../types/category'
+import type { CategoryListQuery, CreateCategoryPayload, UpdateCategoryPayload } from '../types/category'
 
-export function useCategories() {
+export function useCategories(query: CategoryListQuery = {}) {
   return useQuery({
-    queryKey: queryKeys.categories(),
-    queryFn: listCategories,
-    staleTime: 15 * 60 * 1000,
+    queryKey: [...queryKeys.categories(), 'list', query],
+    queryFn: ({ signal }) => listCategories(query, signal),
+    staleTime: 0,
   })
 }
 

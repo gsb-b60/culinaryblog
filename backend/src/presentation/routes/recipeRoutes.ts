@@ -17,6 +17,7 @@ import {
   DeleteRecipeIngredientCommand,
 } from '../../application/commands/recipes/RecipeCommands.js';
 import { GetRecipeIngredientsQuery } from '../../application/handlers/RecipeIngredientQueryHandler.js';
+import { GetRecipeOverviewQuery } from '../../application/queries/recipes/GetRecipeOverviewQuery.js';
 import { GetManagedRecipesQuery } from '../../application/queries/recipes/GetManagedRecipesQuery.js';
 import {
   GetRecipesQuery,
@@ -43,15 +44,19 @@ import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
 const router: RouterType = Router();
 
+// Authenticated overview scope comes exclusively from verified JWT claims.
+router.get('/manage/overview', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    res.json(await commandBus.executeQuery(new GetRecipeOverviewQuery(
+      req.user!.id, req.user!.roles.includes(UserRole.ADMIN),
+    )));
+  } catch (error) { next(error); }
+});
+
 // Protected management list must precede the public /:slug route.
 router.get('/manage', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const input = z
-      .object({
-        page: z.coerce.number().int().positive().default(1),
-        pageSize: z.coerce.number().int().positive().max(50).default(12),
-      })
-      .parse(req.query);
+    const input = paginationSchema.parse(req.query);
     const query = new GetManagedRecipesQuery(
       req.user!.id,
       req.user!.roles.includes(UserRole.ADMIN),

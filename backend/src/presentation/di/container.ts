@@ -32,6 +32,8 @@ import {
 } from '../../application/handlers/AuthCommandHandlers.js';
 import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
 import { DeleteRecipeCommandHandler } from '../../application/handlers/DeleteRecipeCommandHandler.js';
+import { RecipeOverviewQueryHandler } from '../../application/handlers/RecipeOverviewQueryHandler.js';
+import { GetRecipeOverviewQuery } from '../../application/queries/recipes/GetRecipeOverviewQuery.js';
 import { ManagedRecipeQueryHandler } from '../../application/handlers/ManagedRecipeQueryHandler.js';
 import {
   AddRecipeIngredientCommandHandler,
@@ -135,6 +137,8 @@ export function createContainer(): Container {
   commandBus.registerQueryHandler('GetRecipeBySlugQuery', new GetRecipeBySlugQueryHandler(prisma));
   commandBus.registerQueryHandler('GetCategoriesQuery', new GetCategoriesQueryHandler(categoryRepository));
   commandBus.registerQueryHandler('GetCategoryBySlugQuery', new GetCategoryBySlugQueryHandler(categoryRepository, recipeRepository));
+
+  commandBus.registerQueryHandler(GetRecipeOverviewQuery.name, new RecipeOverviewQueryHandler(prisma));
 
   commandBus.registerQueryHandler(
     GetManagedRecipesQuery.name,

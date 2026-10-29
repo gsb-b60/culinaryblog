@@ -37,12 +37,20 @@ function errorMessage(reason: unknown): string {
  * auth guard) is provided by DashboardLayout.
  */
 export default function RecipesPage({ mode = 'publish' }: { mode?: 'publish' | 'archive' }) {
+  const session = useAuthStore((state) => state.session)
+  if (!session) return null
+  const accountKey = JSON.stringify([session.user.id, [...session.user.roles].sort()])
+  return <AccountRecipesPage key={accountKey} mode={mode} />
+}
+
+function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
   const archiveMode = mode === 'archive'
   const navigate = useNavigate()
   const session = useAuthStore((state) => state.session)
   const isAuthenticated = useAuthStore((state) => state.session !== null)
   const signOut = useAuthStore((state) => state.signOut)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(12)
   const [revision, setRevision] = useState(0)
   const [data, setData] = useState<RecipePage | null>(null)
   const [loading, setLoading] = useState(true)
@@ -63,20 +71,31 @@ export default function RecipesPage({ mode = 'publish' }: { mode?: 'publish' | '
     if (!isAuthenticated) return
     // Read the token at call time: the API client may rotate it mid-flight
     // and a new object identity must not re-run this effect.
-    const token = useAuthStore.getState().session?.accessToken
+    const account = useAuthStore.getState().session
+    const token = account?.accessToken
     if (!token) return
     let active = true
+    let correctingPage = false
     const controller = new AbortController()
-    getManagedRecipes(token, page, controller.signal)
+    getManagedRecipes(token, page, controller.signal, pageSize)
       .then((result) => {
-        if (active) setData(result)
+        if (!active) return
+        const lastPage = Math.max(1, result.meta.totalPages)
+        if (page > lastPage) {
+          // Keep the loading state until the corrected page has finished loading.
+          correctingPage = true
+          setPage(lastPage)
+          return
+        }
+        setData(result)
       })
       .catch((reason: unknown) => {
         if (reason instanceof ApiError && reason.status === 401) {
           // Losing the session re-runs this effect (isAuthenticated flips to
           // false) and deactivates it, so this branch must not wait on
           // `active` — otherwise the redirect never happens.
-          if (mounted.current) {
+          const current = useAuthStore.getState().session
+          if (!current || current.user.id === account?.user.id) {
             signOut()
             navigate('/auth/login', { replace: true })
           }
@@ -86,13 +105,13 @@ export default function RecipesPage({ mode = 'publish' }: { mode?: 'publish' | '
         setError(errorMessage(reason))
       })
       .finally(() => {
-        if (active) setLoading(false)
+        if (active && !correctingPage) setLoading(false)
       })
     return () => {
       active = false
       controller.abort()
     }
-  }, [isAuthenticated, page, revision, navigate, signOut])
+  }, [isAuthenticated, page, pageSize, revision, navigate, signOut])
 
   // DashboardLayout owns the auth guard, so a missing session means the layout
   // is about to redirect (or is waiting for the sign-out navigation).
@@ -110,6 +129,8 @@ export default function RecipesPage({ mode = 'publish' }: { mode?: 'publish' | '
     setError('')
     setSuccess('')
     setPage(next)
+    // The target page may already be selected after a failed request.
+    setRevision((value) => value + 1)
   }
 
   const changeStatus = async (recipe: Recipe, archive = false) => {
@@ -140,7 +161,7 @@ export default function RecipesPage({ mode = 'publish' }: { mode?: 'publish' | '
             : 'Đã chuyển công thức về bản nháp.',
       )
     } catch (reason) {
-      if (!mounted.current) return
+      if (!mounted.current && !(reason instanceof ApiError && reason.status === 401 && !useAuthStore.getState().session)) return
       if (reason instanceof ApiError && reason.status === 401) {
         signOut()
         navigate('/auth/login', { replace: true })
@@ -180,6 +201,33 @@ export default function RecipesPage({ mode = 'publish' }: { mode?: 'publish' | '
         >
           Tải lại
         </button>
+      </div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-surface-200 bg-white p-4">
+        <p className="text-sm text-surface-600" aria-live="polite">
+          {loading
+            ? 'Đang tải danh sách...'
+            : data
+              ? `Trang ${data.meta.page}/${Math.max(1, data.meta.totalPages)} · ${data.meta.totalCount} công thức`
+              : 'Danh sách công thức'}
+        </p>
+        <label className="text-sm">
+          Số công thức mỗi trang
+          <select
+            className="ml-2 rounded-lg border border-surface-300 bg-white p-2"
+            value={pageSize}
+            disabled={loading || pending !== null}
+            onChange={(event) => {
+              const nextSize = Number(event.target.value)
+              if (nextSize === pageSize) return
+              setPageSize(nextSize)
+              changePage(1)
+            }}
+          >
+            {[6, 12, 24, 50].map((size) => (
+              <option key={size} value={size}>{size}</option>
+            ))}
+          </select>
+        </label>
       </div>
       {error && (
         <p role="alert" className="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-700">
@@ -249,7 +297,7 @@ export default function RecipesPage({ mode = 'publish' }: { mode?: 'publish' | '
                     )}
                     {canManage && (
                       <Link
-                        to={`/dashboard/ingredients?recipeId=${encodeURIComponent(recipe.id)}&page=${page}`}
+                        to={`/dashboard/ingredients?recipeId=${encodeURIComponent(recipe.id)}&page=${data?.meta.page ?? 1}&pageSize=${data?.meta.pageSize ?? 12}`}
                         className="rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold text-brand-700"
                       >
                         Nguyên liệu

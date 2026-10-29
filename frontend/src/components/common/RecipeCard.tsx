@@ -4,9 +4,9 @@ import { Link } from 'react-router-dom'
 import { Badge } from '../ui/badge'
 import { Card, CardContent, CardHeader } from '../ui/card'
 import { formatDate } from '../../lib/formatDate'
-import type { RecipeDetail } from '../../types/recipe'
+import type { RecipeSummary } from '../../types/recipe'
 
-const DIFFICULTY_LABELS: Record<RecipeDetail['difficulty'], string> = {
+const DIFFICULTY_LABELS: Record<RecipeSummary['difficulty'], string> = {
   EASY: 'Dễ',
   MEDIUM: 'Trung bình',
   HARD: 'Khó',
@@ -21,7 +21,7 @@ export function RecipeCard({
   recipe,
   headingLevel = 2,
 }: {
-  recipe: RecipeDetail
+  recipe: RecipeSummary
   headingLevel?: 2 | 3
 }) {
   const totalMinutes = recipe.prepTime + recipe.cookTime
