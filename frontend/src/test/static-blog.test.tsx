@@ -2,11 +2,39 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Link, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getStaticRecipeBySlug } from '../data/blog-static'
+import { STATIC_RECIPES, STATIC_CATEGORIES, getStaticRecipeBySlug } from '../data/blog-static'
 
 import HomePage from '../pages/HomePage'
 import RecipeDetailPage from '../pages/RecipeDetailPage'
 import RecipesBrowsePage from '../pages/RecipesBrowsePage'
+
+const apiCategories = STATIC_CATEGORIES.map((name, i) => ({
+  id: '00000000-0000-4000-8000-' + String(i + 1).padStart(12, '0'),
+  name, slug: 'cat-' + i, orderIndex: i, createdAt: '',
+}))
+const apiRecipes = [
+  ...STATIC_RECIPES,
+  ...Array.from({ length: 7 }, (_, i) => ({ ...STATIC_RECIPES[0]!, id: 'extra-' + i, slug: 'extra-' + i, title: i === 6 ? 'Công thức trang hai' : 'Công thức thêm ' + i })),
+].map(recipe => ({ ...recipe, categoryId: apiCategories.find(c => c.name === recipe.categoryName)!.id }))
+
+beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+    const query = new URL(url, 'http://localhost')
+    const page = Number(query.searchParams.get('page') ?? 1)
+    const pageSize = Number(query.searchParams.get('pageSize') ?? 12)
+    const q = query.searchParams.get('searchQuery')?.toLowerCase() ?? ''
+    const category = query.searchParams.get('categoryId')
+    const filtered = query.pathname.endsWith('/categories') ? apiCategories
+      : apiRecipes.filter(recipe => (!category || recipe.categoryId === category) &&
+        (!q || (recipe.title + ' ' + recipe.description).toLowerCase().includes(q)))
+    return new Response(JSON.stringify({
+      items: filtered.slice((page - 1) * pageSize, page * pageSize),
+      meta: { page, pageSize, totalCount: filtered.length, totalPages: Math.ceil(filtered.length / pageSize),
+        hasNextPage: page < Math.ceil(filtered.length / pageSize), hasPreviousPage: page > 1 },
+    }), { status: 200 })
+  }))
+})
+afterEach(() => vi.unstubAllGlobals())
 
 function renderHomePage() {
   return render(
@@ -45,7 +73,7 @@ function renderDetailPage(slug: string) {
   )
 }
 
-describe('HomePage static landing', () => {
+describe('HomePage live API landing', () => {
   it('presents the hero and both sign-up actions', () => {
     renderHomePage()
 
@@ -54,23 +82,23 @@ describe('HomePage static landing', () => {
     expect(screen.getByRole('link', { name: 'Đăng nhập' })).toHaveAttribute('href', '/auth/login')
   })
 
-  it('shows the featured recipes and links each one to its detail page', () => {
+  it('shows the featured recipes and links each one to its detail page', async () => {
     renderHomePage()
 
     const featured = screen.getByRole('heading', { name: 'Công thức nổi bật' })
     expect(featured).toBeInTheDocument()
 
-    const link = screen.getByRole('link', { name: 'Phở bò tái nạm' })
+    const link = await screen.findByRole('link', { name: 'Phở bò tái nạm' })
     expect(link).toHaveAttribute('href', '/recipes/pho-bo-tai-nam')
     expect(screen.getByRole('link', { name: 'Bún chả Hà Nội' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Canh chua cá hồi' })).toBeInTheDocument()
   })
 
-  it('links every category to the pre-filtered list', () => {
+  it('links every category to the pre-filtered list', async () => {
     renderHomePage()
 
-    const link = screen.getByRole('link', { name: 'Món nướng' })
-    expect(decodeURIComponent(link.getAttribute('href') ?? '')).toBe('/recipes?category=Món nướng')
+    const link = await screen.findByRole('link', { name: 'Món nướng' })
+    expect(link).toHaveAttribute('href', '/recipes?categoryId=' + apiCategories.find(c => c.name === 'Món nướng')!.id)
   })
 })
 
@@ -80,7 +108,7 @@ describe('RecipesBrowsePage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Phở bò tái nạm' })).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Phân trang công thức' })).toBeInTheDocument()
-    expect(screen.getByText('Trang 1/2 · 6 công thức')).toBeInTheDocument()
+    expect(screen.getByText('Trang 1/2 · 13 công thức')).toBeInTheDocument()
   })
 
   it('moves to the second page', async () => {
@@ -89,7 +117,7 @@ describe('RecipesBrowsePage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
 
-    expect(await screen.findByRole('heading', { name: 'Gà nướng mật ong' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Công thức trang hai' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Phở bò tái nạm' })).not.toBeInTheDocument()
   })
 
@@ -136,7 +164,7 @@ describe('RecipesBrowsePage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Món khai vị' }))
 
     const search = (screen.getByTestId('location').textContent ?? '').split('?')[1] ?? ''
-    expect(new URLSearchParams(search).get('category')).toBe('Món khai vị')
+    expect(new URLSearchParams(search).get('categoryId')).toBe(apiCategories.find(c => c.name === 'Món khai vị')!.id)
     expect(await screen.findByRole('heading', { name: 'Gỏi cuốn tôm thịt' })).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Tất cả' }))

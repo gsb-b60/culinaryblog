@@ -1,6 +1,7 @@
 import type { RecipeIngredient } from '../types/recipe'
+import type { PagedResult } from '../types/api'
 import { loadSession, replaceSession, clearSession, subscribeSession } from './tokenStorage'
-import type { Recipe, RecipePage } from '../types/recipe'
+import type { Recipe, RecipePage, RecipeOverview } from '../types/recipe'
 import type {
   AuthResponse,
   LoginPayload,
@@ -12,6 +13,7 @@ import type {
 import type {
   Category,
   CategoryDetail,
+  CategoryListQuery,
   CreateCategoryPayload,
   UpdateCategoryPayload,
 } from '../types/category'
@@ -207,15 +209,23 @@ export function updateProfile(
   })
 }
 
-/** Load a cancellable page of recipes the account may manage, with 12 items per page. */
+/** Load a cancellable page of recipes the account may manage. */
 export function getManagedRecipes(
   accessToken: string,
   page = 1,
   signal?: AbortSignal,
+  pageSize = 12,
 ): Promise<RecipePage> {
-  return request<RecipePage>('/recipes/manage?page=' + page + '&pageSize=12', {
+  return request<RecipePage>('/recipes/manage?page=' + page + '&pageSize=' + pageSize, {
     headers: { Authorization: 'Bearer ' + accessToken },
     signal,
+  })
+}
+
+/** Fetch account-scoped dashboard totals and recently updated recipes. */
+export function getRecipeOverview(accessToken: string, signal?: AbortSignal): Promise<RecipeOverview> {
+  return request<RecipeOverview>('/recipes/manage/overview', {
+    headers: { Authorization: 'Bearer ' + accessToken }, signal,
   })
 }
 
@@ -255,9 +265,9 @@ function toQuery(params: Record<string, string | number | boolean | undefined>):
 }
 
 /** Fetch public recipes with filters, sorting and pagination. */
-export function listRecipes(query: RecipeListQuery = {}): Promise<PagedRecipes> {
+export function listRecipes(query: RecipeListQuery = {}, signal?: AbortSignal): Promise<PagedRecipes> {
   return request<PagedRecipes>(
-    `/recipes${toQuery(query as Record<string, string | number | boolean | undefined>)}`,
+    `/recipes${toQuery(query as Record<string, string | number | boolean | undefined>)}`, { signal },
   )
 }
 
@@ -349,8 +359,19 @@ export function addRecipeIngredient(
 }
 
 /** Fetch available categories for recipe browsing and editing. */
-export function listCategories(): Promise<Category[]> {
-  return request<Category[]>('/categories')
+export function listCategories(query: CategoryListQuery = {}, signal?: AbortSignal): Promise<PagedResult<Category>> {
+  return request<PagedResult<Category>>(`/categories${toQuery({ ...query })}`, { signal })
+}
+
+/** Load every public category instead of silently truncating catalogs at the first page. */
+export async function listAllCategories(signal?: AbortSignal): Promise<Category[]> {
+  const first = await listCategories({ page: 1, pageSize: 50 }, signal)
+  const items = [...first.items]
+  for (let page = 2; page <= first.meta.totalPages; page += 1) {
+    signal?.throwIfAborted()
+    items.push(...(await listCategories({ page, pageSize: 50 }, signal)).items)
+  }
+  return items
 }
 
 /** Fetch a category and its paginated public recipes by slug. */

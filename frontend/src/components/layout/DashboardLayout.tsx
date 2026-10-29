@@ -22,7 +22,9 @@ export function DashboardLayout() {
   // below decides where to go, so the two never race each other.
   const [enteredSignedIn] = useState(() => useAuthStore.getState().session !== null)
 
-  const active = location.pathname.startsWith('/dashboard/recipes/delete')
+  const active = location.pathname.startsWith('/dashboard/categories')
+    ? 'categories'
+    : location.pathname.startsWith('/dashboard/recipes/delete')
     ? 'delete-recipes'
     : location.pathname.startsWith('/dashboard/recipes/archive')
       ? 'archive-recipes'

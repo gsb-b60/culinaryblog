@@ -78,6 +78,13 @@ function payloadFor(form: IngredientForm, orderIndex: number): CreateIngredientP
 
 /** DashboardLayout owns authentication, navigation and logout. */
 export default function IngredientManagementPage() {
+  const session = useAuthStore((state) => state.session)
+  if (!session) return null
+  const accountKey = JSON.stringify([session.user.id, [...session.user.roles].sort()])
+  return <AccountIngredientManagementPage key={accountKey} />
+}
+
+function AccountIngredientManagementPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -85,6 +92,10 @@ export default function IngredientManagementPage() {
   const accountKey = session ? `${session.user.id}:${session.user.roles.join(',')}` : ''
   const requestedPage = Number(searchParams.get('page') ?? 1)
   const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1
+  const requestedPageSize = Number(searchParams.get('pageSize') ?? 12)
+  const pageSize = Number.isInteger(requestedPageSize) && requestedPageSize > 0 && requestedPageSize <= 50
+    ? requestedPageSize
+    : 12
   const recipeId = searchParams.get('recipeId') ?? ''
   const [recipes, setRecipes] = useState<RecipePage | null>(null)
   const [savedIngredients, setIngredients] = useState<RecipeIngredient[]>([])
@@ -100,7 +111,10 @@ export default function IngredientManagementPage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const selectedRecipe =
-    recipes?.meta.page === page ? recipes.items.find((item) => item.id === recipeId) : undefined
+    recipes?.meta.page === page && recipes.meta.pageSize === pageSize
+      ? recipes.items.find((item) => item.id === recipeId)
+      : undefined
+  const missingRecipe = !loadingRecipes && !error && recipes?.meta.page === page && Boolean(recipeId) && !selectedRecipe
   const ingredientKey = JSON.stringify([accountKey, recipeId, location.key, revision])
   const loadingIngredients = Boolean(selectedRecipe) && finishedIngredientKey !== ingredientKey
   const ingredients = loadedIngredientKey === ingredientKey ? savedIngredients : []
@@ -118,22 +132,23 @@ export default function IngredientManagementPage() {
   }, [])
 
   useEffect(() => {
-    const token = useAuthStore.getState().session?.accessToken
+    const account = useAuthStore.getState().session
+    const token = account?.accessToken
     if (!accountKey || !token) return
     let active = true
     const controller = new AbortController()
-    getManagedRecipes(token, page, controller.signal)
+    getManagedRecipes(token, page, controller.signal, pageSize)
       .then((result) => {
         if (!active) return
         setRecipes(result)
         setSearchParams(
           (current) => {
             const preferred = current.get('recipeId') ?? ''
-            const nextId = result.items.some((item) => item.id === preferred)
-              ? preferred
-              : (result.items[0]?.id ?? '')
+            // Never replace an explicitly requested recipe with a different one.
+            const nextId = preferred || (result.items[0]?.id ?? '')
             const next = new URLSearchParams(current)
             next.set('page', String(page))
+            next.set('pageSize', String(pageSize))
             if (nextId) next.set('recipeId', nextId)
             else next.delete('recipeId')
             return next
@@ -142,7 +157,7 @@ export default function IngredientManagementPage() {
         )
       })
       .catch((reason: unknown) => {
-        if (reason instanceof ApiError && reason.status === 401 && mounted.current) {
+        if (reason instanceof ApiError && reason.status === 401 && (!useAuthStore.getState().session || useAuthStore.getState().session?.user.id === account?.user.id)) {
           useAuthStore.getState().signOut()
           navigate('/auth/login', { replace: true })
           return
@@ -156,10 +171,11 @@ export default function IngredientManagementPage() {
       active = false
       controller.abort()
     }
-  }, [accountKey, page, revision, navigate, setSearchParams])
+  }, [accountKey, page, pageSize, revision, navigate, setSearchParams])
 
   useEffect(() => {
-    const token = useAuthStore.getState().session?.accessToken
+    const account = useAuthStore.getState().session
+    const token = account?.accessToken
     if (!accountKey || !selectedRecipe || !token) return
     let active = true
     const controller = new AbortController()
@@ -171,7 +187,7 @@ export default function IngredientManagementPage() {
         }
       })
       .catch((reason: unknown) => {
-        if (reason instanceof ApiError && reason.status === 401 && mounted.current) {
+        if (reason instanceof ApiError && reason.status === 401 && (!useAuthStore.getState().session || useAuthStore.getState().session?.user.id === account?.user.id)) {
           useAuthStore.getState().signOut()
           navigate('/auth/login', { replace: true })
           return
@@ -223,7 +239,7 @@ export default function IngredientManagementPage() {
     try {
       await action(isCurrent)
     } catch (reason) {
-      if (!isCurrent()) return
+      if (!isCurrent() && !(reason instanceof ApiError && reason.status === 401 && !useAuthStore.getState().session)) return
       if (reason instanceof ApiError && reason.status === 401) {
         useAuthStore.getState().signOut()
         navigate('/auth/login', { replace: true })
@@ -356,6 +372,12 @@ export default function IngredientManagementPage() {
           {error}
         </p>
       )}
+      {missingRecipe && (
+        <p role="alert" className="mb-4 rounded-lg bg-amber-50 p-4 text-amber-800">
+          Công thức đã chọn không có trong trang hiện tại hoặc bạn không còn quyền truy cập.
+          Hãy chọn lại công thức hoặc chuyển trang; hệ thống giữ nguyên lựa chọn để tránh sửa nhầm.
+        </p>
+      )}
       {notice && (
         <p role="status" className="mb-4 rounded-lg bg-green-50 p-4 text-green-800">
           {notice}
@@ -383,6 +405,9 @@ export default function IngredientManagementPage() {
           }}
         >
           <option value="">{loadingRecipes ? 'Đang tải công thức…' : 'Chọn một công thức'}</option>
+          {recipeId && !selectedRecipe && !loadingRecipes && (
+            <option value={recipeId} disabled>Công thức đã chọn không có trong trang hiện tại</option>
+          )}
           {recipes?.items.map((item) => (
             <option key={item.id} value={item.id}>
               {item.title} —{' '}

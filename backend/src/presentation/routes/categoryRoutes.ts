@@ -1,5 +1,5 @@
 import { Router, type Router as RouterType } from 'express';
-import { z } from 'zod';
+import { paginationSchema } from '../../application/validators/paginationValidators.js';
 
 import { commandBus } from '../../application/command-bus.js';
 import { 
@@ -49,11 +49,6 @@ router.get('/', generalRateLimiter, async (req, res, next) => {
 
 router.get('/:slug', generalRateLimiter, optionalAuth, async (req, res, next) => {
   try {
-    const paginationSchema = z.object({
-      page: z.coerce.number().int().positive().default(1),
-      pageSize: z.coerce.number().int().positive().max(50).default(12),
-    });
-    
     const pagination = paginationSchema.parse(req.query);
 
     const query = new GetCategoryBySlugQuery(

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createPaginationSchema } from './paginationValidators.js';
 
 export const createCategorySchema = z.object({
   name: z.string().min(2).max(100),
@@ -18,10 +19,7 @@ export const categoryFiltersSchema = z.object({
   searchQuery: z.string().min(2).optional(),
 });
 
-export const categoryPaginationSchema = z.object({
-  page: z.number().int().positive().default(1),
-  pageSize: z.number().int().positive().max(50).default(20),
-});
+export const categoryPaginationSchema = createPaginationSchema(20);
 
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
