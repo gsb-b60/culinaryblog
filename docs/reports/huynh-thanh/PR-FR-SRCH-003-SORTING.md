@@ -1,7 +1,7 @@
 ﻿## 1. Thông tin thành viên
 
-| Họ tên | MSSV | Vai trò |
-|---|---|---|
+| Họ tên             | MSSV    | Vai trò                        |
+| ------------------ | ------- | ------------------------------ |
 | Nguyễn Huỳnh Thanh | 2312748 | Fullstack (Backend / Frontend) |
 
 ---
@@ -38,18 +38,18 @@ Hoàn thiện sắp xếp công thức công khai qua `sort={field}`: dấu `-` 
 - Giữ thứ tự phụ `id ASC` hiện có để phân trang ổn định khi giá trị sắp xếp bằng nhau.
 - Bổ sung test, E2E PostgreSQL thật, ảnh desktop và bằng chứng response/log.
 
-| File chính | Thay đổi |
-|---|---|
-| `backend/src/application/validators/recipeValidators.ts` | Parse và whitelist tham số sort |
-| `backend/src/presentation/routes/recipeRoutes.ts` | Áp dụng vào danh sách và tìm kiếm |
-| `backend/src/presentation/docs/openapi.ts` | Mô tả sort, mặc định và lỗi 422 |
-| `frontend/src/types/recipe.ts` | Kiểu query và lựa chọn sắp xếp |
-| `frontend/src/pages/RecipesBrowsePage.tsx` | Dropdown, URL state và reset phân trang |
-| `backend/tests/recipe-sorting.test.ts` | 22 test hồi quy HTTP → handler → repository |
-| `backend/tests/recipe-sorting.e2e.ts` | Kiểm tra thứ tự thực tế và phân trang với PostgreSQL |
-| `backend/tests/recipe-sorting-evidence.ts` | Chụp ảnh trình duyệt, API và đầu ra test/lint |
-| `frontend/src/test/static-blog.test.tsx` | Khôi phục sort, query gửi đi, giữ bộ lọc và fallback |
-| `docs/reports/huynh-thanh/evidence/fr-srch-003/` | PNG, JSON và log gốc |
+| File chính                                               | Thay đổi                                             |
+| -------------------------------------------------------- | ---------------------------------------------------- |
+| `backend/src/application/validators/recipeValidators.ts` | Parse và whitelist tham số sort                      |
+| `backend/src/presentation/routes/recipeRoutes.ts`        | Áp dụng vào danh sách và tìm kiếm                    |
+| `backend/src/presentation/docs/openapi.ts`               | Mô tả sort, mặc định và lỗi 422                      |
+| `frontend/src/types/recipe.ts`                           | Kiểu query và lựa chọn sắp xếp                       |
+| `frontend/src/pages/RecipesBrowsePage.tsx`               | Dropdown, URL state và reset phân trang              |
+| `backend/tests/recipe-sorting.test.ts`                   | 22 test hồi quy HTTP → handler → repository          |
+| `backend/tests/recipe-sorting.e2e.ts`                    | Kiểm tra thứ tự thực tế và phân trang với PostgreSQL |
+| `backend/tests/recipe-sorting-evidence.ts`               | Chụp ảnh trình duyệt, API và đầu ra test/lint        |
+| `frontend/src/test/static-blog.test.tsx`                 | Khôi phục sort, query gửi đi, giữ bộ lọc và fallback |
+| `docs/reports/huynh-thanh/evidence/fr-srch-003/`         | PNG, JSON và log gốc                                 |
 
 ---
 
@@ -110,18 +110,18 @@ Không sửa domain/repository hoặc Prisma schema. Dùng lại `RecipeSortOpti
 
 **Kết quả đã xác minh trước khi bổ sung ảnh:**
 
-| Kiểm tra | Kết quả |
-|---|---|
-| Backend toàn bộ Vitest | 335/335 test, 26 file pass |
-| Frontend toàn bộ Vitest, 2 worker | 242/242 test, 25 file pass |
-| Backend test riêng sorting + filtering | 45/45 pass |
-| E2E PostgreSQL riêng sorting | 5 trường hợp thứ tự, tìm kiếm, lỗi sort và phân trang pass |
-| Backend/frontend build | Pass |
-| Backend lint | Exit 0, 0 errors, 196 warnings |
-| Frontend lint | Pass |
-| git diff --check | Pass |
+| Kiểm tra                               | Kết quả                                                    |
+| -------------------------------------- | ---------------------------------------------------------- |
+| Backend toàn bộ Vitest                 | 335/335 test, 26 file pass                                 |
+| Frontend toàn bộ Vitest, 2 worker      | 242/242 test, 25 file pass                                 |
+| Backend test riêng sorting + filtering | 45/45 pass                                                 |
+| E2E PostgreSQL riêng sorting           | 5 trường hợp thứ tự, tìm kiếm, lỗi sort và phân trang pass |
+| Backend/frontend build                 | Pass                                                       |
+| Backend lint                           | Exit 0, 0 errors, 196 warnings                             |
+| Frontend lint                          | Pass                                                       |
+| git diff --check                       | Pass                                                       |
 
-Lần chạy frontend đồng thời với nhiều kiểm tra từng gặp một test dashboard timeout 5 giây; chạy lại toàn bộ với 2 worker đạt 242/242, không sửa test hoặc timeout. Các lệnh thực tế dùng npm/npx tương ứng. Vitest chạy không coverage; chưa khẳng định đạt ngưỡng coverage của `pnpm test` backend. Frontend build còn cảnh báo bundle >500 kB.
+Lần chạy frontend đồng thời với nhiều kiểm tra từng gặp một test dashboard timeout 5 giây; chạy lại toàn bộ với 2 worker đạt 242/242, không sửa test hoặc timeout. Các lệnh thực tế dùng npm/npx tương ứng. Lần kiểm tra bổ sung đã chạy `pnpm test` backend có coverage: 335/335 test pass, lines/statements 91,35%, branches 90,41%, functions 92,09%; vượt ngưỡng lines 80%. Đã chạy `pnpm prisma:generate` thành công. Prettier đã áp dụng cho các file issue #36; kiểm tra toàn repo bị chặn bởi HTML có sẵn ở `web-showcase.html:280`, nên bỏ qua format toàn repo. Frontend build còn cảnh báo bundle >500 kB.
 
 Script chụp ảnh cần PostgreSQL/Redis local, Chromium Playwright và cổng 5187 trống; chạy Vite/HTTP thật, không mock API. Dữ liệu Soup 01–14 là fixture minh chứng để dễ đối chiếu thứ tự.
 
@@ -169,6 +169,18 @@ Lần tạo snapshot đã chạy lại: backend 45/45 test, frontend 14/14 test 
 
 ![Lint frontend](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat-issue%2328-FR-SRCH-003-Sorting-Recipes/docs/reports/huynh-thanh/evidence/fr-srch-003/frontend-lint.png)
 
+**10. Backend coverage — 335/335 test pass, lines 91,35%:**
+
+![Backend coverage](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat-issue%2328-FR-SRCH-003-Sorting-Recipes/docs/reports/huynh-thanh/evidence/fr-srch-003/backend-coverage.png)
+
+**11. Prisma generate — tạo Prisma Client thành công:**
+
+![Prisma generate](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat-issue%2328-FR-SRCH-003-Sorting-Recipes/docs/reports/huynh-thanh/evidence/fr-srch-003/prisma-generate.png)
+
+**12. Prettier — các file issue #36 đạt kiểm tra định dạng:**
+
+![Prettier issue 36](https://raw.githubusercontent.com/gsb-b60/culinaryblog/refs/heads/feat-issue%2328-FR-SRCH-003-Sorting-Recipes/docs/reports/huynh-thanh/evidence/fr-srch-003/prettier-issue-36.png)
+
 Log và kết quả máy đọc: `docs/reports/huynh-thanh/evidence/fr-srch-003/` gồm `result.json`, `api-title.json`, `api-cook-time.json`, `api-422.json` và các file `.txt`.
 
 Ảnh trong mô tả PR chỉ tải được sau khi push thư mục evidence lên nhánh tương ứng. Repo riêng tư có thể cần kéo thả PNG trực tiếp vào PR nếu raw image không hiển thị.
@@ -179,11 +191,12 @@ Log và kết quả máy đọc: `docs/reports/huynh-thanh/evidence/fr-srch-003/
 
 - [x] Lint pass backend + frontend (backend có 196 warnings, 0 errors)
 - [x] Build / TypeScript pass
-- [x] Vitest pass không coverage: backend 335, frontend 242
-- [ ] `pnpm test` backend với coverage — chưa chạy trong lần xác minh này
-- [ ] `pnpm prisma:generate` nếu đổi schema — không áp dụng
+- [x] Vitest pass: backend 335 test có coverage, frontend 242 test
+- [x] `pnpm test` backend với coverage — 335/335 test pass, lines/statements 91,35%, branches 90,41%, functions 92,09%; vượt ngưỡng lines 80%
+- [x] `pnpm prisma:generate` — đã chạy thành công, Prisma Client 5.22.0; không đổi schema/database
 - [x] Không đưa .env, secrets, keys hoặc token vào thay đổi issue
-- [ ] Format Prettier toàn repo — chưa chạy
+- [x] Prettier các file của issue #36 — đã format và kiểm tra
+- [ ] Format Prettier toàn repo — đã kiểm tra nhưng không hoàn tất: `web-showcase.html:280` có thẻ `div` đóng không hợp lệ; bỏ qua theo phạm vi yêu cầu
 - [x] Đã tự review code và đối chiếu acceptance criteria
 - [x] Không thêm console/debug thừa vào mã ứng dụng; script kiểm thử có log kết quả
 - [x] Documentation và mô tả API cập nhật

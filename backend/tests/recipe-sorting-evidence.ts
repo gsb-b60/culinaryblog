@@ -7,7 +7,8 @@ import { startIngredientIntegration } from './support/ingredientIntegration.js';
 const root = resolve(process.cwd(), '..');
 const frontend = resolve(root, 'frontend');
 const require = createRequire(resolve(frontend, 'package.json'));
-const { chromium, expect: baseExpect } = require('@playwright/test') as typeof import('@playwright/test');
+const { chromium, expect: baseExpect } =
+  require('@playwright/test') as typeof import('@playwright/test');
 const expect = baseExpect.configure({ timeout: 20000 });
 const output = resolve(root, 'docs/reports/huynh-thanh/evidence/fr-srch-003');
 mkdirSync(output, { recursive: true });
@@ -19,39 +20,91 @@ let web: ReturnType<typeof spawn> | undefined;
 let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
 let webLog = '';
 try {
-  await new Promise<void>(resolve => server.once('listening', resolve));
+  await new Promise<void>((resolve) => server.once('listening', resolve));
   const address = server.address();
   assert(address && typeof address !== 'string');
   const apiBase = 'http://127.0.0.1:' + address.port + '/api/v1';
-  const category = await fixture.prisma.category.create({ data: { name: 'Sorting Demo', slug: 'sorting-demo' } });
-  for (let i = 1; i <= 14; i++) await fixture.prisma.recipe.create({ data: {
-    title: 'Soup ' + String(i).padStart(2, '0'), slug: 'soup-' + i,
-    description: 'Sorting evidence: recipe ' + i + ', cooking time ' + i * 5 + ' minutes.',
-    authorId: fixture.owner.id, categoryId: category.id, prepTime: 10, cookTime: i * 5,
-    servings: 2, status: 'PUBLISHED', createdAt: new Date(Date.UTC(2026, 0, i)),
-  } });
+  const category = await fixture.prisma.category.create({
+    data: { name: 'Sorting Demo', slug: 'sorting-demo' },
+  });
+  for (let i = 1; i <= 14; i++)
+    await fixture.prisma.recipe.create({
+      data: {
+        title: 'Soup ' + String(i).padStart(2, '0'),
+        slug: 'soup-' + i,
+        description: 'Sorting evidence: recipe ' + i + ', cooking time ' + i * 5 + ' minutes.',
+        authorId: fixture.owner.id,
+        categoryId: category.id,
+        prepTime: 10,
+        cookTime: i * 5,
+        servings: 2,
+        status: 'PUBLISHED',
+        createdAt: new Date(Date.UTC(2026, 0, i)),
+      },
+    });
   const apiEvidence: { query: string; status: number; body: unknown }[] = [];
-  for (const [query, status] of [['sort=title&pageSize=4', 200], ['sort=-cookTime&pageSize=4', 200], ['sort=invalid', 422]] as const) {
+  for (const [query, status] of [
+    ['sort=title&pageSize=4', 200],
+    ['sort=-cookTime&pageSize=4', 200],
+    ['sort=invalid', 422],
+  ] as const) {
     const response = await fetch(apiBase + '/recipes?' + query);
     assert.equal(response.status, status);
     const body = await response.json();
     apiEvidence.push({ query, status, body });
-    writeFileSync(resolve(output, status === 422 ? 'api-422.json' : query.startsWith('sort=title') ? 'api-title.json' : 'api-cook-time.json'), JSON.stringify({ query, status, body }, null, 2));
+    writeFileSync(
+      resolve(
+        output,
+        status === 422
+          ? 'api-422.json'
+          : query.startsWith('sort=title')
+            ? 'api-title.json'
+            : 'api-cook-time.json',
+      ),
+      JSON.stringify({ query, status, body }, null, 2),
+    );
   }
   checks.push('Real HTTP 200 for title and descending cookTime; invalid sort returns 422');
-  web = spawn(process.execPath, [resolve(frontend, 'node_modules/vite/bin/vite.js'), '--host', '127.0.0.1', '--port', '5187', '--strictPort'], {
-    cwd: frontend, env: { ...process.env, VITE_API_BASE_URL: apiBase }, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
+  web = spawn(
+    process.execPath,
+    [
+      resolve(frontend, 'node_modules/vite/bin/vite.js'),
+      '--host',
+      '127.0.0.1',
+      '--port',
+      '5187',
+      '--strictPort',
+    ],
+    {
+      cwd: frontend,
+      env: { ...process.env, VITE_API_BASE_URL: apiBase },
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  );
+  web.stdout?.on('data', (value) => {
+    webLog += String(value);
   });
-  web.stdout?.on('data', value => { webLog += String(value); });
-  web.stderr?.on('data', value => { webLog += String(value); });
-  await expect.poll(async () => {
-    if (web?.exitCode !== null) throw new Error('Vite exited: ' + webLog);
-    try { return (await fetch('http://127.0.0.1:5187')).ok; } catch { return false; }
-  }, { timeout: 45000 }).toBe(true);
+  web.stderr?.on('data', (value) => {
+    webLog += String(value);
+  });
+  await expect
+    .poll(
+      async () => {
+        if (web?.exitCode !== null) throw new Error('Vite exited: ' + webLog);
+        try {
+          return (await fetch('http://127.0.0.1:5187')).ok;
+        } catch {
+          return false;
+        }
+      },
+      { timeout: 45000 },
+    )
+    .toBe(true);
   browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   const errors: string[] = [];
-  page.on('pageerror', error => errors.push(error.message));
+  page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('http://127.0.0.1:5187/recipes');
   const select = page.locator('#recipe-sort');
   const cards = page.locator('main ul > li h2');
@@ -90,42 +143,126 @@ try {
   // Evidence pages display captured response/log text; no simulated terminal or Scalar UI.
   const evidencePage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   async function snapshot(name: string, title: string, content: string) {
-    await evidencePage.setContent('<html><body style="margin:0;padding:36px;background:#101827;color:#e5edf8;font:18px/1.5 monospace"><h1 style="font:28px sans-serif"></h1><p style="color:#a8b8cc">Captured evidence text (HTTP response / command output)</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere"></pre></body></html>');
+    await evidencePage.setContent(
+      '<html><body style="margin:0;padding:36px;background:#101827;color:#e5edf8;font:18px/1.5 monospace"><h1 style="font:28px sans-serif"></h1><p style="color:#a8b8cc">Captured evidence text (HTTP response / command output)</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere"></pre></body></html>',
+    );
     await evidencePage.locator('h1').textContent();
-    await evidencePage.locator('h1').evaluate((node, value) => { node.textContent = value; }, title);
-    await evidencePage.locator('pre').evaluate((node, value) => { node.textContent = value; }, content);
+    await evidencePage.locator('h1').evaluate((node, value) => {
+      node.textContent = value;
+    }, title);
+    await evidencePage.locator('pre').evaluate((node, value) => {
+      node.textContent = value;
+    }, content);
     await evidencePage.screenshot({ path: resolve(output, name + '.png'), fullPage: true });
   }
   for (const record of apiEvidence) {
-    const name = record.status === 422 ? 'api-422' : record.query.startsWith('sort=title') ? 'api-title' : 'api-cook-time';
-    const body = record.body as { items?: { title: string; cookTime: number; createdAt: string }[]; meta?: unknown };
-    const shown = record.status === 422 ? body : { items: body.items?.map(({ title, cookTime, createdAt }) => ({ title, cookTime, createdAt })), meta: body.meta };
-    await snapshot(name, 'GET /api/v1/recipes?' + record.query + ' - HTTP ' + record.status, JSON.stringify(shown, null, 2));
+    const name =
+      record.status === 422
+        ? 'api-422'
+        : record.query.startsWith('sort=title')
+          ? 'api-title'
+          : 'api-cook-time';
+    const body = record.body as {
+      items?: { title: string; cookTime: number; createdAt: string }[];
+      meta?: unknown;
+    };
+    const shown =
+      record.status === 422
+        ? body
+        : {
+            items: body.items?.map(({ title, cookTime, createdAt }) => ({
+              title,
+              cookTime,
+              createdAt,
+            })),
+            meta: body.meta,
+          };
+    await snapshot(
+      name,
+      'GET /api/v1/recipes?' + record.query + ' - HTTP ' + record.status,
+      JSON.stringify(shown, null, 2),
+    );
   }
   const records = [];
   for (const [name, cwd, cli, args] of [
-    ['backend-tests', resolve(root, 'backend'), resolve(root, 'backend/node_modules/vitest/vitest.mjs'), ['run', 'tests/recipe-sorting.test.ts', 'tests/recipe-filtering.test.ts']],
-    ['frontend-tests', frontend, resolve(frontend, 'node_modules/vitest/vitest.mjs'), ['run', 'src/test/static-blog.test.tsx']],
-    ['backend-lint', resolve(root, 'backend'), resolve(root, 'backend/node_modules/eslint/bin/eslint.js'), ['src', '--ext', '.ts']],
+    [
+      'backend-tests',
+      resolve(root, 'backend'),
+      resolve(root, 'backend/node_modules/vitest/vitest.mjs'),
+      ['run', 'tests/recipe-sorting.test.ts', 'tests/recipe-filtering.test.ts'],
+    ],
+    [
+      'frontend-tests',
+      frontend,
+      resolve(frontend, 'node_modules/vitest/vitest.mjs'),
+      ['run', 'src/test/static-blog.test.tsx'],
+    ],
+    [
+      'backend-lint',
+      resolve(root, 'backend'),
+      resolve(root, 'backend/node_modules/eslint/bin/eslint.js'),
+      ['src', '--ext', '.ts'],
+    ],
     ['frontend-lint', frontend, resolve(frontend, 'node_modules/eslint/bin/eslint.js'), ['.']],
   ] as const) {
-    const result = spawnSync(process.execPath, [cli, ...args], { cwd, encoding: 'utf8', windowsHide: true, timeout: 180000, env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' } });
+    const result = spawnSync(process.execPath, [cli, ...args], {
+      cwd,
+      encoding: 'utf8',
+      windowsHide: true,
+      timeout: 180000,
+      env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' },
+    });
     const log = String(result.stdout ?? '') + String(result.stderr ?? '');
-    writeFileSync(resolve(output, name + '.txt'), log);
     records.push({ name, exitCode: result.status });
     assert.equal(result.status, 0, name + ': ' + log.slice(-2000));
     const excerpt = name === 'backend-lint' ? log.trim().split('\n').slice(-22).join('\n') : log;
-    await snapshot(name, name + ' - exit code ' + result.status, (name === 'backend-lint' ? 'Last 22 lines; full output saved in backend-lint.txt\n\n' : '') + (excerpt || '(No warnings or errors)'));
+    await snapshot(
+      name,
+      name + ' - exit code ' + result.status,
+      (name === 'backend-lint' ? 'Last 22 lines of captured command output\n\n' : '') +
+        (excerpt || '(No warnings or errors)'),
+    );
     checks.push(name + ': exit 0');
   }
-  writeFileSync(resolve(output, 'result.json'), JSON.stringify({ feature: 'FR-SRCH-003', issue: 36, result: 'passed', startedAt, finishedAt: new Date().toISOString(), sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), services: 'Real PostgreSQL isolated schema, Express/CQRS/Prisma, Chromium and Vite. No mocked API.', checks, records, pageErrors: errors, note: 'Desktop PNGs are real browser screenshots. API/test/lint PNGs render captured HTTP/output text; not OS terminal or Scalar screenshots. API images project title/cookTime/createdAt/meta; JSON files preserve complete responses.' }, null, 2));
+  writeFileSync(
+    resolve(output, 'result.json'),
+    JSON.stringify(
+      {
+        feature: 'FR-SRCH-003',
+        issue: 36,
+        result: 'passed',
+        startedAt,
+        finishedAt: new Date().toISOString(),
+        sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], {
+          cwd: root,
+          encoding: 'utf8',
+        }).trim(),
+        services:
+          'Real PostgreSQL isolated schema, Express/CQRS/Prisma, Chromium and Vite. No mocked API.',
+        checks,
+        records,
+        pageErrors: errors,
+        note: 'Desktop PNGs are real browser screenshots. API/test/lint PNGs render captured HTTP/output text; not OS terminal or Scalar screenshots. API images project title/cookTime/createdAt/meta; JSON files preserve complete responses.',
+      },
+      null,
+      2,
+    ),
+  );
   console.log('PASS sorting evidence: ' + checks.length + ' checks; snapshots in ' + output);
 } catch (error) {
-  writeFileSync(resolve(output, 'failure.json'), JSON.stringify({ checks, error: String(error), webLog }, null, 2));
+  writeFileSync(
+    resolve(output, 'failure.json'),
+    JSON.stringify({ checks, error: String(error), webLog }, null, 2),
+  );
   throw error;
 } finally {
   if (browser) await browser.close();
-  if (web && web.exitCode === null) { web.kill(); await new Promise<void>(resolve => web!.once('exit', () => resolve())); }
-  await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+  if (web && web.exitCode === null) {
+    web.kill();
+    await new Promise<void>((resolve) => web!.once('exit', () => resolve()));
+  }
+  await new Promise<void>((resolve, reject) =>
+    server.close((error) => (error ? reject(error) : resolve())),
+  );
   await fixture.close();
 }
