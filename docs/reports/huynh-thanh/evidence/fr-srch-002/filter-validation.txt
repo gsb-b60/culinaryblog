@@ -1,0 +1,15 @@
+$ cd backend
+$ node node_modules/vitest/vitest.mjs run tests/recipe-filtering.test.ts
+
+
+ RUN  v2.1.9 D:/udptwnc/culinaryblog/backend
+
+ ✓ tests/recipe-filtering.test.ts (23 tests) 12ms
+
+ Test Files  1 passed (1)
+      Tests  23 passed (23)
+   Start at  05:15:00
+   Duration  1.92s (transform 666ms, setup 136ms, collect 573ms, tests 12ms, environment 0ms, prepare 691ms)
+
+
+Exit code: 0

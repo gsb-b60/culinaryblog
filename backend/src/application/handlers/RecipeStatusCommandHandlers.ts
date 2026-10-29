@@ -4,7 +4,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 import { RecipeDifficulty } from '../../domain/enums/RecipeDifficulty.js';
 import { RecipeStatus } from '../../domain/enums/RecipeStatus.js';
 import { type ICommandHandler } from '../command-bus.js';
-import { PublishRecipeCommand, UnpublishRecipeCommand } from '../commands/recipes/RecipeCommands.js';
+import { ArchiveRecipeCommand, PublishRecipeCommand, UnpublishRecipeCommand } from '../commands/recipes/RecipeCommands.js';
 import { type RecipeDto } from '../dtos/RecipeDto.js';
 
 export interface RecipeStatusCache {
@@ -73,8 +73,8 @@ class RecipeStatusHandler {
   ) {}
 
   protected async changeStatus(
-    command: PublishRecipeCommand | UnpublishRecipeCommand,
-    target: RecipeStatus.DRAFT | RecipeStatus.PUBLISHED,
+    command: PublishRecipeCommand | UnpublishRecipeCommand | ArchiveRecipeCommand,
+    target: RecipeStatus,
   ): Promise<RecipeDto> {
     const recipe = await this.prisma.recipe.findUnique({
       where: { id: command.recipeId, isDeleted: false },
@@ -84,7 +84,7 @@ class RecipeStatusHandler {
     if (!command.isAdmin && recipe.authorId !== command.authorId) {
       throw new ForbiddenError('You are not allowed to modify this recipe');
     }
-    if (recipe.status === RecipeStatus.ARCHIVED) {
+    if (recipe.status === RecipeStatus.ARCHIVED && target !== RecipeStatus.ARCHIVED) {
       throw new ValidationError({ status: ['Archived recipes cannot be published or unpublished'] });
     }
     if (target === RecipeStatus.PUBLISHED && recipe.steps.length === 0) {
@@ -108,7 +108,7 @@ class RecipeStatusHandler {
           data: {
             status: target,
             updatedAt: now,
-            publishedAt: target === RecipeStatus.PUBLISHED ? now : null,
+            publishedAt: target === RecipeStatus.ARCHIVED ? recipe.publishedAt : target === RecipeStatus.PUBLISHED ? now : null,
             version: { increment: 1 },
           },
           include: recipeInclude,
@@ -137,5 +137,11 @@ export class PublishRecipeCommandHandler extends RecipeStatusHandler implements 
 export class UnpublishRecipeCommandHandler extends RecipeStatusHandler implements ICommandHandler<UnpublishRecipeCommand, RecipeDto> {
   execute(command: UnpublishRecipeCommand): Promise<RecipeDto> {
     return this.changeStatus(command, RecipeStatus.DRAFT);
+  }
+}
+
+export class ArchiveRecipeCommandHandler extends RecipeStatusHandler implements ICommandHandler<ArchiveRecipeCommand, RecipeDto> {
+  execute(command: ArchiveRecipeCommand): Promise<RecipeDto> {
+    return this.changeStatus(command, RecipeStatus.ARCHIVED);
   }
 }

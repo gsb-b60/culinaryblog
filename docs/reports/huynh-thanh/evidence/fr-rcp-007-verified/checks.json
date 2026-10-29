@@ -1,0 +1,8 @@
+﻿{
+    "backendTest":  0,
+    "backendBuild":  0,
+    "frontendBuild":  0,
+    "frontendLint":  0,
+    "frontendTest":  0,
+    "backendLint":  0
+}

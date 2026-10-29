@@ -10,6 +10,7 @@ export interface RecipeFilters {
   maxPrepTime?: number;
   minCookTime?: number;
   maxCookTime?: number;
+  minServings?: number;
   searchQuery?: string;
 }
 

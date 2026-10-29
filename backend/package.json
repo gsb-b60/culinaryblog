@@ -23,7 +23,8 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "db:push": "prisma db push",
     "deps:check": "dependency-cruiser src --exit-code",
-    "migrate": "node-pg-migrate"
+    "migrate": "node-pg-migrate",
+    "test:e2e:filtering": "tsx tests/recipe-filtering.e2e.ts"
   },
   "keywords": [],
   "author": "",

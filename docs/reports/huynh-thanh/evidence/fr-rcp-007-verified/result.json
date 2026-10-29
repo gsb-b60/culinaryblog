@@ -1,0 +1,46 @@
+{
+  "commit": "0d9da540a42bbb98050bb8c7694e61636bbd61bf",
+  "branch": "feat-issue#24-FR-RCP-007-Delete-Recipe-New",
+  "startedAt": "2026-10-28T16:56:36.714Z",
+  "requests": [
+    {
+      "method": "DELETE",
+      "path": "/api/v1/recipes/2438365c-ba50-4863-8ed6-7b20abc01fd4",
+      "status": 401
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/recipes/2438365c-ba50-4863-8ed6-7b20abc01fd4",
+      "status": 403
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/recipes/2438365c-ba50-4863-8ed6-7b20abc01fd4",
+      "status": 204,
+      "body": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/recipes/2438365c-ba50-4863-8ed6-7b20abc01fd4",
+      "status": 404
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/recipes/9a108d4a-9df8-402c-b81d-4b436e20e2aa",
+      "status": 204
+    }
+  ],
+  "checks": {
+    "cancelPreservesRecipe": true,
+    "recipeRemaining": 0,
+    "stepsRemaining": 0,
+    "ingredientsRemaining": 0,
+    "imagesRemaining": 0,
+    "outboxTasksBeforeWorker": 4,
+    "cleanupJobsCompleted": 4,
+    "minioObjectsRemaining": 0,
+    "adminDeletesOtherAuthorRecipe": true,
+    "status": "PASS"
+  },
+  "finishedAt": "2026-10-28T16:56:46.089Z"
+}

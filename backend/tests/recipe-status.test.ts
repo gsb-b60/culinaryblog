@@ -1,3 +1,7 @@
+import { RecipeRepository } from '../src/infrastructure/persistence/repositories/RecipeRepository.js';
+import { CategoryRepository } from '../src/infrastructure/persistence/repositories/CategoryRepository.js';
+import { GetRecipesQueryHandler, SearchRecipesQueryHandler, GetRecipeBySlugQueryHandler, GetCategoryBySlugQueryHandler } from '../src/application/handlers/RecipeQueryHandlers.js';
+import categoryRoutes from '../src/presentation/routes/categoryRoutes.js';
 import { Prisma } from '@prisma/client';
 import express from 'express';
 import passport from 'passport';
@@ -7,14 +11,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ManagedRecipeQueryHandler } from '../src/application/handlers/ManagedRecipeQueryHandler.js';
 import { GetManagedRecipesQuery } from '../src/application/queries/recipes/GetManagedRecipesQuery.js';
 import { commandBus } from '../src/application/command-bus.js';
-import { PublishRecipeCommand, UnpublishRecipeCommand } from '../src/application/commands/recipes/RecipeCommands.js';
-import { PublishRecipeCommandHandler, UnpublishRecipeCommandHandler } from '../src/application/handlers/RecipeStatusCommandHandlers.js';
+import { ArchiveRecipeCommand, PublishRecipeCommand, UnpublishRecipeCommand } from '../src/application/commands/recipes/RecipeCommands.js';
+import { ArchiveRecipeCommandHandler, PublishRecipeCommandHandler, UnpublishRecipeCommandHandler } from '../src/application/handlers/RecipeStatusCommandHandlers.js';
 import { UserRole } from '../src/domain/enums/UserRole.js';
 import { globalErrorHandler } from '../src/presentation/middleware/GlobalErrorHandler.js';
 import recipeRoutes from '../src/presentation/routes/recipeRoutes.js';
 
-const prisma = { recipe: { findUnique: vi.fn(), update: vi.fn(), findMany: vi.fn(), count: vi.fn() } };
+const prisma = { category: { findUnique: vi.fn() }, recipe: { findUnique: vi.fn(), update: vi.fn(), findMany: vi.fn(), count: vi.fn() } };
 const cache = { deletePattern: vi.fn().mockResolvedValue(undefined) };
+const archive = new ArchiveRecipeCommandHandler(prisma as never, cache);
 const publish = new PublishRecipeCommandHandler(prisma as never, cache);
 const unpublish = new UnpublishRecipeCommandHandler(prisma as never, cache);
 
@@ -46,6 +51,7 @@ beforeEach(() => {
   prisma.recipe.findMany.mockResolvedValue([storedRecipe()]);
   prisma.recipe.count.mockResolvedValue(1);
   commandBus.registerQueryHandler(GetManagedRecipesQuery.name, new ManagedRecipeQueryHandler(prisma as never));
+  commandBus.registerCommandHandler(ArchiveRecipeCommand.name, archive);
   commandBus.registerCommandHandler(PublishRecipeCommand.name, publish);
   commandBus.registerCommandHandler(UnpublishRecipeCommand.name, unpublish);
   // Stub only credential verification; routes, auth middleware, bus, handlers and error mapping run normally.
@@ -60,7 +66,13 @@ beforeEach(() => {
     }) as any);
   app = express();
   app.use(express.json());
+  const repository = new RecipeRepository(prisma as never);
+  commandBus.registerQueryHandler('GetRecipesQuery', new GetRecipesQueryHandler(repository));
+  commandBus.registerQueryHandler('SearchRecipesQuery', new SearchRecipesQueryHandler(repository));
+  commandBus.registerQueryHandler('GetRecipeBySlugQuery', new GetRecipeBySlugQueryHandler(prisma as never));
+  commandBus.registerQueryHandler('GetCategoryBySlugQuery', new GetCategoryBySlugQueryHandler(new CategoryRepository(prisma as never), repository));
   app.use('/api/v1/recipes', recipeRoutes);
+  app.use('/api/v1/categories', categoryRoutes);
   app.use(globalErrorHandler);
 });
 
@@ -96,20 +108,20 @@ describe('Publish/unpublish recipe endpoints', () => {
     }));
   });
 
-  it.each(['publish', 'unpublish'])('allows Admin to %s another author recipe', async action => {
+  it.each(['publish', 'unpublish', 'archive'])('allows Admin to %s another author recipe', async action => {
     prisma.recipe.findUnique.mockResolvedValue(storedRecipe({ status: action === 'publish' ? 'DRAFT' : 'PUBLISHED' }));
     const response = await request(app).patch('/api/v1/recipes/recipe-1/' + action).set('Authorization', 'Bearer admin');
     expect(response.status).toBe(200);
     expect(prisma.recipe.update).toHaveBeenCalled();
   });
 
-  it.each(['publish', 'unpublish'])('returns 401 for %s without valid authentication', async action => {
+  it.each(['publish', 'unpublish', 'archive'])('returns 401 for %s without valid authentication', async action => {
     const response = await request(app).patch('/api/v1/recipes/recipe-1/' + action).set('Authorization', 'Bearer invalid');
     expect(response.status).toBe(401);
     expect(prisma.recipe.findUnique).not.toHaveBeenCalled();
   });
 
-  it.each(['publish', 'unpublish'])('returns 403 for %s by another author even with forged body fields', async action => {
+  it.each(['publish', 'unpublish', 'archive'])('returns 403 for %s by another author even with forged body fields', async action => {
     const response = await request(app).patch('/api/v1/recipes/recipe-1/' + action)
       .set('Authorization', 'Bearer other').send({ authorId: 'owner-1', isAdmin: true });
     expect(response.status).toBe(403);
@@ -117,7 +129,7 @@ describe('Publish/unpublish recipe endpoints', () => {
     expect(cache.deletePattern).not.toHaveBeenCalled();
   });
 
-  it.each(['publish', 'unpublish'])('returns 404 for %s of a missing or deleted recipe', async action => {
+  it.each(['publish', 'unpublish', 'archive'])('returns 404 for %s of a missing or deleted recipe', async action => {
     prisma.recipe.findUnique.mockResolvedValue(null);
     const response = await request(app).patch('/api/v1/recipes/recipe-1/' + action).set('Authorization', 'Bearer owner');
     expect(response.status).toBe(404);
@@ -223,5 +235,126 @@ describe('Protected management list', () => {
     expect((await call('unpublish')).status).toBe(200);
     list = await request(app).get('/api/v1/recipes/manage').set('Authorization', 'Bearer owner');
     expect(list.body.items[0].status).toBe('DRAFT');
+  });
+});
+
+describe('Archive recipe lifecycle', () => {
+  it.each(['DRAFT', 'PUBLISHED'])('archives %s without removing content or publication history', async status => {
+    const publishedAt = status === 'PUBLISHED' ? new Date('2026-02-01') : null;
+    prisma.recipe.findUnique.mockResolvedValue(storedRecipe({ status, publishedAt, steps: [] }));
+    const result = await request(app).patch('/api/v1/recipes/recipe-1/archive').set('Authorization', 'Bearer owner');
+    expect(result.status).toBe(200);
+    expect(result.body).toMatchObject({ id: 'recipe-1', status: 'ARCHIVED', version: 2, ingredients: [{ name: 'Water' }] });
+    expect(prisma.recipe.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'recipe-1', isDeleted: false, version: 1, status, authorId: 'owner-1' },
+      data: { status: 'ARCHIVED', version: { increment: 1 }, updatedAt: expect.any(Date), publishedAt },
+    }));
+    expect(cache.deletePattern.mock.calls).toEqual([['recipes:*'], ['categories:*']]);
+  });
+
+  it('retries archive without incrementing version and invalidates caches again', async () => {
+    prisma.recipe.findUnique.mockResolvedValue(storedRecipe({ status: 'ARCHIVED' }));
+    const result = await request(app).patch('/api/v1/recipes/recipe-1/archive').set('Authorization', 'Bearer owner');
+    expect(result.status).toBe(200);
+    expect(result.body).toMatchObject({ status: 'ARCHIVED', version: 1 });
+    expect(prisma.recipe.update).not.toHaveBeenCalled();
+    expect(cache.deletePattern).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects commands from a non-owner outside HTTP', async () => {
+    await expect(archive.execute(new ArchiveRecipeCommand('recipe-1', 'other-1'))).rejects.toMatchObject({ statusCode: 403 });
+    expect(prisma.recipe.update).not.toHaveBeenCalled();
+  });
+
+  it('returns 409 for concurrent changes without invalidating caches', async () => {
+    prisma.recipe.update.mockRejectedValue(new Prisma.PrismaClientKnownRequestError('Changed', { code: 'P2025', clientVersion: '5.17.0' }));
+    const result = await request(app).patch('/api/v1/recipes/recipe-1/archive').set('Authorization', 'Bearer owner');
+    expect(result.status).toBe(409);
+    expect(cache.deletePattern).not.toHaveBeenCalled();
+  });
+});
+
+describe('Archived recipe visibility through HTTP, query handlers and repositories', () => {
+  it('removes archived recipes from lists, search and category pages while retaining owner access', async () => {
+    let current = storedRecipe({ status: 'PUBLISHED' });
+    prisma.recipe.findUnique.mockImplementation(async () => current);
+    prisma.recipe.update.mockImplementation(async ({ data }) => {
+      current = { ...current, ...data, version: current.version + 1 };
+      return current;
+    });
+    prisma.recipe.findMany.mockImplementation(async ({ where }) => current.status === where.status ? [current] : []);
+    prisma.recipe.count.mockImplementation(async ({ where }) => current.status === where.status ? 1 : 0);
+    prisma.category.findUnique.mockResolvedValue({
+      id: 'category-1', name: 'Soup', slug: 'soup-category', description: null, imageUrl: null,
+      orderIndex: 0, createdAt: new Date(), updatedAt: new Date(), isDeleted: false, version: 1,
+    });
+    const paths = ['/api/v1/recipes', '/api/v1/recipes/search?q=soup', '/api/v1/categories/soup-category?page=1&pageSize=12'];
+    for (const path of paths) {
+      const before = await request(app).get(path);
+      expect(before.status).toBe(200);
+      expect((before.body.recipes ?? before.body).items).toHaveLength(1);
+    }
+    expect((await request(app).patch('/api/v1/recipes/recipe-1/archive').set('Authorization', 'Bearer owner')).status).toBe(200);
+    for (const path of paths) {
+      const after = await request(app).get(path);
+      expect(after.status).toBe(200);
+      expect((after.body.recipes ?? after.body).items).toEqual([]);
+      expect((after.body.recipes ?? after.body).meta.totalCount).toBe(0);
+    }
+    for (const [, args] of prisma.recipe.findMany.mock.calls.entries()) {
+      expect(args[0].where).toMatchObject({ status: 'PUBLISHED', isDeleted: false });
+    }
+    expect(current).toMatchObject({ status: 'ARCHIVED', isDeleted: false, ingredients: [{ name: 'Water' }] });
+    const detail = await request(app).get('/api/v1/recipes/soup').set('Authorization', 'Bearer owner');
+    expect(detail.status).toBe(200);
+    expect(detail.body).toMatchObject({ status: 'ARCHIVED', steps: [{ id: 'step-1' }], ingredients: [{ name: 'Water' }] });
+  });
+
+  it.each(['owner', 'admin'])('allows %s to view archived detail', async token => {
+    prisma.recipe.findUnique.mockResolvedValue(storedRecipe({ status: 'ARCHIVED' }));
+    const result = await request(app).get('/api/v1/recipes/soup').set('Authorization', 'Bearer ' + token);
+    expect(result.status).toBe(200);
+    expect(result.body.status).toBe('ARCHIVED');
+  });
+
+  it.each(['other', ''])('blocks private detail for viewer "%s"', async token => {
+    prisma.recipe.findUnique.mockResolvedValue(storedRecipe({ status: 'ARCHIVED' }));
+    const result = await request(app).get('/api/v1/recipes/soup').set('Authorization', token ? 'Bearer ' + token : '');
+    expect(result.status).toBe(403);
+    expect(result.body).not.toHaveProperty('ingredients');
+  });
+
+  it.each(['/api/v1/recipes?status=ARCHIVED', '/api/v1/recipes/search?q=soup&status=ARCHIVED'])('ignores forged public status filter: %s', async path => {
+    prisma.recipe.findMany.mockResolvedValue([]);
+    const result = await request(app).get(path);
+    expect(result.status).toBe(200);
+    expect(prisma.recipe.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ status: 'PUBLISHED', isDeleted: false }),
+    }));
+  });
+});
+
+describe('Public numeric query parameters', () => {
+  it.each(['/api/v1/recipes', '/api/v1/recipes/search?q=soup'])('parses pagination and every time filter for %s', async path => {
+    const separator = path.includes('?') ? '&' : '?';
+    const result = await request(app).get(path + separator + 'page=2&pageSize=5&minPrepTime=0&maxPrepTime=20&minCookTime=5&maxCookTime=60');
+    expect(result.status).toBe(200);
+    expect(result.body.meta).toMatchObject({ page: 2, pageSize: 5 });
+    expect(prisma.recipe.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      skip: 5, take: 5,
+      where: expect.objectContaining({
+        status: 'PUBLISHED', prepTime: { gte: 0, lte: 20 }, cookTime: { gte: 5, lte: 60 },
+      }),
+    }));
+  });
+
+  it.each([
+    'page=0', 'page=-1', 'page=abc', 'page=1.5', 'page=', 'page=1&page=2',
+    'pageSize=51', 'pageSize=', 'minCookTime=-1', 'maxPrepTime=abc',
+    'minPrepTime=', 'minCookTime=1&minCookTime=2', 'maxCookTime=Infinity',
+  ])('rejects invalid numeric query %s before reading the database', async query => {
+    const result = await request(app).get('/api/v1/recipes?' + query);
+    expect(result.status).toBe(422);
+    expect(prisma.recipe.findMany).not.toHaveBeenCalled();
   });
 });
