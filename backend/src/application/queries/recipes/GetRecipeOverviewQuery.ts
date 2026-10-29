@@ -8,5 +8,6 @@ export interface RecipeOverview {
 
 export class GetRecipeOverviewQuery extends Query<RecipeOverview> {
   readonly type = 'GetRecipeOverviewQuery';
+
   constructor(public readonly userId: string, public readonly isAdmin: boolean) { super(); }
 }

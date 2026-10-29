@@ -1,5 +1,5 @@
 import { Router, type Router as RouterType } from 'express';
-import { paginationSchema } from '../../application/validators/paginationValidators.js';
+
 
 import { commandBus } from '../../application/command-bus.js';
 import { 
@@ -17,6 +17,7 @@ import {
   categoryFiltersSchema,
   categoryPaginationSchema 
 } from '../../application/validators/categoryValidators.js';
+import { paginationSchema } from '../../application/validators/paginationValidators.js';
 import { UserRole } from '../../domain/enums/UserRole.js';
 import {
   authenticateJwt,

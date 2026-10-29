@@ -1,0 +1,13 @@
+{
+  "backendTests": 290,
+  "frontendTests": 240,
+  "backendLint": {
+    "errors": 0,
+    "warnings": 196
+  },
+  "frontendLint": {
+    "errors": 0
+  },
+  "backendTypes": "pass",
+  "frontendBuild": "pass"
+}
