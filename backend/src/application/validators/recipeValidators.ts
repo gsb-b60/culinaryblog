@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-
 import { RecipeDifficulty } from '../../domain/enums/RecipeDifficulty.js';
 import { RecipeStatus } from '../../domain/enums/RecipeStatus.js';
 
@@ -31,14 +30,16 @@ export const createRecipeSchema = z.object({
   servings: z.number().int().positive(),
   difficulty: z.nativeEnum(RecipeDifficulty).default(RecipeDifficulty.EASY),
   instructions: z.string().max(10000).optional(),
-  nutrition: z.object({
-    calories: z.number().positive().max(999999.99).optional(),
-    protein: z.number().positive().max(999999.99).optional(),
-    carbohydrates: z.number().positive().max(999999.99).optional(),
-    fat: z.number().positive().max(999999.99).optional(),
-    fiber: z.number().positive().max(999999.99).optional(),
-    sodium: z.number().positive().max(999999.99).optional(),
-  }).optional(),
+  nutrition: z
+    .object({
+      calories: z.number().positive().max(999999.99).optional(),
+      protein: z.number().positive().max(999999.99).optional(),
+      carbohydrates: z.number().positive().max(999999.99).optional(),
+      fat: z.number().positive().max(999999.99).optional(),
+      fiber: z.number().positive().max(999999.99).optional(),
+      sodium: z.number().positive().max(999999.99).optional(),
+    })
+    .optional(),
   steps: z.array(createRecipeStepSchema).min(1).optional(),
   ingredients: z.array(createRecipeIngredientSchema).min(1).optional(),
 });
@@ -52,27 +53,32 @@ export const updateRecipeSchema = z.object({
   servings: z.number().int().positive().optional(),
   difficulty: z.nativeEnum(RecipeDifficulty).optional(),
   instructions: z.string().max(10000).optional(),
-  nutrition: z.object({
-    calories: z.number().positive().max(999999.99).optional(),
-    protein: z.number().positive().max(999999.99).optional(),
-    carbohydrates: z.number().positive().max(999999.99).optional(),
-    fat: z.number().positive().max(999999.99).optional(),
-    fiber: z.number().positive().max(999999.99).optional(),
-    sodium: z.number().positive().max(999999.99).optional(),
-  }).optional(),
+  nutrition: z
+    .object({
+      calories: z.number().positive().max(999999.99).optional(),
+      protein: z.number().positive().max(999999.99).optional(),
+      carbohydrates: z.number().positive().max(999999.99).optional(),
+      fat: z.number().positive().max(999999.99).optional(),
+      fiber: z.number().positive().max(999999.99).optional(),
+      sodium: z.number().positive().max(999999.99).optional(),
+    })
+    .optional(),
 });
 
 // Express query values are strings; reject empty values and arrays rather than coercing them to zero.
-const queryNumber = (schema: z.ZodNumber) => z.preprocess(
-  value => typeof value === 'string' && value.trim() !== '' ? Number(value) : value,
-  schema,
-);
+const queryNumber = (schema: z.ZodNumber) =>
+  z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() !== '' ? Number(value) : value),
+    schema,
+  );
 
 export const recipeFiltersSchema = z.object({
   categoryId: z.string().uuid().optional(),
   // Accept issue examples and preserve uppercase API clients.
-  difficulty: z.enum(['Easy', 'Medium', 'Hard', 'Expert', 'EASY', 'MEDIUM', 'HARD', 'EXPERT'])
-    .transform(value => value.toUpperCase() as RecipeDifficulty).optional(),
+  difficulty: z
+    .enum(['Easy', 'Medium', 'Hard', 'Expert', 'EASY', 'MEDIUM', 'HARD', 'EXPERT'])
+    .transform((value) => value.toUpperCase() as RecipeDifficulty)
+    .optional(),
   status: z.nativeEnum(RecipeStatus).optional(),
   authorId: z.string().uuid().optional(),
   minPrepTime: queryNumber(z.number().int().nonnegative()).optional(),
@@ -89,12 +95,31 @@ export const recipeSortSchema = z.object({
 });
 
 // sort takes precedence over legacy field/order.
-export const recipeSortQuerySchema = recipeSortSchema.extend({
-  sort: z.enum(['createdAt', '-createdAt', 'title', '-title', 'prepTime', '-prepTime', 'cookTime', '-cookTime', 'publishedAt', '-publishedAt']).optional(),
-}).transform(({ sort, field, order }) => sort === undefined ? { field, order } : {
-  field: (sort.startsWith('-') ? sort.slice(1) : sort) as RecipeSortInput['field'],
-  order: sort.startsWith('-') ? 'desc' as const : 'asc' as const,
-});
+export const recipeSortQuerySchema = recipeSortSchema
+  .extend({
+    sort: z
+      .enum([
+        'createdAt',
+        '-createdAt',
+        'title',
+        '-title',
+        'prepTime',
+        '-prepTime',
+        'cookTime',
+        '-cookTime',
+        'publishedAt',
+        '-publishedAt',
+      ])
+      .optional(),
+  })
+  .transform(({ sort, field, order }) =>
+    sort === undefined
+      ? { field, order }
+      : {
+          field: (sort.startsWith('-') ? sort.slice(1) : sort) as RecipeSortInput['field'],
+          order: sort.startsWith('-') ? ('desc' as const) : ('asc' as const),
+        },
+  );
 
 export { paginationSchema };
 

@@ -558,7 +558,10 @@ export const openApiSpec = {
         summary: 'Account-scoped recipe statistics and five recently updated recipes',
         security: [{ bearerAuth: [] }],
         responses: {
-          '200': { description: 'Statistics (total, published, draft, archived) and recentRecipes; Admin sees all, Author sees own' },
+          '200': {
+            description:
+              'Statistics (total, published, draft, archived) and recentRecipes; Admin sees all, Author sees own',
+          },
           '401': { description: 'Unauthorized' },
         },
       },
@@ -567,7 +570,8 @@ export const openApiSpec = {
       get: {
         tags: ['recipes'],
         summary: 'List published recipes (paginated, filtered)',
-        description: 'Filters combine with AND before pagination. totalCount counts matching published, non-deleted recipes.',
+        description:
+          'Filters combine with AND before pagination. totalCount counts matching published, non-deleted recipes.',
         parameters: [
           { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
           { name: 'pageSize', in: 'query', schema: { type: 'integer', default: 12, maximum: 50 } },
@@ -575,14 +579,50 @@ export const openApiSpec = {
           {
             name: 'difficulty',
             in: 'query',
-            schema: { type: 'string', enum: ['Easy', 'Medium', 'Hard', 'Expert', 'EASY', 'MEDIUM', 'HARD', 'EXPERT'] },
+            schema: {
+              type: 'string',
+              enum: ['Easy', 'Medium', 'Hard', 'Expert', 'EASY', 'MEDIUM', 'HARD', 'EXPERT'],
+            },
           },
-          { name: 'sort', in: 'query', description: 'Prefix - for descending, otherwise ascending. Overrides legacy field/order. Equal values use id ascending for stable pagination. Invalid values return 422.', schema: { type: 'string', default: '-createdAt', enum: ['createdAt', '-createdAt', 'title', '-title', 'prepTime', '-prepTime', 'cookTime', '-cookTime', 'publishedAt', '-publishedAt'] } },
-          { name: 'maxCookTime', in: 'query', description: 'Inclusive maximum cookTime in minutes, excluding prepTime', schema: { type: 'integer', minimum: 0, maximum: 2147483647 } },
-          { name: 'minServings', in: 'query', description: 'Inclusive minimum servings', schema: { type: 'integer', minimum: 1, maximum: 2147483647 } },
+          {
+            name: 'sort',
+            in: 'query',
+            description:
+              'Prefix - for descending, otherwise ascending. Overrides legacy field/order. Equal values use id ascending for stable pagination. Invalid values return 422.',
+            schema: {
+              type: 'string',
+              default: '-createdAt',
+              enum: [
+                'createdAt',
+                '-createdAt',
+                'title',
+                '-title',
+                'prepTime',
+                '-prepTime',
+                'cookTime',
+                '-cookTime',
+                'publishedAt',
+                '-publishedAt',
+              ],
+            },
+          },
+          {
+            name: 'maxCookTime',
+            in: 'query',
+            description: 'Inclusive maximum cookTime in minutes, excluding prepTime',
+            schema: { type: 'integer', minimum: 0, maximum: 2147483647 },
+          },
+          {
+            name: 'minServings',
+            in: 'query',
+            description: 'Inclusive minimum servings',
+            schema: { type: 'integer', minimum: 1, maximum: 2147483647 },
+          },
         ],
         responses: {
-          '422': { description: 'Invalid recipe filter; application/problem+json with field errors' },
+          '422': {
+            description: 'Invalid recipe filter; application/problem+json with field errors',
+          },
           '200': {
             description: 'OK',
             content: {
@@ -711,7 +751,12 @@ export const openApiSpec = {
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
         ],
         responses: {
-          '200': { description: 'Archived recipe, including status, version and content', content: { 'application/json': { schema: { $ref: '#/components/schemas/RecipeDetail' } } } },
+          '200': {
+            description: 'Archived recipe, including status, version and content',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/RecipeDetail' } },
+            },
+          },
           '401': { description: 'Authentication required' },
           '403': { description: 'Only owner or Admin may archive' },
           '404': { description: 'Recipe not found or deleted' },

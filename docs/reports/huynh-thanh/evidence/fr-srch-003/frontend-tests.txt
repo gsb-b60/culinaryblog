@@ -1,9 +1,0 @@
-
- RUN  v5.0.2 D:/udptwnc/culinaryblog/frontend
-
-
- Test Files  1 passed (1)
-      Tests  14 passed (14)
-   Start at  05:55:34
-   Duration  18.59s (environment 34%, import 27%, tests 23%, setup 11%, transform 5%)
-

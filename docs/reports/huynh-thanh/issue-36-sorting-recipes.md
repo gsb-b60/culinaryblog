@@ -20,28 +20,28 @@ Frontend regression tests extend static-blog.test.tsx to verify URL restoration,
 
 Commands from backend:
 
-~~~powershell
+```powershell
 npx vitest run tests/recipe-sorting.test.ts tests/recipe-filtering.test.ts
 npx tsx tests/recipe-sorting.e2e.ts
 npx vitest run
 npm run build
 npm run lint
-~~~
+```
 
 Commands from frontend:
 
-~~~powershell
+```powershell
 npx vitest run
 npm run build
 npm run lint
-~~~
+```
 
 The PostgreSQL test requires the existing local PostgreSQL/Redis integration setup. Frontend component tests use mocked HTTP. Additional real Chromium browser checks and desktop screenshots are captured by tests/recipe-sorting-evidence.ts with real PostgreSQL and HTTP. See PR-FR-SRCH-003-SORTING.md and evidence/fr-srch-003/result.json. No schema migration is required.
 
 ## Executed results
 
 - Backend targeted sorting/filtering: 45/45 passed.
-- Backend complete suite: 335/335 tests, 26 files passed (without coverage).
+- Backend complete suite: 335/335 tests, 26 files passed with coverage: statements/lines 91.35%, branches 90.41%, functions 92.09%; line threshold 80% passed.
 - Frontend complete suite: 242/242 tests, 25 files passed with npx vitest run --maxWorkers=2. An earlier concurrent run had one unrelated dashboard test exceed its 5-second timeout; the complete rerun passed without changing that test or its timeout.
 - Backend and frontend builds: passed. Frontend retains the chunk-size warning above 500 kB.
 - Backend lint: exit 0, 0 errors, 196 warnings. Frontend lint: passed.
@@ -49,3 +49,9 @@ The PostgreSQL test requires the existing local PostgreSQL/Redis integration set
 - git diff --check: passed.
 
 Evidence capture used source commit cda2b9e on feat-issue#28-FR-SRCH-003-Sorting-Recipes. The PR template and screenshots were added locally afterward; no PR creation or issue state change was performed.
+
+## Additional checklist verification
+
+- pnpm prisma:generate: passed; generated Prisma Client 5.22.0 without changing schema/database.
+- Prettier: formatted and checked the 11 issue-specific source/test/report files. Whole-repository check found an existing malformed closing div at web-showcase.html:280; whole-repository formatting was skipped as requested when not feasible.
+- Coverage, Prisma and formatting PNGs display captured command output excerpts. Checklist results are in evidence/fr-srch-003/checklist-validation.json; text log files were removed.
