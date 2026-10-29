@@ -103,6 +103,29 @@ describe('HomePage live API landing', () => {
 })
 
 describe('RecipesBrowsePage', () => {
+  it('restores sorting and resets the page while preserving filters', async () => {
+    renderBrowsePage('/recipes?page=2&sort=-cookTime&minServings=2')
+    await screen.findByRole('heading', { name: 'Công thức trang hai' })
+    expect(screen.getByLabelText('Sắp xếp')).toHaveValue('-cookTime')
+    await userEvent.selectOptions(screen.getByLabelText('Sắp xếp'), 'title')
+    await screen.findByRole('heading', { name: 'Phở bò tái nạm' })
+    const params = new URLSearchParams(screen.getByTestId('location').textContent!.split('?')[1])
+    expect(params.get('sort')).toBe('title')
+    expect(params.get('page')).toBeNull()
+    expect(params.get('minServings')).toBe('2')
+    expect(vi.mocked(fetch).mock.calls.some(([url]) => {
+      const query = new URL(String(url), 'http://localhost').searchParams
+      return query.get('sort') === 'title' && query.get('page') === '1'
+    })).toBe(true)
+    await userEvent.click(screen.getByRole('button', { name: 'Xóa bộ lọc' }))
+    expect(screen.getByLabelText('Sắp xếp')).toHaveValue('title')
+  })
+  it('falls back to newest for unknown URL sorting', async () => {
+    renderBrowsePage('/recipes?sort=invalid')
+    await screen.findByRole('heading', { name: 'Phở bò tái nạm' })
+    expect(screen.getByLabelText('Sắp xếp')).toHaveValue('-createdAt')
+  })
+
   it('lists the first page of recipes with a pagination summary', async () => {
     renderBrowsePage()
 
