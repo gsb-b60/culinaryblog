@@ -32,8 +32,6 @@ import {
 } from '../../application/handlers/AuthCommandHandlers.js';
 import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
 import { DeleteRecipeCommandHandler } from '../../application/handlers/DeleteRecipeCommandHandler.js';
-import { RecipeOverviewQueryHandler } from '../../application/handlers/RecipeOverviewQueryHandler.js';
-import { GetRecipeOverviewQuery } from '../../application/queries/recipes/GetRecipeOverviewQuery.js';
 import { ManagedRecipeQueryHandler } from '../../application/handlers/ManagedRecipeQueryHandler.js';
 import {
   AddRecipeIngredientCommandHandler,
@@ -44,6 +42,7 @@ import {
   GetRecipeIngredientsQuery,
   GetRecipeIngredientsQueryHandler,
 } from '../../application/handlers/RecipeIngredientQueryHandler.js';
+import { RecipeOverviewQueryHandler } from '../../application/handlers/RecipeOverviewQueryHandler.js';
 import { GetRecipesQueryHandler, SearchRecipesQueryHandler, GetRecipeBySlugQueryHandler, GetCategoriesQueryHandler, GetCategoryBySlugQueryHandler } from '../../application/handlers/RecipeQueryHandlers.js';
 import {
   ArchiveRecipeCommandHandler,
@@ -54,6 +53,7 @@ import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
 import { GetManagedRecipesQuery } from '../../application/queries/recipes/GetManagedRecipesQuery.js';
+import { GetRecipeOverviewQuery } from '../../application/queries/recipes/GetRecipeOverviewQuery.js';
 import { env } from '../../config-middleware/config/env.js';
 import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository.js';
 import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.js';

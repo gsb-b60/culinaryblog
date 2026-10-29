@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { createPaginationSchema } from './paginationValidators.js';
 
 export const createCategorySchema = z.object({
