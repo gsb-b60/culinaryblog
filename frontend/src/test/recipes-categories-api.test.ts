@@ -9,6 +9,7 @@ import {
   getCategoryBySlug,
   getRecipeBySlug,
   listCategories,
+  listAllCategories,
   listRecipes,
   publishRecipe,
   searchRecipes,
@@ -98,10 +99,28 @@ describe('recipes api client (typed)', () => {
 })
 
 describe('categories api client (typed)', () => {
+  it('loads the entire category catalog across API pages', async () => {
+    const category = { id: 'c', name: 'Category', slug: 'cat', orderIndex: 0, createdAt: '' }
+    fetchMock.mockResolvedValueOnce(json({
+      items: Array.from({ length: 50 }, (_, i) => ({ ...category, id: 'c' + i })),
+      meta: { page: 1, pageSize: 50, totalCount: 51, totalPages: 2, hasNextPage: true, hasPreviousPage: false },
+    })).mockResolvedValueOnce(json({
+      items: [{ ...category, id: 'c50' }],
+      meta: { page: 2, pageSize: 50, totalCount: 51, totalPages: 2, hasNextPage: false, hasPreviousPage: true },
+    }))
+    expect(await listAllCategories()).toHaveLength(51)
+    expect(fetchMock.mock.calls[1][0]).toContain('/categories?page=2&pageSize=50')
+  })
+
   it('lists, details, and mutates with auth', async () => {
-    fetchMock.mockResolvedValue(json([{ id: 'c1', name: 'Mon nuoc', slug: 'mon-nuoc', orderIndex: 0, createdAt: '' }]))
-    const cats = await listCategories()
-    expect(cats[0]?.slug).toBe('mon-nuoc')
+    fetchMock.mockResolvedValue(json({
+      items: [{ id: 'c1', name: 'Mon nuoc', slug: 'mon-nuoc', orderIndex: 0, createdAt: '' }],
+      meta: { page: 2, pageSize: 12, totalCount: 13, totalPages: 2, hasNextPage: false, hasPreviousPage: true },
+    }))
+    const cats = await listCategories({ page: 2, pageSize: 12, searchQuery: 'Mon' })
+    expect(cats.items[0]?.slug).toBe('mon-nuoc')
+    expect(cats.meta.totalCount).toBe(13)
+    expect(fetchMock.mock.calls[0][0]).toContain('/categories?page=2&pageSize=12&searchQuery=Mon')
 
     fetchMock.mockResolvedValue(json({ id: 'c1', slug: 'mon-nuoc', recipes: { items: [], meta: {} } }))
     const detail = await getCategoryBySlug('mon-nuoc')

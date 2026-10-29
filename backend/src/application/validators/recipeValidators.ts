@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { paginationSchema } from './paginationValidators.js';
 
 import { RecipeDifficulty } from '../../domain/enums/RecipeDifficulty.js';
 import { RecipeStatus } from '../../domain/enums/RecipeStatus.js';
@@ -82,10 +83,7 @@ export const recipeSortSchema = z.object({
   order: z.enum(['asc', 'desc']).default('desc'),
 });
 
-export const paginationSchema = z.object({
-  page: queryNumber(z.number().int().positive()).default(1),
-  pageSize: queryNumber(z.number().int().positive().max(50)).default(12),
-});
+export { paginationSchema };
 
 export type CreateRecipeInput = z.infer<typeof createRecipeSchema>;
 export type UpdateRecipeInput = z.infer<typeof updateRecipeSchema>;

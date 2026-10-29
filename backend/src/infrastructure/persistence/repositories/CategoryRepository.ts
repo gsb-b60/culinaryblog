@@ -68,7 +68,7 @@ export class CategoryRepository implements ICategoryRepository {
     const [items, totalCount] = await Promise.all([
       this.prisma.category.findMany({
         where,
-        orderBy: { orderIndex: 'asc' },
+        orderBy: [{ orderIndex: 'asc' }, { id: 'asc' }],
         skip: (page - 1) * pageSize,
         take: pageSize,
         include: {
@@ -89,7 +89,7 @@ export class CategoryRepository implements ICategoryRepository {
   async findAll(): Promise<Category[]> {
     const categories = await this.prisma.category.findMany({
       where: { isDeleted: false },
-      orderBy: { orderIndex: 'asc' },
+      orderBy: [{ orderIndex: 'asc' }, { id: 'asc' }],
       include: {
         _count: {
           select: { recipes: { where: { status: 'PUBLISHED', isDeleted: false } } },

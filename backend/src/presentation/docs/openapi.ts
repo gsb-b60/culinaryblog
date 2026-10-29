@@ -552,6 +552,17 @@ export const openApiSpec = {
         },
       },
     },
+    '/recipes/manage/overview': {
+      get: {
+        tags: ['recipes'],
+        summary: 'Account-scoped recipe statistics and five recently updated recipes',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': { description: 'Statistics (total, published, draft, archived) and recentRecipes; Admin sees all, Author sees own' },
+          '401': { description: 'Unauthorized' },
+        },
+      },
+    },
     '/recipes': {
       get: {
         tags: ['recipes'],

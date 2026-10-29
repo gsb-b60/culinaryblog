@@ -158,7 +158,7 @@ export class RecipeRepository implements IRecipeRepository {
       isDeleted: false,
     };
 
-    const orderBy = sort ? this.buildOrderBy(sort) : { createdAt: 'desc' as const };
+    const orderBy = this.buildOrderBy(sort ?? { field: 'createdAt', order: 'desc' });
 
     const [items, totalCount] = await Promise.all([
       this.prisma.recipe.findMany({
@@ -310,7 +310,7 @@ export class RecipeRepository implements IRecipeRepository {
   }
 
   /** Translate requested sorting into Prisma ordering with repository defaults. */
-  private buildOrderBy(sort: RecipeSortOptions): Prisma.RecipeOrderByWithRelationInput {
+  private buildOrderBy(sort: RecipeSortOptions): Prisma.RecipeOrderByWithRelationInput[] {
     const { field, order } = sort;
     const fieldMap: Record<string, string> = {
       createdAt: 'createdAt',
@@ -319,6 +319,6 @@ export class RecipeRepository implements IRecipeRepository {
       cookTime: 'cookTime',
       publishedAt: 'publishedAt',
     };
-    return { [fieldMap[field] || 'createdAt']: order };
+    return [{ [fieldMap[field] || 'createdAt']: order }, { id: 'asc' }];
   }
 }
