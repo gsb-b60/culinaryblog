@@ -1,0 +1,19 @@
+{
+  "capturedAt": "2026-10-29T12:14:57.871Z",
+  "sourceCommit": "7fb1822080a3d5d18273178df06b64aece156a1c",
+  "note": "PNG snapshots render verbatim captured command logs and HTTP responses. They are evidence pages, not screenshots of an OS terminal or Scalar.",
+  "records": [
+    {
+      "name": "filter-validation",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-lint",
+      "exitCode": 0
+    },
+    {
+      "name": "frontend-lint",
+      "exitCode": 0
+    }
+  ]
+}

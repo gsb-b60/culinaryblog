@@ -1,0 +1,248 @@
+$ cd backend
+$ node node_modules/eslint/bin/eslint.js src --ext .ts
+
+
+D:\udptwnc\culinaryblog\backend\src\application\command-bus.ts
+   36:49  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+   36:62  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+   42:61  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+   42:66  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+   44:57  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+   44:62  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+   46:51  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+   48:42  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+   48:47  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+   64:39  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+   64:52  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+   71:37  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+   71:42  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+   88:5   warning  Unsafe return of type `Promise<any>` from function with return type `Promise<TResponse>`  @typescript-eslint/no-unsafe-return
+  106:5   warning  Unsafe return of type `Promise<any>` from function with return type `Promise<TResponse>`  @typescript-eslint/no-unsafe-return
+  109:47  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+  109:60  warning  Unexpected any. Specify a different type                                                  @typescript-eslint/no-explicit-any
+  121:7   warning  Unsafe return of type `Promise<any>` from function with return type `Promise<TResponse>`  @typescript-eslint/no-unsafe-return
+
+D:\udptwnc\culinaryblog\backend\src\application\handlers\RecipeIngredientCommandHandlers.ts
+  42:68  warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+  42:85  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\udptwnc\culinaryblog\backend\src\application\pipelines\pipelineMiddleware.ts
+   4:51  warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+   4:56  warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+   6:54  warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+   6:59  warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  12:29  warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  12:50  warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  13:3   warning  Unsafe return of an `any` typed value                             @typescript-eslint/no-unsafe-return
+  13:32  warning  Unsafe member access .getCacheKey on an `any` value               @typescript-eslint/no-unsafe-member-access
+  13:75  warning  Unsafe member access .getCacheTtl on an `any` value               @typescript-eslint/no-unsafe-member-access
+  16:38  warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  16:63  warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  17:3   warning  Unsafe return of an `any` typed value                             @typescript-eslint/no-unsafe-return
+  17:36  warning  Unsafe member access .getCacheKeysToInvalidate on an `any` value  @typescript-eslint/no-unsafe-member-access
+  20:57  warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  20:63  warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  32:5   warning  Unsafe return of an `any` typed value                             @typescript-eslint/no-unsafe-return
+  32:22  warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  36:9   warning  Unsafe assignment of an `any` value                               @typescript-eslint/no-unsafe-assignment
+  40:3   warning  Unsafe return of an `any` typed value                             @typescript-eslint/no-unsafe-return
+  43:69  warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  43:75  warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  44:9   warning  Unsafe assignment of an `any` value                               @typescript-eslint/no-unsafe-assignment
+  54:3   warning  Unsafe return of an `any` typed value                             @typescript-eslint/no-unsafe-return
+
+D:\udptwnc\culinaryblog\backend\src\config-middleware\shared\database\client.ts
+  11:5   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  12:5   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  12:17  warning  Unsafe member access .where on an `any` value      @typescript-eslint/no-unsafe-member-access
+  12:37  warning  Unsafe member access .where on an `any` value      @typescript-eslint/no-unsafe-member-access
+  13:38  warning  Unsafe member access .where on an `any` value      @typescript-eslint/no-unsafe-member-access
+  14:19  warning  Unsafe member access .where on an `any` value      @typescript-eslint/no-unsafe-member-access
+  19:5   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  20:5   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  20:17  warning  Unsafe member access .where on an `any` value      @typescript-eslint/no-unsafe-member-access
+  20:37  warning  Unsafe member access .where on an `any` value      @typescript-eslint/no-unsafe-member-access
+  21:38  warning  Unsafe member access .where on an `any` value      @typescript-eslint/no-unsafe-member-access
+  22:19  warning  Unsafe member access .where on an `any` value      @typescript-eslint/no-unsafe-member-access
+  28:5   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  29:5   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  29:17  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  29:36  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  30:36  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  31:19  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  33:17  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  38:5   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  39:5   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  39:17  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  39:36  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  40:35  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  41:7   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  41:19  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  41:26  warning  Unsafe call of an `any` typed value                @typescript-eslint/no-unsafe-call
+  41:38  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  41:51  warning  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  41:60  warning  Unsafe return of an `any` typed value              @typescript-eslint/no-unsafe-return
+  43:9   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  43:22  warning  Unsafe member access .createdAt on an `any` value  @typescript-eslint/no-unsafe-member-access
+  44:9   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  44:22  warning  Unsafe member access .updatedAt on an `any` value  @typescript-eslint/no-unsafe-member-access
+  45:9   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  45:20  warning  Unsafe member access .version on an `any` value    @typescript-eslint/no-unsafe-member-access
+  46:9   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  46:22  warning  Unsafe member access .isDeleted on an `any` value  @typescript-eslint/no-unsafe-member-access
+  49:7   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  49:19  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  49:48  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  50:7   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  50:19  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  50:48  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  51:7   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  51:19  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  51:46  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  52:7   warning  Unsafe assignment of an `any` value                @typescript-eslint/no-unsafe-assignment
+  52:19  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+  52:48  warning  Unsafe member access .data on an `any` value       @typescript-eslint/no-unsafe-member-access
+
+D:\udptwnc\culinaryblog\backend\src\config-middleware\shared\tracing\index.ts
+  15:11  warning  Unsafe assignment of an `any` value                   @typescript-eslint/no-unsafe-assignment
+  16:11  warning  Unsafe assignment of an `any` value                   @typescript-eslint/no-unsafe-assignment
+  17:11  warning  Unsafe assignment of an `any` value                   @typescript-eslint/no-unsafe-assignment
+  18:11  warning  Unsafe assignment of an `any` value                   @typescript-eslint/no-unsafe-assignment
+  19:11  warning  Unsafe assignment of an `any` value                   @typescript-eslint/no-unsafe-assignment
+  20:11  warning  Unsafe assignment of an `any` value                   @typescript-eslint/no-unsafe-assignment
+  23:11  warning  Unsafe assignment of an `any` value                   @typescript-eslint/no-unsafe-assignment
+  23:17  warning  Unsafe construction of an any type value              @typescript-eslint/no-unsafe-call
+  24:7   warning  Unsafe assignment of an `any` value                   @typescript-eslint/no-unsafe-assignment
+  24:17  warning  Unsafe construction of an any type value              @typescript-eslint/no-unsafe-call
+  25:37  warning  Unsafe member access .SERVICE_NAME on an `any` value  @typescript-eslint/no-unsafe-member-access
+  27:7   warning  Unsafe assignment of an `any` value                   @typescript-eslint/no-unsafe-assignment
+  27:22  warning  Unsafe construction of an any type value              @typescript-eslint/no-unsafe-call
+  30:26  warning  Unsafe construction of an any type value              @typescript-eslint/no-unsafe-call
+  30:53  warning  Unsafe construction of an any type value              @typescript-eslint/no-unsafe-call
+  33:5   warning  Unsafe call of an `any` typed value                   @typescript-eslint/no-unsafe-call
+  33:9   warning  Unsafe member access .start on an `any` value         @typescript-eslint/no-unsafe-member-access
+
+D:\udptwnc\culinaryblog\backend\src\infrastructure\auth\strategies\JwtStrategy.ts
+  23:52  warning  Unsafe argument of type `any` assigned to a parameter of type `string`  @typescript-eslint/no-unsafe-argument
+  23:60  warning  Unsafe member access .userId on an `any` value                          @typescript-eslint/no-unsafe-member-access
+
+D:\udptwnc\culinaryblog\backend\src\infrastructure\cache\RedisCacheService.ts
+  28:7   warning  Unexpected console statement              no-console
+  46:7   warning  Unsafe return of an `any` typed value     @typescript-eslint/no-unsafe-return
+  52:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  57:7   warning  Unexpected console statement              no-console
+  66:7   warning  Unexpected console statement              no-console
+  78:7   warning  Unexpected console statement              no-console
+
+D:\udptwnc\culinaryblog\backend\src\infrastructure\file-storage\MinioFileStorageService.ts
+  38:7   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+  38:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\udptwnc\culinaryblog\backend\src\infrastructure\health\HealthCheckService.ts
+  18:93   warning  Unsafe assignment of an `any` value              @typescript-eslint/no-unsafe-assignment
+  18:118  warning  Unsafe member access .message on an `any` value  @typescript-eslint/no-unsafe-member-access
+  19:90   warning  Unsafe assignment of an `any` value              @typescript-eslint/no-unsafe-assignment
+  19:115  warning  Unsafe member access .message on an `any` value  @typescript-eslint/no-unsafe-member-access
+
+D:\udptwnc\culinaryblog\backend\src\infrastructure\jobs\workers\imageResizeWorker.ts
+  10:5  warning  Unexpected console statement  no-console
+  16:5  warning  Unexpected console statement  no-console
+  29:3  warning  Unexpected console statement  no-console
+  33:3  warning  Unexpected console statement  no-console
+
+D:\udptwnc\culinaryblog\backend\src\infrastructure\jobs\workers\sitemapWorker.ts
+   9:5  warning  Unexpected console statement  no-console
+  15:5  warning  Unexpected console statement  no-console
+  28:3  warning  Unexpected console statement  no-console
+  32:3  warning  Unexpected console statement  no-console
+
+D:\udptwnc\culinaryblog\backend\src\infrastructure\jobs\workers\welcomeEmailWorker.ts
+  12:5  warning  Unexpected console statement  no-console
+  25:3  warning  Unexpected console statement  no-console
+  29:3  warning  Unexpected console statement  no-console
+
+D:\udptwnc\culinaryblog\backend\src\infrastructure\persistence\repositories\CategoryRepository.ts
+   59:18  warning  Unexpected any. Specify a different type                                    @typescript-eslint/no-explicit-any
+   62:13  warning  Unsafe member access .OR on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+   70:9   warning  Unsafe assignment of an `any` value                                         @typescript-eslint/no-unsafe-assignment
+   80:36  warning  Unsafe assignment of an `any` value                                         @typescript-eslint/no-unsafe-assignment
+   86:30  warning  Unsafe argument of type `any` assigned to a parameter of type `Category[]`  @typescript-eslint/no-unsafe-argument
+   86:38  warning  Unexpected any. Specify a different type                                    @typescript-eslint/no-explicit-any
+  107:17  warning  Unexpected any. Specify a different type                                    @typescript-eslint/no-explicit-any
+  122:7   warning  Unsafe assignment of an `any` value                                         @typescript-eslint/no-unsafe-assignment
+  123:7   warning  Unsafe assignment of an `any` value                                         @typescript-eslint/no-unsafe-assignment
+  148:18  warning  Unexpected any. Specify a different type                                    @typescript-eslint/no-explicit-any
+  150:13  warning  Unsafe member access .OR on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+  155:41  warning  Unsafe assignment of an `any` value                                         @typescript-eslint/no-unsafe-assignment
+
+D:\udptwnc\culinaryblog\backend\src\infrastructure\persistence\repositories\RecipeRepository.ts
+   58:16  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+   58:21  warning  Unsafe member access ._authorName on an `any` value                       @typescript-eslint/no-unsafe-member-access
+   59:16  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+   59:21  warning  Unsafe member access ._categoryName on an `any` value                     @typescript-eslint/no-unsafe-member-access
+  140:9   warning  Unsafe argument of type `any` assigned to a parameter of type `string`    @typescript-eslint/no-unsafe-argument
+  140:15  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  140:20  warning  Unsafe member access ._categoryName on an `any` value                     @typescript-eslint/no-unsafe-member-access
+  141:9   warning  Unsafe argument of type `any` assigned to a parameter of type `string`    @typescript-eslint/no-unsafe-argument
+  141:15  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  141:20  warning  Unsafe member access ._authorName on an `any` value                       @typescript-eslint/no-unsafe-member-access
+  145:30  warning  Unsafe argument of type `any` assigned to a parameter of type `Recipe[]`  @typescript-eslint/no-unsafe-argument
+  145:43  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  181:9   warning  Unsafe argument of type `any` assigned to a parameter of type `string`    @typescript-eslint/no-unsafe-argument
+  181:15  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  181:20  warning  Unsafe member access ._categoryName on an `any` value                     @typescript-eslint/no-unsafe-member-access
+  182:9   warning  Unsafe argument of type `any` assigned to a parameter of type `string`    @typescript-eslint/no-unsafe-argument
+  182:15  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  182:20  warning  Unsafe member access ._authorName on an `any` value                       @typescript-eslint/no-unsafe-member-access
+  186:30  warning  Unsafe argument of type `any` assigned to a parameter of type `Recipe[]`  @typescript-eslint/no-unsafe-argument
+  186:43  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  218:9   warning  Unsafe argument of type `any` assigned to a parameter of type `string`    @typescript-eslint/no-unsafe-argument
+  218:15  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  218:20  warning  Unsafe member access ._categoryName on an `any` value                     @typescript-eslint/no-unsafe-member-access
+  219:9   warning  Unsafe argument of type `any` assigned to a parameter of type `string`    @typescript-eslint/no-unsafe-argument
+  219:15  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  219:20  warning  Unsafe member access ._authorName on an `any` value                       @typescript-eslint/no-unsafe-member-access
+  223:30  warning  Unsafe argument of type `any` assigned to a parameter of type `Recipe[]`  @typescript-eslint/no-unsafe-argument
+  223:43  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  230:17  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  258:7   warning  Unsafe assignment of an `any` value                                       @typescript-eslint/no-unsafe-assignment
+  259:7   warning  Unsafe assignment of an `any` value                                       @typescript-eslint/no-unsafe-assignment
+
+D:\udptwnc\culinaryblog\backend\src\infrastructure\persistence\repositories\UserRepository.ts
+  58:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  80:7   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+  81:7   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+
+D:\udptwnc\culinaryblog\backend\src\infrastructure\persistence\seed\categorySeeder.ts
+  29:3  warning  Unexpected console statement  no-console
+
+D:\udptwnc\culinaryblog\backend\src\infrastructure\persistence\seed\recipeSeeder.ts
+  82:3  warning  Unexpected console statement  no-console
+
+D:\udptwnc\culinaryblog\backend\src\infrastructure\persistence\seed\userSeeder.ts
+  64:3  warning  Unexpected console statement  no-console
+
+D:\udptwnc\culinaryblog\backend\src\presentation\di\container.ts
+  259:11  warning  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  259:16  warning  Unsafe member access .container on an `any` value  @typescript-eslint/no-unsafe-member-access
+
+D:\udptwnc\culinaryblog\backend\src\presentation\middleware\AuthMiddleware.ts
+  34:3   warning  Unsafe call of an `any` typed value       @typescript-eslint/no-unsafe-call
+  34:78  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  44:5   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+  50:3   warning  Unsafe call of an `any` typed value       @typescript-eslint/no-unsafe-call
+  50:78  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  52:7   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+
+D:\udptwnc\culinaryblog\backend\src\presentation\middleware\CorrelationIdMiddleware.ts
+  11:11  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  11:16  warning  Unsafe member access .correlationId on an `any` value  @typescript-eslint/no-unsafe-member-access
+
+D:\udptwnc\culinaryblog\backend\src\presentation\routes\authRoutes.ts
+  78:53  warning  Unsafe argument of type `any` assigned to a parameter of type `string | undefined`  @typescript-eslint/no-unsafe-argument
+  78:63  warning  Unsafe member access .refreshToken on an `any` value                                @typescript-eslint/no-unsafe-member-access
+
+✖ 196 problems (0 errors, 196 warnings)
+
+
+Exit code: 0
