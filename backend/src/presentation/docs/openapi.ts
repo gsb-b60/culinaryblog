@@ -567,6 +567,7 @@ export const openApiSpec = {
       get: {
         tags: ['recipes'],
         summary: 'List published recipes (paginated, filtered)',
+        description: 'Filters combine with AND before pagination. totalCount counts matching published, non-deleted recipes.',
         parameters: [
           { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
           { name: 'pageSize', in: 'query', schema: { type: 'integer', default: 12, maximum: 50 } },
@@ -574,10 +575,13 @@ export const openApiSpec = {
           {
             name: 'difficulty',
             in: 'query',
-            schema: { type: 'string', enum: ['EASY', 'MEDIUM', 'HARD', 'EXPERT'] },
+            schema: { type: 'string', enum: ['Easy', 'Medium', 'Hard', 'Expert', 'EASY', 'MEDIUM', 'HARD', 'EXPERT'] },
           },
+          { name: 'maxCookTime', in: 'query', description: 'Inclusive maximum cookTime in minutes, excluding prepTime', schema: { type: 'integer', minimum: 0, maximum: 2147483647 } },
+          { name: 'minServings', in: 'query', description: 'Inclusive minimum servings', schema: { type: 'integer', minimum: 1, maximum: 2147483647 } },
         ],
         responses: {
+          '422': { description: 'Invalid recipe filter; application/problem+json with field errors' },
           '200': {
             description: 'OK',
             content: {
