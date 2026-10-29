@@ -1,4 +1,4 @@
-# Issue #36 - FR-SRCH-003: Sorting Recipes
+﻿# Issue #36 - FR-SRCH-003: Sorting Recipes
 
 GitHub: https://github.com/gsb-b60/culinaryblog/issues/36
 
@@ -36,7 +36,7 @@ npm run build
 npm run lint
 ~~~
 
-The PostgreSQL test requires the existing local PostgreSQL/Redis integration setup. Frontend component tests use mocked HTTP; this change does not include a real browser check or screenshots. No schema migration is required.
+The PostgreSQL test requires the existing local PostgreSQL/Redis integration setup. Frontend component tests use mocked HTTP. Additional real Chromium browser checks and desktop screenshots are captured by tests/recipe-sorting-evidence.ts with real PostgreSQL and HTTP. See PR-FR-SRCH-003-SORTING.md and evidence/fr-srch-003/result.json. No schema migration is required.
 
 ## Executed results
 
@@ -48,4 +48,4 @@ The PostgreSQL test requires the existing local PostgreSQL/Redis integration set
 - Real PostgreSQL sorting E2E: passed.
 - git diff --check: passed.
 
-Changes are local on feat-issue#28-FR-SRCH-003-Sorting-Recipes; no commit, push, PR creation or GitHub issue state change was performed.
+Evidence capture used source commit cda2b9e on feat-issue#28-FR-SRCH-003-Sorting-Recipes. The PR template and screenshots were added locally afterward; no PR creation or issue state change was performed.
