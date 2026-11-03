@@ -6,6 +6,7 @@ import AuthCallbackPage from './pages/AuthCallbackPage'
 import RecipesPage from './pages/RecipesPage'
 import DeleteRecipesPage from './pages/DeleteRecipesPage'
 import IngredientManagementPage from './pages/IngredientManagementPage'
+import RecipeStepsPage from './pages/RecipeStepsPage'
 import RecipesBrowsePage from './pages/RecipesBrowsePage'
 import RecipeDetailPage from './pages/RecipeDetailPage'
 import DashboardPage from './pages/DashboardPage'
@@ -53,6 +54,7 @@ export default function App() {
         />
         <Route path="/dashboard/recipes" element={<RecipesPage key="publish" />} />
         <Route path="/dashboard/ingredients" element={<IngredientManagementPage />} />
+        <Route path="/dashboard/steps" element={<RecipeStepsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
 

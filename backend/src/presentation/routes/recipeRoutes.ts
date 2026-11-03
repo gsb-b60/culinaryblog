@@ -17,6 +17,7 @@ import {
   DeleteRecipeIngredientCommand,
 } from '../../application/commands/recipes/RecipeCommands.js';
 import { GetRecipeIngredientsQuery } from '../../application/handlers/RecipeIngredientQueryHandler.js';
+import { GetRecipeStepsQuery } from '../../application/handlers/RecipeStepCommandHandlers.js';
 import { GetManagedRecipesQuery } from '../../application/queries/recipes/GetManagedRecipesQuery.js';
 import { GetRecipeOverviewQuery } from '../../application/queries/recipes/GetRecipeOverviewQuery.js';
 import {
@@ -227,15 +228,29 @@ router.delete('/:id', authenticateJwt, async (req: AuthenticatedRequest, res, ne
 });
 
 // Recipe Steps
+router.get('/:id/steps', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const result = await commandBus.executeQuery(
+      new GetRecipeStepsQuery(
+        req.params.id!,
+        req.user!.id,
+        req.user!.roles.includes(UserRole.ADMIN),
+      ),
+    );
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post(
   '/:id/steps',
   authenticateJwt,
-  authorizeOwnerOrAdmin(async (req) => req.params.id!),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const stepSchema = z.object({
-        title: z.string().min(1).max(200),
-        description: z.string().min(1),
+        title: z.string().trim().min(1).max(200),
+        description: z.string().trim().min(1),
         timerMinutes: z.number().int().nonnegative().optional(),
         imageUrl: z.string().url().max(500).optional(),
       });
@@ -248,6 +263,7 @@ router.post(
         input.description,
         input.timerMinutes,
         input.imageUrl,
+        req.user!.roles.includes(UserRole.ADMIN),
       );
       const stepId = await commandBus.executeCommand(command);
       res.status(201).json({ id: stepId, message: 'Step added successfully' });
@@ -260,16 +276,15 @@ router.post(
 router.put(
   '/:id/steps/:stepId',
   authenticateJwt,
-  authorizeOwnerOrAdmin(async (req) => req.params.id!),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const stepSchema = z.object({
         stepNumber: z.number().int().positive().optional(),
-        title: z.string().min(1).max(200).optional(),
-        description: z.string().min(1).optional(),
-        timerMinutes: z.number().int().nonnegative().optional(),
-        imageUrl: z.string().url().max(500).optional(),
-      });
+        title: z.string().trim().min(1).max(200).optional(),
+        description: z.string().trim().min(1).optional(),
+        timerMinutes: z.number().int().nonnegative().nullable().optional(),
+        imageUrl: z.string().url().max(500).nullable().optional(),
+      }).refine((value) => Object.keys(value).length > 0, 'At least one field is required');
 
       const input = stepSchema.parse(req.body);
       const command = new UpdateRecipeStepCommand(
@@ -281,6 +296,7 @@ router.put(
         input.description,
         input.timerMinutes,
         input.imageUrl,
+        req.user!.roles.includes(UserRole.ADMIN),
       );
       await commandBus.executeCommand(command);
       res.json({ message: 'Step updated successfully' });
@@ -293,10 +309,14 @@ router.put(
 router.delete(
   '/:id/steps/:stepId',
   authenticateJwt,
-  authorizeOwnerOrAdmin(async (req) => req.params.id!),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const command = new DeleteRecipeStepCommand(req.params.id!, req.user!.id, req.params.stepId!);
+      const command = new DeleteRecipeStepCommand(
+        req.params.id!,
+        req.user!.id,
+        req.params.stepId!,
+        req.user!.roles.includes(UserRole.ADMIN),
+      );
       await commandBus.executeCommand(command);
       res.status(204).send();
     } catch (error) {

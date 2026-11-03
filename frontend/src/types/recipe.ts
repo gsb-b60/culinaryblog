@@ -168,6 +168,14 @@ export interface CreateStepPayload {
   imageUrl?: string;
 }
 
+export interface UpdateStepPayload {
+  stepNumber?: number;
+  title?: string;
+  description?: string;
+  timerMinutes?: number | null;
+  imageUrl?: string | null;
+}
+
 export interface CreateIngredientPayload {
   name: string;
   quantity?: number;

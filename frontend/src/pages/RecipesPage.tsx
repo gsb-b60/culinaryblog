@@ -303,6 +303,14 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
                         Nguyên liệu
                       </Link>
                     )}
+                    {canManage && (
+                      <Link
+                        to={`/dashboard/steps?recipeId=${encodeURIComponent(recipe.id)}&page=${data?.meta.page ?? 1}&pageSize=${data?.meta.pageSize ?? 12}`}
+                        className="rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold text-brand-700"
+                      >
+                        Các bước nấu
+                      </Link>
+                    )}
                     {!archiveMode && canManage && !archived && (
                       <button
                         type="button"

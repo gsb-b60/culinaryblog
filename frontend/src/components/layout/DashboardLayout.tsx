@@ -30,6 +30,8 @@ export function DashboardLayout() {
       ? 'archive-recipes'
       : location.pathname.startsWith('/dashboard/ingredients')
         ? 'ingredients'
+        : location.pathname.startsWith('/dashboard/steps')
+          ? 'steps'
         : location.pathname.startsWith('/dashboard/recipes')
           ? 'recipes'
           : location.pathname.startsWith('/profile')

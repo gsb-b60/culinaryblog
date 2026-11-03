@@ -1,0 +1,81 @@
+{
+  "feature": "FR-RCP-010",
+  "issue": 34,
+  "result": "passed",
+  "startedAt": "2026-11-03T12:14:57.028Z",
+  "finishedAt": "2026-11-03T12:15:12.454Z",
+  "services": "Real isolated PostgreSQL schema, Express/CQRS/Prisma, Vite and Chromium; no API response mocking.",
+  "recipeId": "6e53e432-c45f-44fb-aa2a-e5c06fc87e1b",
+  "checks": [
+    "API authentication, owner authorization and validation errors return 401/403/422.",
+    "Real Chromium UI completed create, update/reorder and delete/renumber for recipe steps.",
+    "PostgreSQL persisted edited step content and sequential numbering after deletion.",
+    "Desktop screenshot captured after adding the first step; browser reported no page errors."
+  ],
+  "apiResponses": [
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/manage",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps/423dae06-2502-4b12-9ff0-8a147f882de5",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "status": 200
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps/f66630d8-0557-4f07-a918-b0c17ccaec77",
+      "status": 204
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "status": 200
+    }
+  ],
+  "pageErrors": [],
+  "screenshots": [
+    "desktop.png"
+  ]
+}

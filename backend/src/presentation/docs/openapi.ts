@@ -765,20 +765,64 @@ export const openApiSpec = {
       },
     },
     '/recipes/{id}/steps': {
-      post: {
+      get: {
         tags: ['recipes'],
-        summary: 'Add step (Owner/Admin)',
+        summary: 'List recipe steps in order (Owner/Admin)',
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
         ],
-        responses: { '201': { description: 'Created' } },
+        responses: {
+          '200': {
+            description: 'Active recipe steps ordered by stepNumber',
+            content: {
+              'application/json': {
+                schema: { type: 'array', items: { $ref: '#/components/schemas/RecipeStep' } },
+              },
+            },
+          },
+          '401': { description: 'Authentication required' },
+          '403': { description: 'Not recipe owner/Admin' },
+          '404': { description: 'Recipe not found' },
+        },
+      },
+      post: {
+        tags: ['recipes'],
+        summary: 'Add step at the next position (Owner/Admin)',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['title', 'description'],
+                properties: {
+                  title: { type: 'string', minLength: 1, maxLength: 200 },
+                  description: { type: 'string', minLength: 1 },
+                  timerMinutes: { type: 'integer', minimum: 0 },
+                  imageUrl: { type: 'string', format: 'uri', maxLength: 500 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '201': { description: 'Created; step number is assigned automatically' },
+          '401': { description: 'Authentication required' },
+          '403': { description: 'Not recipe owner/Admin' },
+          '404': { description: 'Recipe not found' },
+          '422': { description: 'Invalid step data' },
+        },
       },
     },
     '/recipes/{id}/steps/{stepId}': {
       put: {
         tags: ['recipes'],
-        summary: 'Update step',
+        summary: 'Update step content or position (Owner/Admin)',
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
@@ -793,7 +837,7 @@ export const openApiSpec = {
       },
       delete: {
         tags: ['recipes'],
-        summary: 'Delete step',
+        summary: 'Delete step and renumber remaining steps (Owner/Admin)',
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },

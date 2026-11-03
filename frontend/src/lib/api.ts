@@ -21,8 +21,10 @@ import type {
   CreateIngredientPayload,
   CreateRecipePayload,
   CreateStepPayload,
+  UpdateStepPayload,
   PagedRecipes,
   RecipeDetail,
+  RecipeStep,
   RecipeListQuery,
   UpdateRecipePayload,
 } from '../types/recipe'
@@ -343,6 +345,50 @@ export function addRecipeStep(
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(payload),
   })
+}
+
+/** Load the authorized recipe's active steps in display order. */
+export function getRecipeSteps(
+  accessToken: string,
+  id: string,
+  signal?: AbortSignal,
+): Promise<RecipeStep[]> {
+  return request<RecipeStep[]>(`/recipes/${encodeURIComponent(id)}/steps`, {
+    headers: { Authorization: 'Bearer ' + accessToken },
+    signal,
+  })
+}
+
+/** Update a step's content and optionally move it to another position. */
+export function updateRecipeStep(
+  accessToken: string,
+  recipeId: string,
+  stepId: string,
+  payload: UpdateStepPayload,
+): Promise<null> {
+  return request<null>(
+    `/recipes/${encodeURIComponent(recipeId)}/steps/${encodeURIComponent(stepId)}`,
+    {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer ' + accessToken },
+      body: JSON.stringify(payload),
+    },
+  )
+}
+
+/** Delete a step and let the API renumber the remaining steps. */
+export function deleteRecipeStep(
+  accessToken: string,
+  recipeId: string,
+  stepId: string,
+): Promise<null> {
+  return request<null>(
+    `/recipes/${encodeURIComponent(recipeId)}/steps/${encodeURIComponent(stepId)}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer ' + accessToken },
+    },
+  )
 }
 
 /** Create an ingredient bound to the authorized recipe and return its saved DTO. */
