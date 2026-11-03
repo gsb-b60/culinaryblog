@@ -1,4 +1,4 @@
-import { Link, Navigate, Route, Routes } from 'react-router-dom'
+import { Link, Route, Routes } from 'react-router-dom'
 
 import AppLayout from './components/layout/AppLayout'
 import DashboardLayout from './components/layout/DashboardLayout'
