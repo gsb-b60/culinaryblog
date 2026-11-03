@@ -158,12 +158,14 @@ try {
   await page.getByRole('button', { name: 'Lưu thay đổi' }).click();
   await expect(page.getByText('Bước 2: Hoàn tất món ăn')).toBeVisible();
   await expect(page.getByText('Bước 3: Nấu món ăn')).toBeVisible();
+  await page.screenshot({ path: resolve(evidence, 'desktop-reordered.png'), fullPage: true });
 
   await page.getByRole('button', { name: 'Xóa bước 1' }).click();
   await page.getByRole('button', { name: 'Xác nhận xóa' }).click();
   await expect(page.getByText('Bước 1: Hoàn tất món ăn')).toBeVisible();
   await expect(page.getByText('Bước 2: Nấu món ăn')).toBeVisible();
   await expect(page.getByRole('status')).toContainText('cập nhật lại thứ tự');
+  await page.screenshot({ path: resolve(evidence, 'desktop-after-delete.png'), fullPage: true });
   checks.push('Real Chromium UI completed create, update/reorder and delete/renumber for recipe steps.');
 
   const persisted = await fixture.prisma.recipeStep.findMany({
@@ -212,7 +214,7 @@ try {
         checks,
         apiResponses,
         pageErrors,
-        screenshots: ['desktop.png'],
+        screenshots: ['desktop.png', 'desktop-reordered.png', 'desktop-after-delete.png'],
       },
       null,
       2,
