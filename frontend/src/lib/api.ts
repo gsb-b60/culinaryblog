@@ -1,6 +1,6 @@
 import { loadSession, saveSession, clearSession } from './tokenStorage'
 import type { AuthResponse, LoginPayload, ProblemDetails, RegisterPayload, UpdateProfilePayload, UserProfile } from '../types/auth'
-import type { CategoryDto } from '../types/category'
+import type { CategoryDto, CategoryDetailDto } from '../types/category'
 
 const API_BASE: string = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api/v1'
 
@@ -116,5 +116,18 @@ export function logout(accessToken: string, refreshToken: string): Promise<null>
 export function getCategories(): Promise<CategoryDto[]> {
   return request<CategoryDto[]>('/categories', {
     method: 'GET',
+  })
+}
+
+export function getCategoryDetail(
+  slug: string,
+  page = 1,
+  pageSize = 12,
+  accessToken?: string,
+): Promise<CategoryDetailDto> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+  return request<CategoryDetailDto>(`/categories/${encodeURIComponent(slug)}?${params}`, {
+    method: 'GET',
+    ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {}),
   })
 }

@@ -9,8 +9,17 @@ export interface CategoryDto {
   createdAt?: Date;
 }
 
-export interface CategoryDetailDto extends CategoryDto {
-  recipes: import('./PagedResult.js').PagedResult<import('./RecipeDto.js').RecipeSummaryDto>;
+export interface CategoryDetailDto {
+  category: CategoryDto;
+  recipes: {
+    items: import('./RecipeDto.js').RecipeSummaryDto[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
 export interface CreateCategoryInput {

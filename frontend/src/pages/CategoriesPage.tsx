@@ -61,21 +61,30 @@ export default function CategoriesPage() {
     }
   }
 
-  const fetchCategories = async () => {
+  const fetchCategories = () => {
     setLoading(true)
     setError(null)
-    try {
-      const data = await getCategories()
-      setCategories(data)
-    } catch {
-      setError('Không thể tải danh sách danh mục. Vui lòng thử lại.')
-    } finally {
-      setLoading(false)
-    }
+    getCategories()
+      .then((data) => setCategories(data))
+      .catch(() => setError('Không thể tải danh sách danh mục. Vui lòng thử lại.'))
+      .finally(() => setLoading(false))
   }
 
   useEffect(() => {
-    void fetchCategories()
+    let ignore = false
+    getCategories()
+      .then((data) => {
+        if (!ignore) setCategories(data)
+      })
+      .catch(() => {
+        if (!ignore) setError('Không thể tải danh sách danh mục. Vui lòng thử lại.')
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false)
+      })
+    return () => {
+      ignore = true
+    }
   }, [])
 
   return (

@@ -12,7 +12,7 @@
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-catalog.md` §FR-CAT-001 |
 | Endpoint | `GET /api/v1/categories` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -85,12 +85,12 @@ Return detailed info for a specific category (by Slug) along with a paginated li
 
 **Acceptance Criteria:**
 
-- [ ] Valid slug returns 200 with category + paginated recipes
-- [ ] Only PUBLISHED recipes shown to guests
-- [ ] Logged-in Author additionally sees own DRAFT recipes in category
-- [ ] Invalid slug returns 404 with RFC 7807 body
-- [ ] Pagination works (page, pageSize, totalCount, totalPages correct)
-- [ ] Empty category returns 200 with empty items array
+- [x] Valid slug returns 200 with category + paginated recipes
+- [x] Only PUBLISHED recipes shown to guests
+- [x] Logged-in Author additionally sees own DRAFT recipes in category
+- [x] Invalid slug returns 404 with RFC 7807 body
+- [x] Pagination works (page, pageSize, totalCount, totalPages correct)
+- [x] Empty category returns 200 with empty items array
 
 ---
 
