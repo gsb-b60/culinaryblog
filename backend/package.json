@@ -14,6 +14,7 @@
     "test": "vitest run --coverage",
     "test:watch": "vitest",
     "test:e2e:ingredients": "tsx tests/ingredients-master.e2e.ts",
+    "test:e2e:steps": "tsx tests/recipe-steps.e2e.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",

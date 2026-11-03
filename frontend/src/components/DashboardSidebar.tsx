@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 type Section =
-  'overview' | 'categories' | 'recipes' | 'delete-recipes' | 'archive-recipes' | 'ingredients' | 'profile'
+  'overview' | 'categories' | 'recipes' | 'delete-recipes' | 'archive-recipes' | 'ingredients' | 'steps' | 'profile'
 
 /** Render dashboard destinations and indicate the active page. */
 export default function DashboardSidebar({
@@ -26,7 +26,8 @@ export default function DashboardSidebar({
     active === 'recipes' ||
     active === 'delete-recipes' ||
     active === 'archive-recipes' ||
-    active === 'ingredients'
+    active === 'ingredients' ||
+    active === 'steps'
   // A destination opened from the overview must reveal its active submenu.
   const recipesExpanded = recipesMenu?.section === active ? recipesMenu.expanded : recipesActive
   const toggleRecipes = () => {
@@ -86,6 +87,13 @@ export default function DashboardSidebar({
                 className={submenuClass(active === 'ingredients')}
               >
                 Nguyên liệu
+              </Link>
+              <Link
+                to="/dashboard/steps"
+                aria-current={active === 'steps' ? 'page' : undefined}
+                className={submenuClass(active === 'steps')}
+              >
+                Các bước nấu
               </Link>
               <Link
                 to="/dashboard/recipes/delete"
@@ -166,6 +174,13 @@ export default function DashboardSidebar({
               className={submenuClass(active === 'ingredients')}
             >
               Nguyên liệu
+            </Link>
+            <Link
+              to="/dashboard/steps"
+              aria-current={active === 'steps' ? 'page' : undefined}
+              className={submenuClass(active === 'steps')}
+            >
+              Các bước nấu
             </Link>
             <Link
               to="/dashboard/recipes/delete"
