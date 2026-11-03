@@ -16,7 +16,12 @@ import {
   updateCategorySchema
 } from '../../application/validators/categoryValidators.js';
 import { UserRole } from '../../domain/enums/UserRole.js';
-import { authenticateJwt, optionalAuth, AuthenticatedRequest, authorize } from '../middleware/AuthMiddleware.js';
+import {
+  authenticateJwt,
+  AuthenticatedRequest,
+  authorize,
+  optionalAuth,
+} from '../middleware/AuthMiddleware.js';
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 // Explicit annotation avoids TS2742 when emitting declarations on CI.

@@ -7,7 +7,7 @@ import { GoogleAuthButton } from '../components/auth/GoogleAuthButton'
 import { TextField } from '../components/auth/TextField'
 import { useGoogleSignIn } from '../hooks/useGoogleSignIn'
 import { ApiError, register } from '../lib/api'
-import { clearSession, saveSession } from '../lib/tokenStorage'
+import { useAuthStore } from '../store'
 import type { AuthResponse } from '../types/auth'
 import { firstErrors, registerFormSchema } from '../validation/register'
 import type { FieldErrors, RegisterFormValues } from '../validation/register'
@@ -32,7 +32,11 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<FieldErrors>({})
   const [banner, setBanner] = useState<BannerState | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  // Local mirror of the freshly registered account, only used by the success
+  // screen; the shared session itself lives in the auth store.
   const [session, setSession] = useState<AuthResponse | null>(null)
+  const persistSession = useAuthStore((state) => state.setSession)
+  const signOut = useAuthStore((state) => state.signOut)
 
   const {
     state: googleState,
@@ -82,7 +86,7 @@ export default function RegisterPage() {
         userName: parsed.data.userName,
         password: parsed.data.password,
       })
-      saveSession(auth)
+      persistSession(auth)
       setSession(auth)
     } catch (err) {
       if (!(err instanceof ApiError)) {
@@ -160,7 +164,7 @@ export default function RegisterPage() {
             <button
               type="button"
                 onClick={() => {
-                  clearSession()
+                  signOut()
                   setSession(null)
                   setForm(EMPTY_FORM)
                   setAgree(false)
