@@ -2,15 +2,15 @@
   "feature": "FR-RCP-010",
   "issue": 34,
   "result": "passed",
-  "startedAt": "2026-11-03T12:14:57.028Z",
-  "finishedAt": "2026-11-03T12:15:12.454Z",
+  "startedAt": "2026-11-03T13:00:23.300Z",
+  "finishedAt": "2026-11-03T13:00:45.251Z",
   "services": "Real isolated PostgreSQL schema, Express/CQRS/Prisma, Vite and Chromium; no API response mocking.",
-  "recipeId": "6e53e432-c45f-44fb-aa2a-e5c06fc87e1b",
+  "recipeId": "fb347227-3076-498c-9d00-2395c291cafb",
   "checks": [
     "API authentication, owner authorization and validation errors return 401/403/422.",
     "Real Chromium UI completed create, update/reorder and delete/renumber for recipe steps.",
     "PostgreSQL persisted edited step content and sequential numbering after deletion.",
-    "Desktop screenshot captured after adding the first step; browser reported no page errors."
+    "Desktop screenshots captured after adding, reordering/updating and deleting steps; browser reported no page errors."
   ],
   "apiResponses": [
     {
@@ -20,62 +20,64 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "path": "/api/v1/recipes/fb347227-3076-498c-9d00-2395c291cafb/steps",
       "status": 200
     },
     {
       "method": "POST",
-      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "path": "/api/v1/recipes/fb347227-3076-498c-9d00-2395c291cafb/steps",
       "status": 201
     },
     {
       "method": "GET",
-      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "path": "/api/v1/recipes/fb347227-3076-498c-9d00-2395c291cafb/steps",
       "status": 200
     },
     {
       "method": "POST",
-      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "path": "/api/v1/recipes/fb347227-3076-498c-9d00-2395c291cafb/steps",
       "status": 201
     },
     {
       "method": "GET",
-      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "path": "/api/v1/recipes/fb347227-3076-498c-9d00-2395c291cafb/steps",
       "status": 200
     },
     {
       "method": "POST",
-      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "path": "/api/v1/recipes/fb347227-3076-498c-9d00-2395c291cafb/steps",
       "status": 201
     },
     {
       "method": "GET",
-      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "path": "/api/v1/recipes/fb347227-3076-498c-9d00-2395c291cafb/steps",
       "status": 200
     },
     {
       "method": "PUT",
-      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps/423dae06-2502-4b12-9ff0-8a147f882de5",
+      "path": "/api/v1/recipes/fb347227-3076-498c-9d00-2395c291cafb/steps/8e42c5d2-9391-4c56-a81c-9cd86349f13d",
       "status": 200
     },
     {
       "method": "GET",
-      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "path": "/api/v1/recipes/fb347227-3076-498c-9d00-2395c291cafb/steps",
       "status": 200
     },
     {
       "method": "DELETE",
-      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps/f66630d8-0557-4f07-a918-b0c17ccaec77",
+      "path": "/api/v1/recipes/fb347227-3076-498c-9d00-2395c291cafb/steps/d032d9e0-c55d-4dd1-be0a-98b496906c38",
       "status": 204
     },
     {
       "method": "GET",
-      "path": "/api/v1/recipes/6e53e432-c45f-44fb-aa2a-e5c06fc87e1b/steps",
+      "path": "/api/v1/recipes/fb347227-3076-498c-9d00-2395c291cafb/steps",
       "status": 200
     }
   ],
   "pageErrors": [],
   "screenshots": [
-    "desktop.png"
+    "desktop.png",
+    "desktop-reordered.png",
+    "desktop-after-delete.png"
   ]
 }

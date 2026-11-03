@@ -90,6 +90,45 @@ try {
   const shortcut = page.getByRole('region', { name: 'Lưu trữ công thức', exact: true });
   await expect(shortcut).toBeVisible();
   await page.screenshot({ path: resolve(out, '00-dashboard-shortcut.png'), fullPage: false });
+  await page.goto('http://127.0.0.1:5187/dashboard/recipes');
+  const managedRecipe = page.getByRole('article', { name: title, exact: true });
+  await expect(managedRecipe.getByText('Đã xuất bản', { exact: true })).toBeVisible();
+  await page.screenshot({ path: resolve(out, '07-published-state.png'), fullPage: false });
+  const unpublishResponse = page.waitForResponse(response =>
+    response.request().method() === 'PATCH' &&
+    response.url() === api + '/recipes/' + target.id + '/unpublish',
+  );
+  await managedRecipe.getByRole('button', { name: 'Chuyển về bản nháp', exact: true }).click();
+  const unpublished = await unpublishResponse;
+  assert.equal(unpublished.status(), 200);
+  await expect(managedRecipe.getByText('Bản nháp', { exact: true })).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('Đã chuyển công thức về bản nháp.');
+  await page.screenshot({ path: resolve(out, '08-unpublish-success.png'), fullPage: false });
+  result.requests.push({
+    method: 'PATCH',
+    path: '/api/v1/recipes/' + target.id + '/unpublish',
+    status: 200,
+    source: 'real UI interaction',
+  });
+  const publishResponse = page.waitForResponse(response =>
+    response.request().method() === 'PATCH' &&
+    response.url() === api + '/recipes/' + target.id + '/publish',
+  );
+  await managedRecipe.getByRole('button', { name: 'Xuất bản', exact: true }).click();
+  const published = await publishResponse;
+  assert.equal(published.status(), 200);
+  await expect(managedRecipe.getByText('Đã xuất bản', { exact: true })).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('Đã xuất bản công thức.');
+  await page.screenshot({ path: resolve(out, '09-publish-success.png'), fullPage: false });
+  result.requests.push({
+    method: 'PATCH',
+    path: '/api/v1/recipes/' + target.id + '/publish',
+    status: 200,
+    source: 'real UI interaction',
+  });
+  result.checks.publishUnpublishUITransitions = true;
+  await page.goto('http://127.0.0.1:5187/dashboard');
+  await expect(shortcut).toBeVisible();
   await shortcut.getByRole('link', { name: 'Lưu trữ công thức', exact: true }).click();
   await expect(page).toHaveURL('http://127.0.0.1:5187/dashboard/recipes/archive');
   await expect(page.getByRole('heading', { level: 1, name: 'Lưu trữ công thức', exact: true })).toBeVisible();
@@ -165,7 +204,7 @@ try {
   await report.setContent(html + '</body></html>');
   await report.screenshot({ path: resolve(out, '06-tests-lint-build.png'), fullPage: true });
   await context.close();
-  console.log(JSON.stringify({ status: result.status, screenshots: 7, checks: result.checks }, null, 2));
+  console.log(JSON.stringify({ status: result.status, screenshots: 10, checks: result.checks }, null, 2));
 } catch (error) {
   result.error = String(error);
   writeFileSync(resolve(out, 'failure.json'), JSON.stringify(result, null, 2));
