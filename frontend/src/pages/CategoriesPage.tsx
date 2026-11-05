@@ -61,7 +61,6 @@ export default function CategoriesPage() {
     }
   }
 
-  const handleRetry = () => {
   const fetchCategories = () => {
     setLoading(true)
     setError(null)
@@ -69,6 +68,10 @@ export default function CategoriesPage() {
       .then((data) => setCategories(data))
       .catch(() => setError('Không thể tải danh sách danh mục. Vui lòng thử lại.'))
       .finally(() => setLoading(false))
+  }
+
+  const handleRetry = () => {
+    fetchCategories()
   }
 
   useEffect(() => {
@@ -89,19 +92,6 @@ export default function CategoriesPage() {
 
     return () => {
       active = false
-    let ignore = false
-    getCategories()
-      .then((data) => {
-        if (!ignore) setCategories(data)
-      })
-      .catch(() => {
-        if (!ignore) setError('Không thể tải danh sách danh mục. Vui lòng thử lại.')
-      })
-      .finally(() => {
-        if (!ignore) setLoading(false)
-      })
-    return () => {
-      ignore = true
     }
   }, [])
 

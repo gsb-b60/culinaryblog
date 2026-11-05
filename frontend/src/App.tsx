@@ -2,6 +2,7 @@ import { Link, Route, Routes } from 'react-router-dom'
 
 import AppLayout from './components/layout/AppLayout'
 import DashboardLayout from './components/layout/DashboardLayout'
+import AdminCategoriesPage from './pages/AdminCategoriesPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import RecipesPage from './pages/RecipesPage'
 import IngredientManagementPage from './pages/IngredientManagementPage'
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/recipes" element={<RecipesPage />} />
         <Route path="/dashboard/ingredients" element={<IngredientManagementPage />} />
+        <Route path="/dashboard/categories" element={<AdminCategoriesPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
 

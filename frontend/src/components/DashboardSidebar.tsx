@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-type Section = 'overview' | 'recipes' | 'ingredients' | 'profile'
+type Section = 'overview' | 'recipes' | 'ingredients' | 'categories' | 'profile'
 
 /** Render dashboard destinations and indicate the active page. */
 export default function DashboardSidebar({
@@ -44,7 +44,11 @@ export default function DashboardSidebar({
           >
             Nguyên liệu
           </Link>
-          <Link to="/dashboard" className={itemClass(false)}>
+          <Link
+            to="/dashboard/categories"
+            aria-current={active === 'categories' ? 'page' : undefined}
+            className={itemClass(active === 'categories')}
+          >
             Danh mục
           </Link>
           <Link
@@ -96,6 +100,16 @@ export default function DashboardSidebar({
           }
         >
           Nguyên liệu
+        </Link>
+        <Link
+          to="/dashboard/categories"
+          aria-current={active === 'categories' ? 'page' : undefined}
+          className={
+            'flex-1 text-center text-xs ' +
+            (active === 'categories' ? 'font-medium text-brand-600' : 'text-surface-400')
+          }
+        >
+          Danh mục
         </Link>
         <Link
           to="/profile"

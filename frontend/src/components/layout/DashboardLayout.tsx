@@ -24,9 +24,7 @@ export function DashboardLayout() {
 
   const active = location.pathname.startsWith('/dashboard/ingredients')
     ? 'ingredients'
-    : location.pathname.startsWith('/dashboard/recipes')
-      ? 'recipes'
-      : location.pathname.startsWith('/profile')
+    : location.pathname.startsWith('/dashboard/recipes') ? 'recipes' : location.pathname.startsWith('/dashboard/categories') ? 'categories' : location.pathname.startsWith('/profile')
         ? 'profile'
         : 'overview'
 

@@ -296,8 +296,8 @@ export function getCategoryBySlug(slug: string, page = 1, pageSize = 12): Promis
 export function createCategory(
   accessToken: string,
   payload: CreateCategoryPayload,
-): Promise<{ id: string }> {
-  return request<{ id: string }>('/categories', {
+): Promise<Category> {
+  return request<Category>('/categories', {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(payload),

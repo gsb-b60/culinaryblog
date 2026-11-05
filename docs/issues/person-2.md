@@ -106,7 +106,7 @@ Return detailed info for a specific category (by Slug) along with a paginated li
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-catalog.md` §FR-CAT-003 |
 | Endpoint | `POST /api/v1/categories` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -135,13 +135,13 @@ New category created. Category cache deleted. Location header → `/api/v1/categ
 
 **Acceptance Criteria:**
 
-- [ ] Admin can create category → 201 with Location header
-- [ ] Slug auto-generated (lowercase, hyphenated, no diacritics)
-- [ ] Slug collision appends numeric suffix (-2, -3, ...)
-- [ ] Non-admin gets 403
-- [ ] name < 2 or > 50 chars returns 422
-- [ ] HTML in name rejected (422)
-- [ ] Cache key `categories:all` deleted after creation
+- [x] Admin can create category → 201 with Location header
+- [x] Slug auto-generated (lowercase, hyphenated, no diacritics)
+- [x] Slug collision appends numeric suffix (-2, -3, ...)
+- [x] Non-admin gets 403
+- [x] name < 2 or > 50 chars returns 422
+- [x] HTML in name rejected (422)
+- [x] Cache key `categories:all` deleted after creation
 
 ---
 

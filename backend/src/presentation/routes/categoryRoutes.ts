@@ -7,6 +7,7 @@ import {
   UpdateCategoryCommand, 
   DeleteCategoryCommand 
 } from '../../application/commands/categories/CategoryCommands.js';
+import { CategoryDto } from '../../application/dtos/CategoryDto.js';
 import { 
   GetCategoriesQuery, 
   GetCategoryBySlugQuery 
@@ -81,8 +82,9 @@ router.post('/', authenticateJwt, authorize(UserRole.ADMIN), async (req, res, ne
   try {
     const input = createCategorySchema.parse(req.body);
     const command = new CreateCategoryCommand(input);
-    const categoryId = await commandBus.executeCommand(command);
-    res.status(201).json({ id: categoryId, message: 'Category created successfully' });
+    const category = await commandBus.executeCommand<CreateCategoryCommand, CategoryDto>(command);
+    res.setHeader('Location', `/api/v1/categories/${category.slug}`);
+    res.status(201).json(category);
   } catch (error) {
     next(error);
   }

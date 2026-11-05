@@ -12,6 +12,7 @@ import {
   RegisterCommand,
   UpdateProfileCommand,
 } from '../../application/commands/auth/AuthCommands.js';
+import { CreateCategoryCommandHandler } from '../../application/commands/categories/CreateCategoryCommandHandler.js';
 import {
   AddRecipeIngredientCommand,
   PublishRecipeCommand,
@@ -95,6 +96,11 @@ export function createContainer(): Container {
   const jwtService = new JwtService();
   const fileStorageService = new MinioFileStorageService();
   const emailService = new NodemailerEmailService();
+
+  commandBus.registerCommandHandler(
+    'CreateCategoryCommand',
+    new CreateCategoryCommandHandler(prisma, categoryCache),
+  );
 
   commandBus.registerCommandHandler(
     AddRecipeIngredientCommand.name,
