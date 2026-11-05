@@ -7,13 +7,8 @@ import { GoogleAuthButton } from '../components/auth/GoogleAuthButton'
 import { TextField } from '../components/auth/TextField'
 import { useGoogleSignIn } from '../hooks/useGoogleSignIn'
 import { ApiError, login } from '../lib/api'
-import {
-  consumeGoogleErrorCode,
-  describeGoogleErrorCode,
-  requiresRegistration,
-} from '../lib/googleErrors'
-import { loadSession, saveSession } from '../lib/tokenStorage'
-import type { AuthResponse } from '../types/auth'
+import { consumeGoogleErrorCode, describeGoogleErrorCode, requiresRegistration } from '../lib/googleErrors'
+import { useAuthStore } from '../store'
 import { firstErrors, loginFormSchema } from '../validation/login'
 import type { LoginFieldErrors, LoginFormValues } from '../validation/login'
 
@@ -48,8 +43,10 @@ export default function LoginPage() {
   })
   const [submitting, setSubmitting] = useState(false)
   const [remember, setRemember] = useState(true)
-  const [session, setSession] = useState<AuthResponse | null>(null)
-  const [alreadyLoggedIn] = useState(() => loadSession() !== null)
+  // The auth store owns the session: a successful sign-in publishes it here
+  // and the redirect below reacts to it.
+  const session = useAuthStore((state) => state.session)
+  const setSession = useAuthStore((state) => state.setSession)
 
   const {
     state: googleState,
@@ -86,8 +83,7 @@ export default function LoginPage() {
         email: parsed.data.email,
         password: parsed.data.password,
       })
-      saveSession(auth, remember)
-      setSession(auth)
+      setSession(auth, remember)
     } catch (err) {
       if (!(err instanceof ApiError)) {
         setNotice({ kind: 'error', title: 'Đăng nhập thất bại', detail: 'Đã xảy ra lỗi không xác định.' })
@@ -99,7 +95,7 @@ export default function LoginPage() {
     }
   }
 
-  if (alreadyLoggedIn || session) {
+  if (session) {
     return <Navigate to="/dashboard" replace />
   }
 

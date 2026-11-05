@@ -9,6 +9,7 @@ const envSchema = z.object({
 
   DATABASE_URL: z.string(),
   REDIS_URL: z.string().default('redis://localhost:6379'),
+  BULLMQ_PREFIX: z.string().default('bull'),
 
   JWT_ACCESS_SECRET: z.string().min(32),
   JWT_REFRESH_SECRET: z.string().min(32),

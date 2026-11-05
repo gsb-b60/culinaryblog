@@ -3,6 +3,7 @@ import { Queue } from 'bullmq';
 import { env } from '../../../config-middleware/config/env.js';
 
 export const welcomeEmailQueue = new Queue('welcome-email', {
+  prefix: env.BULLMQ_PREFIX,
   connection: {
     host: new URL(env.REDIS_URL).hostname,
     port: parseInt(new URL(env.REDIS_URL).port) || 6379,
@@ -23,6 +24,7 @@ export interface WelcomeEmailJobData {
   displayName: string;
 }
 
+/** Enqueue welcome email delivery in the configured BullMQ namespace. */
 export async function addWelcomeEmailJob(data: WelcomeEmailJobData): Promise<void> {
   await welcomeEmailQueue.add('send-welcome-email', data);
 }

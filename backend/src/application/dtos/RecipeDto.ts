@@ -36,6 +36,11 @@ export interface RecipeDetailDto extends RecipeSummaryDto {
   images: RecipeImageDto[];
 }
 
+export interface RecipeDto extends RecipeDetailDto {
+  updatedAt: Date;
+  version: number;
+}
+
 export interface RecipeStepDto {
   id: string;
   stepNumber: number;

@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import AuthCallbackPage from '../pages/AuthCallbackPage'
-import { loadSession } from '../lib/tokenStorage'
+import { loadSession, saveSession } from '../lib/tokenStorage'
 import type { AuthResponse } from '../types/auth'
 
 const AUTH: AuthResponse = {
@@ -112,10 +112,9 @@ describe('AuthCallbackPage', () => {
     renderCallback('')
     await screen.findByRole('alert')
 
-    localStorage.setItem(
-      'culinary_session',
-      JSON.stringify(AUTH),
-    )
+    // Drive the session through the storage API: it also publishes the change
+    // to the auth store, exactly like a real sign-in would.
+    saveSession(AUTH)
     await userEvent.click(screen.getByRole('button', { name: /thử lại/i }))
 
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Trang chủ' })).toBeInTheDocument())

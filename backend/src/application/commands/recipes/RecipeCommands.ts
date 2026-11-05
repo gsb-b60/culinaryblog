@@ -1,5 +1,5 @@
 import { Command } from '../../command-bus.js';
-import { CreateRecipeInput, RecipeIngredientDto, UpdateRecipeInput } from '../../dtos/RecipeDto.js';
+import { CreateRecipeInput, RecipeDto, RecipeIngredientDto, UpdateRecipeInput } from '../../dtos/RecipeDto.js';
 
 export class CreateRecipeCommand extends Command<string> {
   readonly type = 'CreateRecipeCommand';
@@ -25,23 +25,25 @@ export class UpdateRecipeCommand extends Command<void> {
   }
 }
 
-export class PublishRecipeCommand extends Command<void> {
+export class PublishRecipeCommand extends Command<RecipeDto> {
   readonly type = 'PublishRecipeCommand';
 
   constructor(
     public readonly recipeId: string,
-    public readonly authorId: string
+    public readonly authorId: string,
+    public readonly isAdmin = false
   ) {
     super();
   }
 }
 
-export class UnpublishRecipeCommand extends Command<void> {
+export class UnpublishRecipeCommand extends Command<RecipeDto> {
   readonly type = 'UnpublishRecipeCommand';
 
   constructor(
     public readonly recipeId: string,
-    public readonly authorId: string
+    public readonly authorId: string,
+    public readonly isAdmin = false
   ) {
     super();
   }
