@@ -12,6 +12,8 @@ import HomePage from './pages/HomePage'
 import ProfilePage from './pages/ProfilePage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
+import CategoriesPage from './pages/CategoriesPage'
+import CategoryDetailPage from './pages/CategoryDetailPage'
 
 /** Render the fallback for an unknown application route. */
 function NotFoundPage() {
@@ -52,6 +54,9 @@ export default function App() {
       <Route path="/auth/register" element={<RegisterPage />} />
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      <Route path="/categories" element={<CategoriesPage />} />
+      <Route path="/categories/:slug" element={<CategoryDetailPage />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }

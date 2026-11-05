@@ -13,9 +13,7 @@ import {
 } from '../../application/queries/categories/CategoryQueries.js';
 import { 
   createCategorySchema, 
-  updateCategorySchema,
-  categoryFiltersSchema,
-  categoryPaginationSchema 
+  updateCategorySchema
 } from '../../application/validators/categoryValidators.js';
 import { UserRole } from '../../domain/enums/UserRole.js';
 import {
@@ -28,18 +26,12 @@ import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
 const router: RouterType = Router();
+export const categoryListRoutes: RouterType = router;
 
 // Public routes
-router.get('/', generalRateLimiter, async (req, res, next) => {
+router.get('/', generalRateLimiter, async (_req, res, next) => {
   try {
-    const filters = categoryFiltersSchema.parse(req.query);
-    const pagination = categoryPaginationSchema.parse(req.query);
-
-    const query = new GetCategoriesQuery(
-      filters,
-      pagination.page,
-      pagination.pageSize
-    );
+    const query = new GetCategoriesQuery();
     const result = await commandBus.executeQuery(query);
     res.json(result);
   } catch (error) {
@@ -50,18 +42,21 @@ router.get('/', generalRateLimiter, async (req, res, next) => {
 router.get('/:slug', generalRateLimiter, optionalAuth, async (req, res, next) => {
   try {
     const paginationSchema = z.object({
-      page: z.number().int().positive().default(1),
-      pageSize: z.number().int().positive().max(50).default(12),
+      page: z.coerce.number().int().positive().default(1),
+      pageSize: z.coerce.number().int().positive().max(50).default(12),
     });
     
     const pagination = paginationSchema.parse(req.query);
+
+    // Optionally read the user from JWT if present (no hard auth requirement)
+    const authReq = req as AuthenticatedRequest;
 
     const query = new GetCategoryBySlugQuery(
       req.params.slug!,
       pagination.page,
       pagination.pageSize,
-      (req as AuthenticatedRequest).user?.id,
-      (req as AuthenticatedRequest).user?.roles[0]
+      authReq.user?.id,
+      authReq.user?.roles[0]
     );
     const result = await commandBus.executeQuery(query);
     

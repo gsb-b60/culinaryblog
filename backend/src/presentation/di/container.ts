@@ -46,6 +46,8 @@ import {
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
+import { GetCategoriesQueryHandler } from '../../application/queries/categories/GetCategoriesQueryHandler.js';
+import { GetCategoryBySlugQueryHandler } from '../../application/queries/categories/GetCategoryBySlugQueryHandler.js';
 import { GetManagedRecipesQuery } from '../../application/queries/recipes/GetManagedRecipesQuery.js';
 import { env } from '../../config-middleware/config/env.js';
 import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository.js';
@@ -53,6 +55,7 @@ import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.j
 import { IUserRepository } from '../../domain/repositories/IUserRepository.js';
 import { JwtService } from '../../infrastructure/auth/JwtService.js';
 import { PasswordService } from '../../infrastructure/auth/PasswordService.js';
+import { categoryCache } from '../../infrastructure/cache/CategoryCache.js';
 import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
 import { NodemailerEmailService } from '../../infrastructure/email/NodemailerEmailService.js';
 import { MinioFileStorageService } from '../../infrastructure/file-storage/MinioFileStorageService.js';
@@ -125,6 +128,16 @@ export function createContainer(): Container {
     new GetRecipeIngredientsQueryHandler(prisma),
   );
   commandBus.registerQueryHandler('GetCurrentUserQuery', new GetCurrentUserQueryHandler(prisma));
+
+  commandBus.registerQueryHandler(
+    'GetCategoriesQuery',
+    new GetCategoriesQueryHandler(prisma, categoryCache),
+  );
+
+  commandBus.registerQueryHandler(
+    'GetCategoryBySlugQuery',
+    new GetCategoryBySlugQueryHandler(prisma),
+  );
 
   commandBus.registerCommandHandler(
     UpdateProfileCommand.name,

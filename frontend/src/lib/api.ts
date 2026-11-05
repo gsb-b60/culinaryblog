@@ -1,29 +1,8 @@
 import type { RecipeIngredient } from '../types/recipe'
 import { loadSession, saveSession, clearSession } from './tokenStorage'
-import type { Recipe, RecipePage } from '../types/recipe'
-import type {
-  AuthResponse,
-  LoginPayload,
-  ProblemDetails,
-  RegisterPayload,
-  UpdateProfilePayload,
-  UserProfile,
-} from '../types/auth'
-import type {
-  Category,
-  CategoryDetail,
-  CreateCategoryPayload,
-  UpdateCategoryPayload,
-} from '../types/category'
-import type {
-  CreateIngredientPayload,
-  CreateRecipePayload,
-  CreateStepPayload,
-  PagedRecipes,
-  RecipeDetail,
-  RecipeListQuery,
-  UpdateRecipePayload,
-} from '../types/recipe'
+import type { AuthResponse, LoginPayload, ProblemDetails, RegisterPayload, UpdateProfilePayload, UserProfile } from '../types/auth'
+import type { CategoryDto, CategoryDetailDto, Category, CategoryDetail, CreateCategoryPayload, UpdateCategoryPayload } from '../types/category'
+import type { Recipe, RecipePage, CreateIngredientPayload, CreateRecipePayload, CreateStepPayload, PagedRecipes, RecipeDetail, RecipeListQuery, UpdateRecipePayload } from '../types/recipe'
 import { env } from '../config/env'
 
 export const API_BASE: string = env.VITE_API_BASE_URL
@@ -176,6 +155,25 @@ export function logout(accessToken: string, refreshToken: string): Promise<null>
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify({ refreshToken }),
+  })
+}
+
+export function getCategories(): Promise<CategoryDto[]> {
+  return request<CategoryDto[]>('/categories', {
+    method: 'GET',
+  })
+}
+
+export function getCategoryDetail(
+  slug: string,
+  page = 1,
+  pageSize = 12,
+  accessToken?: string,
+): Promise<CategoryDetailDto> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+  return request<CategoryDetailDto>(`/categories/${encodeURIComponent(slug)}?${params}`, {
+    method: 'GET',
+    ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {}),
   })
 }
 
@@ -370,3 +368,4 @@ export function deleteRecipeIngredient(
     },
   )
 }
+
