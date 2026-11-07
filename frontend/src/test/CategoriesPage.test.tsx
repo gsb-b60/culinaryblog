@@ -29,6 +29,20 @@ beforeEach(() => { vi.stubGlobal('fetch', fetchMock); fetchMock.mockReset() })
 afterEach(() => { vi.unstubAllGlobals() })
 
 describe('Paginated categories', () => {
+  it('links each category card to its dashboard detail route', async () => {
+    fetchMock.mockResolvedValue(response(1))
+    mount()
+    const link = await screen.findByRole('link', { name: /Món nước/ })
+    expect(link).toHaveAttribute('href', '/dashboard/categories/1')
+  })
+
+  it('keeps detail links relative to the public category route', async () => {
+    fetchMock.mockResolvedValue(response(1))
+    mount('/categories')
+    const link = await screen.findByRole('link', { name: /Món nước/ })
+    expect(link).toHaveAttribute('href', '/categories/1')
+  })
+
   it('loads pages through the shared control and restores the page with browser history', async () => {
     fetchMock.mockImplementation((url: string) => Promise.resolve(response(Number(new URL(url, 'http://localhost').searchParams.get('page')))))
     mount()

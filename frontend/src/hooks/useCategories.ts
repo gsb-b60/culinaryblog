@@ -12,11 +12,19 @@ export function useCategories(query: CategoryListQuery = {}) {
   })
 }
 
-export function useCategoryDetail(slug: string) {
+export function useCategoryDetail(
+  slug: string,
+  page = 1,
+  pageSize = 12,
+  accessToken?: string,
+) {
   return useQuery({
-    queryKey: queryKeys.categoryDetail(slug),
-    queryFn: () => getCategoryBySlug(slug),
+    // The token is part of the key so switching accounts cannot show another
+    // author's drafts from the cache.
+    queryKey: [...queryKeys.categoryDetail(slug), page, pageSize, accessToken ?? null],
+    queryFn: ({ signal }) => getCategoryBySlug(slug, page, pageSize, accessToken, signal),
     enabled: slug.length > 0,
+    staleTime: 0,
   })
 }
 

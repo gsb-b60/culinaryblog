@@ -31,9 +31,16 @@ export function RecipeCard({
     <Card className="h-full transition-shadow hover:shadow-md">
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
-          <Badge variant="secondary" className="bg-brand-50 text-brand-700 hover:bg-brand-100">
-            {recipe.categoryName ?? 'Khác'}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary" className="bg-brand-50 text-brand-700 hover:bg-brand-100">
+              {recipe.categoryName ?? 'Khác'}
+            </Badge>
+            {recipe.status === 'DRAFT' && (
+              <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                Bản nháp
+              </Badge>
+            )}
+          </div>
           {recipe.publishedAt && (
             <span className="text-xs text-surface-400">{formatDate(recipe.publishedAt)}</span>
           )}

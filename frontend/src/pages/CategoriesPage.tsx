@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 
 import { EmptyState } from '../components/common/EmptyState'
 import { ErrorState } from '../components/common/ErrorState'
@@ -14,7 +14,11 @@ function positiveInteger(value: string | null, fallback: number, maximum = Numbe
 
 /** Category list uses the same pagination controls and API envelope as recipes. */
 export default function CategoriesPage() {
+  const location = useLocation()
   const [params, setParams] = useSearchParams()
+  const detailBase = location.pathname.startsWith('/dashboard/categories')
+    ? '/dashboard/categories'
+    : '/categories'
   const page = positiveInteger(params.get('page'), 1)
   const pageSize = positiveInteger(params.get('pageSize'), 12, 50)
   const { data, isPending, isFetching, isError, refetch } = useCategories({ page, pageSize })
@@ -55,22 +59,35 @@ export default function CategoriesPage() {
           </select>
         </label>
       </header>
-      {isPending || correctingPage ? <PageLoading label="Đang tải danh mục..." /> : isError ? (
-        <ErrorState message="Không thể tải danh mục." onRetry={() => { void refetch() }} />
+      {isPending || correctingPage ? (
+        <div data-testid="categories-loading">
+          <PageLoading label="Đang tải danh mục..." />
+        </div>
+      ) : isError ? (
+        <div data-testid="categories-error">
+          <ErrorState message="Không thể tải danh mục." onRetry={() => { void refetch() }} />
+        </div>
       ) : data && (
         <>
           {data.items.length === 0 ? (
-            <EmptyState
-              title="Chưa có danh mục"
-              description="Danh mục sẽ xuất hiện tại đây."
-            />
+            <div data-testid="categories-empty">
+              <EmptyState
+                title="Chưa có danh mục"
+                description="Danh mục sẽ xuất hiện tại đây."
+              />
+            </div>
           ) : (
-            <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Danh sách danh mục">
+            <ul data-testid="categories-grid" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Danh sách danh mục">
               {data.items.map((category) => (
-                <li key={category.id} className="rounded-xl border border-surface-200 bg-white p-5">
-                  <h2 className="font-semibold">{category.name}</h2>
-                  {category.description && <p className="mt-2 text-sm text-surface-600">{category.description}</p>}
-                  <p className="mt-3 text-sm text-surface-500">{category.recipeCount ?? 0} công thức</p>
+                <li key={category.id}>
+                  <Link
+                    to={`${detailBase}/${category.slug}`}
+                    className="block h-full rounded-xl border border-surface-200 bg-white p-5 transition-colors hover:border-brand-300 hover:bg-brand-50/40"
+                  >
+                    <h2 className="font-semibold">{category.name}</h2>
+                    {category.description && <p className="mt-2 text-sm text-surface-600">{category.description}</p>}
+                    <p className="mt-3 text-sm text-surface-500">{category.recipeCount ?? 0} công thức</p>
+                  </Link>
                 </li>
               ))}
             </ul>

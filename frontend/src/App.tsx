@@ -11,6 +11,7 @@ import RecipesBrowsePage from './pages/RecipesBrowsePage'
 import RecipeDetailPage from './pages/RecipeDetailPage'
 import DashboardPage from './pages/DashboardPage'
 import CategoriesPage from './pages/CategoriesPage'
+import CategoryDetailPage from './pages/CategoryDetailPage'
 import HomePage from './pages/HomePage'
 import ProfilePage from './pages/ProfilePage'
 import RegisterPage from './pages/RegisterPage'
@@ -40,6 +41,22 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/recipes" element={<RecipesBrowsePage />} />
         <Route path="/recipes/:slug" element={<RecipeDetailPage />} />
+        <Route
+          path="/categories"
+          element={
+            <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+              <CategoriesPage />
+            </main>
+          }
+        />
+        <Route
+          path="/categories/:slug"
+          element={
+            <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+              <CategoryDetailPage />
+            </main>
+          }
+        />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 
@@ -47,6 +64,7 @@ export default function App() {
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/categories" element={<CategoriesPage />} />
+        <Route path="/dashboard/categories/:slug" element={<CategoryDetailPage />} />
         <Route path="/dashboard/recipes/delete" element={<DeleteRecipesPage />} />
         <Route
           path="/dashboard/recipes/archive"

@@ -109,6 +109,8 @@ export class GetCategoryBySlugQueryHandler implements IQueryHandler<
       category.id,
       query.page,
       query.pageSize,
+      undefined,
+      query.userId,
     )) as unknown as PagedResult<RecipeSummaryDto>;
     return {
       id: category.id,

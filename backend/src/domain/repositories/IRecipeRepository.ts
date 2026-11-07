@@ -32,7 +32,9 @@ export interface IRecipeRepository {
     categoryId: string,
     page: number,
     pageSize: number,
-    sort?: RecipeSortOptions
+    sort?: RecipeSortOptions,
+    /** When supplied, the viewer's own drafts are included alongside published recipes. */
+    viewerId?: string
   ): Promise<PagedResult<Recipe>>;
   search(
     query: string,
