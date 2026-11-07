@@ -145,17 +145,28 @@ export class RecipeRepository implements IRecipeRepository {
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
 
-  /** Load published recipes in a category with pagination. */
+  /**
+   * Load a category's published recipes, plus the viewer's own drafts when a
+   * viewer is supplied, with pagination.
+   */
   async findPublishedByCategory(
     categoryId: string,
     page: number,
     pageSize: number,
     sort?: RecipeSortOptions,
+    viewerId?: string,
   ): Promise<PagedResult<Recipe>> {
     const where: Prisma.RecipeWhereInput = {
       categoryId,
-      status: 'PUBLISHED',
       isDeleted: false,
+      ...(viewerId
+        ? {
+            OR: [
+              { status: 'PUBLISHED' },
+              { status: 'DRAFT', authorId: viewerId },
+            ],
+          }
+        : { status: 'PUBLISHED' }),
     };
 
     const orderBy = this.buildOrderBy(sort ?? { field: 'createdAt', order: 'desc' });

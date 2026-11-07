@@ -135,4 +135,14 @@ describe('categories api client (typed)', () => {
     await deleteCategory('tok', 'c1')
     expect(fetchMock).toHaveBeenCalledTimes(4)
   })
+
+  it('sends the viewer token when loading a category detail', async () => {
+    fetchMock.mockResolvedValue(json({ id: 'c1', slug: 'mon-nuoc', recipes: { items: [], meta: {} } }))
+
+    await getCategoryBySlug('mon-nuoc', 1, 12, 'tok')
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/categories/mon-nuoc?page=1&pageSize=12')
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer tok')
+  })
 })

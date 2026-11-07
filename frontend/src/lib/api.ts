@@ -420,10 +420,23 @@ export async function listAllCategories(signal?: AbortSignal): Promise<Category[
   return items
 }
 
-/** Fetch a category and its paginated public recipes by slug. */
-export function getCategoryBySlug(slug: string, page = 1, pageSize = 12): Promise<CategoryDetail> {
+/**
+ * Fetch a category and its paginated recipes by slug. Passing an access token
+ * lets the API include the signed-in author's own drafts.
+ */
+export function getCategoryBySlug(
+  slug: string,
+  page = 1,
+  pageSize = 12,
+  accessToken?: string,
+  signal?: AbortSignal,
+): Promise<CategoryDetail> {
+  const init: RequestInit = {}
+  if (accessToken) init.headers = { Authorization: `Bearer ${accessToken}` }
+  if (signal) init.signal = signal
   return request<CategoryDetail>(
     `/categories/${encodeURIComponent(slug)}${toQuery({ page, pageSize })}`,
+    init,
   )
 }
 

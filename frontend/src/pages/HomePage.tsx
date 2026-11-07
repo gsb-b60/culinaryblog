@@ -131,9 +131,18 @@ function PublicHomePage() {
       </section>
 
       <section aria-labelledby="categories-heading" className="mx-auto max-w-6xl px-4 pb-12 sm:px-6">
-        <h2 id="categories-heading" className="text-2xl font-bold text-surface-900">
-          Danh mục
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="categories-heading" className="text-2xl font-bold text-surface-900">
+            Danh mục
+          </h2>
+          <Link
+            to="/categories"
+            className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
+          >
+            Xem tất cả danh mục
+            <ArrowRightIcon className="size-4" aria-hidden="true" />
+          </Link>
+        </div>
         {catalog.loading ? <PageLoading label="Đang tải danh mục..." cards={3} />
           : catalog.error ? <ErrorState message="Không thể tải danh mục." onRetry={catalog.reload} />
           : catalog.data.length === 0 ? <EmptyState title="Chưa có danh mục" />
