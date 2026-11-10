@@ -10,15 +10,50 @@ import {
   PlusIcon,
   SearchIcon,
   Trash2Icon,
+  TriangleAlertIcon,
   XIcon,
 } from 'lucide-react'
 
-import { ApiError, createCategory, listCategories } from '@/lib/api'
+import { ApiError, createCategory, deleteCategory, listCategories, updateCategory } from '@/lib/api'
 import { useAuthStore } from '@/store'
-import type { Category, CreateCategoryPayload } from '@/types/category'
+import type { Category, CreateCategoryPayload, UpdateCategoryPayload } from '@/types/category'
 
 type SortField = 'orderIndex' | 'name' | 'recipeCount'
 type SortOrder = 'asc' | 'desc'
+type DialogMode = 'create' | 'edit'
+
+/** Pastel color palette for category badges — cycles by index */
+const CATEGORY_COLORS = [
+  { bg: 'bg-orange-100', text: 'text-orange-700', dot: 'bg-orange-400' },
+  { bg: 'bg-blue-100', text: 'text-blue-700', dot: 'bg-blue-400' },
+  { bg: 'bg-green-100', text: 'text-green-700', dot: 'bg-green-400' },
+  { bg: 'bg-purple-100', text: 'text-purple-700', dot: 'bg-purple-400' },
+  { bg: 'bg-pink-100', text: 'text-pink-700', dot: 'bg-pink-400' },
+  { bg: 'bg-yellow-100', text: 'text-yellow-700', dot: 'bg-yellow-400' },
+  { bg: 'bg-teal-100', text: 'text-teal-700', dot: 'bg-teal-400' },
+  { bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-400' },
+]
+
+function getCategoryColor(index: number) {
+  return CATEGORY_COLORS[index % CATEGORY_COLORS.length]
+}
+
+function SortIndicator({
+  field,
+  sortField,
+  sortOrder,
+}: {
+  field: SortField
+  sortField: SortField
+  sortOrder: SortOrder
+}) {
+  if (sortField !== field) return <ArrowUpDownIcon className="h-3.5 w-3.5 text-surface-400" />
+  return sortOrder === 'asc' ? (
+    <ArrowUpIcon className="h-3.5 w-3.5 text-brand-500" />
+  ) : (
+    <ArrowDownIcon className="h-3.5 w-3.5 text-brand-500" />
+  )
+}
 
 function slugifyPreview(text: string): string {
   return text
@@ -43,11 +78,18 @@ export default function AdminCategoriesPage() {
   const [sortField, setSortField] = useState<SortField>('orderIndex')
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
 
-  // Dialog state
+  // Dialog state (shared for create & edit)
+  const [dialogMode, setDialogMode] = useState<DialogMode>('create')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [orderIndex, setOrderIndex] = useState(0)
+
+  // Delete confirm dialog
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   // Form submission states
   const [saving, setSaving] = useState(false)
@@ -76,20 +118,50 @@ export default function AdminCategoriesPage() {
     }
   }, [])
 
-  const handleOpenDialog = () => {
-    setName('')
-    setDescription('')
-    setOrderIndex(categories.length)
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  const showSuccess = (msg: string) => {
+    setSuccessMessage(msg)
+    setTimeout(() => setSuccessMessage(null), 5000)
+  }
+
+  const clearFormErrors = () => {
     setError422(null)
     setError409(null)
     setGeneralError(null)
+  }
+
+  // ── Create dialog ─────────────────────────────────────────────────────────
+
+  const handleOpenCreate = () => {
+    setDialogMode('create')
+    setEditingCategory(null)
+    setName('')
+    setDescription('')
+    setOrderIndex(categories.length)
+    clearFormErrors()
+    setIsDialogOpen(true)
+  }
+
+  // ── Edit dialog ───────────────────────────────────────────────────────────
+
+  const handleOpenEdit = (cat: Category) => {
+    setDialogMode('edit')
+    setEditingCategory(cat)
+    setName(cat.name)
+    setDescription(cat.description ?? '')
+    setOrderIndex(cat.orderIndex ?? 0)
+    clearFormErrors()
     setIsDialogOpen(true)
   }
 
   const handleCloseDialog = () => {
     if (saving) return
     setIsDialogOpen(false)
+    setEditingCategory(null)
   }
+
+  // ── Sort ──────────────────────────────────────────────────────────────────
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -124,13 +196,12 @@ export default function AdminCategoriesPage() {
     })
   }, [categories, searchQuery, sortField, sortOrder])
 
-  const handleCreateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError422(null)
-    setError409(null)
-    setGeneralError(null)
+  // ── Submit (create or edit) ───────────────────────────────────────────────
 
-    // Client-side pre-validation
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    clearFormErrors()
+
     const trimmedName = name.trim()
     if (trimmedName.length < 2 || trimmedName.length > 50) {
       setError422('Tên danh mục phải có độ dài từ 2 đến 50 ký tự.')
@@ -143,24 +214,44 @@ export default function AdminCategoriesPage() {
     }
 
     if (!session?.accessToken) {
-      setGeneralError('Bạn cần đăng nhập với quyền Quản trị viên để tạo danh mục.')
+      setGeneralError('Bạn cần đăng nhập với quyền Quản trị viên để thực hiện thao tác này.')
       return
     }
 
     setSaving(true)
     try {
-      const payload: CreateCategoryPayload = {
-        name: trimmedName,
-        description: description.trim() || undefined,
-        orderIndex,
+      if (dialogMode === 'create') {
+        const payload: CreateCategoryPayload = {
+          name: trimmedName,
+          description: description.trim() || undefined,
+          orderIndex,
+        }
+        const created = await createCategory(session.accessToken, payload)
+        setCategories((prev) => [...prev, created])
+        showSuccess(`Đã tạo danh mục "${created.name}" thành công!`)
+      } else if (editingCategory) {
+        const payload: UpdateCategoryPayload = {
+          name: trimmedName,
+          description: description.trim() || undefined,
+          orderIndex,
+        }
+        await updateCategory(session.accessToken, editingCategory.id, payload)
+        setCategories((prev) =>
+          prev.map((c) =>
+            c.id === editingCategory.id
+              ? {
+                  ...c,
+                  name: trimmedName,
+                  description: description.trim() || undefined,
+                  orderIndex,
+                  slug: slugifyPreview(trimmedName),
+                }
+              : c,
+          ),
+        )
+        showSuccess(`Đã cập nhật danh mục "${trimmedName}" thành công!`)
       }
-
-      const created = await createCategory(session.accessToken, payload)
-      setCategories((prev) => [...prev, created])
-      setSuccessMessage(`Đã tạo danh mục "${created.name}" thành công!`)
       setIsDialogOpen(false)
-
-      setTimeout(() => setSuccessMessage(null), 5000)
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         if (err.status === 409) {
@@ -170,7 +261,7 @@ export default function AdminCategoriesPage() {
         } else if (err.status === 403) {
           setGeneralError('Bạn không có quyền thực hiện thao tác này (yêu cầu quyền Admin).')
         } else {
-          setGeneralError(err.message || 'Có lỗi xảy ra khi tạo danh mục.')
+          setGeneralError(err.message || 'Có lỗi xảy ra. Vui lòng thử lại.')
         }
       } else {
         setGeneralError('Không thể kết nối đến máy chủ. Vui lòng thử lại.')
@@ -180,6 +271,30 @@ export default function AdminCategoriesPage() {
     }
   }
 
+  // ── Delete ────────────────────────────────────────────────────────────────
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingCategory || !session?.accessToken) return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteCategory(session.accessToken, deletingCategory.id)
+      setCategories((prev) => prev.filter((c) => c.id !== deletingCategory.id))
+      showSuccess(`Đã xóa danh mục "${deletingCategory.name}" thành công.`)
+      setDeletingCategory(null)
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        setDeleteError(err.message || 'Không thể xóa danh mục này.')
+      } else {
+        setDeleteError('Không thể kết nối đến máy chủ.')
+      }
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  // ── Derived values ────────────────────────────────────────────────────────
+
   const totalRecipes = useMemo(
     () => categories.reduce((sum, cat) => sum + (cat.recipeCount ?? 0), 0),
     [categories],
@@ -187,10 +302,20 @@ export default function AdminCategoriesPage() {
 
   const previewSlug = useMemo(() => slugifyPreview(name), [name])
 
+  // Map category id → palette index (stable across re-renders)
+  const colorMap = useMemo(() => {
+    const map = new Map<string, number>()
+    categories.forEach((cat, i) => map.set(cat.id, i))
+    return map
+  }, [categories])
+
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2.5">
             <span className="rounded bg-brand-500 px-2 py-0.5 text-xs font-bold text-white uppercase tracking-wider">
@@ -209,8 +334,8 @@ export default function AdminCategoriesPage() {
           <button
             type="button"
             data-testid="create-category-open-btn"
-            onClick={handleOpenDialog}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 transition active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+            onClick={handleOpenCreate}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 transition active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
           >
             <PlusIcon className="h-4 w-4" />
             <span>Thêm danh mục</span>
@@ -225,14 +350,22 @@ export default function AdminCategoriesPage() {
           <p className="mt-1 text-2xl font-bold text-surface-900">{categories.length}</p>
         </div>
         <div className="rounded-xl border border-surface-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium text-surface-500">Tổng công thức liên kết</p>
+          <p className="text-xs font-medium text-surface-500">Tổng công thức</p>
           <p className="mt-1 text-2xl font-bold text-brand-600">{totalRecipes}</p>
         </div>
-        <div className="col-span-2 sm:col-span-1 rounded-xl border border-surface-200 bg-white p-4 shadow-sm flex flex-col justify-center">
-          <p className="text-xs font-medium text-surface-500">Thao tác nhanh</p>
-          <p className="mt-1 text-xs text-surface-400">
-            Bấm tiêu đề cột bảng để sắp xếp nhanh theo thứ tự hoặc số lượng.
-          </p>
+        <div className="col-span-2 sm:col-span-1 rounded-xl border border-surface-200 bg-white p-4 shadow-sm flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50">
+            <FolderIcon className="h-5 w-5 text-brand-500" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-surface-500">Trung bình / danh mục</p>
+            <p className="mt-0.5 text-lg font-bold text-surface-900">
+              {categories.length
+                ? (totalRecipes / categories.length).toFixed(1)
+                : '0'}{' '}
+              <span className="text-xs font-normal text-surface-400">công thức</span>
+            </p>
+          </div>
         </div>
       </div>
 
@@ -252,14 +385,14 @@ export default function AdminCategoriesPage() {
       {fetchError && (
         <div
           role="alert"
-          className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 animate-in fade-in"
+          className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
         >
           <AlertCircleIcon className="h-5 w-5 text-red-600 shrink-0" />
           <span>{fetchError}</span>
         </div>
       )}
 
-      {/* Search Filter Bar */}
+      {/* Search + Count */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
           <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-400" />
@@ -282,7 +415,7 @@ export default function AdminCategoriesPage() {
           )}
         </div>
 
-        <div className="text-xs text-surface-500 text-right">
+        <div className="text-xs text-surface-500 text-right shrink-0">
           Hiển thị{' '}
           <span className="font-semibold text-surface-900">
             {filteredAndSortedCategories.length}
@@ -291,7 +424,7 @@ export default function AdminCategoriesPage() {
         </div>
       </div>
 
-      {/* Categories Table (Desktop) & Cards (Mobile) */}
+      {/* Table */}
       <div className="overflow-hidden rounded-xl border border-surface-200 bg-white shadow-sm">
         {loading ? (
           <div className="divide-y divide-surface-100 p-6 space-y-4 animate-pulse">
@@ -343,15 +476,7 @@ export default function AdminCategoriesPage() {
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Danh mục</span>
-                      {sortField === 'name' ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUpIcon className="h-3.5 w-3.5 text-brand-500" />
-                        ) : (
-                          <ArrowDownIcon className="h-3.5 w-3.5 text-brand-500" />
-                        )
-                      ) : (
-                        <ArrowUpDownIcon className="h-3.5 w-3.5 text-surface-400" />
-                      )}
+                      <SortIndicator field="name" sortField={sortField} sortOrder={sortOrder} />
                     </div>
                   </th>
                   <th scope="col" className="px-6 py-3.5 hidden sm:table-cell">
@@ -364,15 +489,7 @@ export default function AdminCategoriesPage() {
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <span>Số công thức</span>
-                      {sortField === 'recipeCount' ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUpIcon className="h-3.5 w-3.5 text-brand-500" />
-                        ) : (
-                          <ArrowDownIcon className="h-3.5 w-3.5 text-brand-500" />
-                        )
-                      ) : (
-                        <ArrowUpDownIcon className="h-3.5 w-3.5 text-surface-400" />
-                      )}
+                      <SortIndicator field="recipeCount" sortField={sortField} sortOrder={sortOrder} />
                     </div>
                   </th>
                   <th
@@ -382,15 +499,7 @@ export default function AdminCategoriesPage() {
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <span>Thứ tự</span>
-                      {sortField === 'orderIndex' ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUpIcon className="h-3.5 w-3.5 text-brand-500" />
-                        ) : (
-                          <ArrowDownIcon className="h-3.5 w-3.5 text-brand-500" />
-                        )
-                      ) : (
-                        <ArrowUpDownIcon className="h-3.5 w-3.5 text-surface-400" />
-                      )}
+                      <SortIndicator field="orderIndex" sortField={sortField} sortOrder={sortOrder} />
                     </div>
                   </th>
                   <th scope="col" className="px-6 py-3.5 text-right">
@@ -398,65 +507,101 @@ export default function AdminCategoriesPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-200">
-                {filteredAndSortedCategories.map((cat) => (
-                  <tr
-                    key={cat.id}
-                    data-testid={`category-row-${cat.id}`}
-                    className="hover:bg-surface-50/70 transition"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-surface-900">{cat.name}</div>
-                      <div className="text-xs text-surface-400 font-mono mt-0.5">{cat.slug}</div>
-                      {cat.description && (
-                        <p className="mt-1 text-xs text-surface-500 truncate max-w-xs sm:hidden">
-                          {cat.description}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-surface-500 max-w-xs truncate hidden sm:table-cell">
-                      {cat.description || (
-                        <span className="text-surface-300 italic">Không có mô tả</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
-                        {cat.recipeCount ?? 0}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center text-surface-600 font-mono font-medium">
-                      {cat.orderIndex ?? 0}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 text-xs font-medium">
-                        <button
-                          type="button"
-                          aria-label={`Chỉnh sửa ${cat.name}`}
-                          className="inline-flex items-center gap-1 p-1.5 rounded-lg text-surface-400 hover:text-brand-600 hover:bg-brand-50 transition"
+              <tbody className="divide-y divide-surface-100">
+                {filteredAndSortedCategories.map((cat) => {
+                  const colorIdx = colorMap.get(cat.id) ?? 0
+                  const color = getCategoryColor(colorIdx)
+                  return (
+                    <tr
+                      key={cat.id}
+                      data-testid={`category-row-${cat.id}`}
+                      className="hover:bg-surface-50/80 transition group"
+                    >
+                      {/* Name + slug */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color.bg}`}
+                          >
+                            <div className={`h-3 w-3 rounded-sm ${color.dot}`} />
+                          </div>
+                          <div>
+                            <div className="font-semibold text-surface-900">{cat.name}</div>
+                            <div className="text-xs text-surface-400 font-mono mt-0.5">
+                              {cat.slug}
+                            </div>
+                            {cat.description && (
+                              <p className="mt-1 text-xs text-surface-500 truncate max-w-xs sm:hidden">
+                                {cat.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Description (desktop) */}
+                      <td className="px-6 py-4 text-surface-500 max-w-xs truncate hidden sm:table-cell text-sm">
+                        {cat.description || (
+                          <span className="text-surface-300 italic text-xs">Không có mô tả</span>
+                        )}
+                      </td>
+
+                      {/* Recipe count */}
+                      <td className="px-6 py-4 text-center">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${color.bg} ${color.text}`}
                         >
-                          <PencilIcon className="h-4 w-4" />
-                          <span className="hidden lg:inline">Sửa</span>
-                        </button>
-                        <span className="text-surface-200">|</span>
-                        <button
-                          type="button"
-                          aria-label={`Xóa ${cat.name}`}
-                          className="inline-flex items-center gap-1 p-1.5 rounded-lg text-surface-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                        >
-                          <Trash2Icon className="h-4 w-4" />
-                          <span className="hidden lg:inline">Xóa</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {cat.recipeCount ?? 0}
+                        </span>
+                      </td>
+
+                      {/* Order index */}
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-flex items-center justify-center h-7 w-7 rounded-full border border-surface-200 bg-surface-50 text-xs font-semibold text-surface-600 font-mono">
+                          {cat.orderIndex ?? 0}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {isAdmin && (
+                            <>
+                              <button
+                                type="button"
+                                aria-label={`Chỉnh sửa ${cat.name}`}
+                                onClick={() => handleOpenEdit(cat)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-surface-500 hover:text-brand-600 hover:bg-brand-50 transition"
+                              >
+                                <PencilIcon className="h-3.5 w-3.5" />
+                                <span className="hidden lg:inline">Sửa</span>
+                              </button>
+                              <button
+                                type="button"
+                                aria-label={`Xóa ${cat.name}`}
+                                onClick={() => {
+                                  setDeleteError(null)
+                                  setDeletingCategory(cat)
+                                }}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-surface-500 hover:text-rose-600 hover:bg-rose-50 transition"
+                              >
+                                <Trash2Icon className="h-3.5 w-3.5" />
+                                <span className="hidden lg:inline">Xóa</span>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
 
-      {/* Modal Dialog: Thêm danh mục mới (Screen M13) */}
+      {/* ── Create / Edit Modal ─────────────────────────────────────────── */}
       {isDialogOpen && (
         <div
           role="dialog"
@@ -464,16 +609,21 @@ export default function AdminCategoriesPage() {
           aria-labelledby="dialog-title"
           data-testid="create-category-dialog"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-900/50 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleCloseDialog()
+          }}
         >
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-surface-200">
-            {/* Dialog Header */}
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-surface-100 animate-in zoom-in-95 duration-200">
+            {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-surface-100">
               <div>
                 <h2 id="dialog-title" className="text-lg font-bold text-surface-900">
-                  Thêm danh mục mới
+                  {dialogMode === 'create' ? 'Thêm danh mục mới' : `Chỉnh sửa: ${editingCategory?.name}`}
                 </h2>
                 <p className="text-xs text-surface-400 mt-0.5">
-                  Tạo phân loại công thức mới cho hệ thống blog.
+                  {dialogMode === 'create'
+                    ? 'Tạo phân loại công thức mới cho hệ thống blog.'
+                    : 'Cập nhật thông tin danh mục hiện có.'}
                 </p>
               </div>
               <button
@@ -487,7 +637,7 @@ export default function AdminCategoriesPage() {
               </button>
             </div>
 
-            {/* Error banners inside modal */}
+            {/* Error banners */}
             {error422 && (
               <div
                 role="alert"
@@ -520,8 +670,8 @@ export default function AdminCategoriesPage() {
               </div>
             )}
 
-            {/* Dialog Form */}
-            <form onSubmit={handleCreateSubmit} className="mt-4 space-y-4">
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="mt-4 space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label htmlFor="category-name" className="block text-sm font-medium text-surface-700">
@@ -551,15 +701,15 @@ export default function AdminCategoriesPage() {
                   className="w-full rounded-xl border border-surface-300 px-3.5 py-2 text-sm text-surface-900 placeholder:text-surface-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-surface-50 transition"
                 />
                 {previewSlug ? (
-                  <p className="mt-1 text-xs text-surface-500 flex items-center gap-1">
+                  <p className="mt-1.5 text-xs text-surface-500 flex items-center gap-1.5">
                     <span>Slug dự kiến:</span>
                     <code className="bg-surface-100 text-brand-600 px-1.5 py-0.5 rounded font-mono text-[11px]">
                       {previewSlug}
                     </code>
                   </p>
                 ) : (
-                  <p className="mt-1 text-xs text-surface-400">
-                    Từ 2 đến 50 ký tự, không chứa thẻ HTML. Slug sẽ được tự động tạo.
+                  <p className="mt-1.5 text-xs text-surface-400">
+                    Từ 2 đến 50 ký tự. Slug sẽ được tự động tạo từ tên.
                   </p>
                 )}
               </div>
@@ -569,7 +719,7 @@ export default function AdminCategoriesPage() {
                   htmlFor="category-description"
                   className="block text-sm font-medium text-surface-700 mb-1"
                 >
-                  Mô tả (tùy chọn)
+                  Mô tả <span className="text-surface-400 font-normal">(tùy chọn)</span>
                 </label>
                 <textarea
                   id="category-description"
@@ -588,7 +738,8 @@ export default function AdminCategoriesPage() {
                   htmlFor="category-order"
                   className="block text-sm font-medium text-surface-700 mb-1"
                 >
-                  Thứ tự sắp xếp (ưu tiên hiển thị)
+                  Thứ tự sắp xếp
+                  <span className="ml-1 text-surface-400 font-normal text-xs">(số nhỏ hiển thị trước)</span>
                 </label>
                 <input
                   id="category-order"
@@ -598,11 +749,11 @@ export default function AdminCategoriesPage() {
                   data-testid="create-category-order-input"
                   value={orderIndex}
                   onChange={(e) => setOrderIndex(parseInt(e.target.value, 10) || 0)}
-                  className="w-full rounded-xl border border-surface-300 px-3.5 py-2 text-sm text-surface-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-surface-50 transition"
+                  className="w-32 rounded-xl border border-surface-300 px-3.5 py-2 text-sm text-surface-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-surface-50 transition"
                 />
               </div>
 
-              {/* Form Actions */}
+              {/* Actions */}
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-100">
                 <button
                   type="button"
@@ -622,14 +773,84 @@ export default function AdminCategoriesPage() {
                   {saving ? (
                     <>
                       <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Đang tạo...</span>
+                      <span>{dialogMode === 'create' ? 'Đang tạo...' : 'Đang lưu...'}</span>
                     </>
                   ) : (
-                    <span>Tạo danh mục</span>
+                    <span>{dialogMode === 'create' ? 'Tạo danh mục' : 'Lưu thay đổi'}</span>
                   )}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Confirm Modal ────────────────────────────────────────── */}
+      {deletingCategory && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+          data-testid="delete-category-dialog"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-900/50 backdrop-blur-sm animate-in fade-in duration-200"
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border border-surface-100 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-100">
+                <TriangleAlertIcon className="h-5 w-5 text-rose-600" />
+              </div>
+              <div>
+                <h2 id="delete-dialog-title" className="text-base font-bold text-surface-900">
+                  Xác nhận xóa danh mục
+                </h2>
+                <p className="mt-1 text-sm text-surface-500">
+                  Bạn có chắc muốn xóa danh mục{' '}
+                  <strong className="text-surface-800">"{deletingCategory.name}"</strong>?
+                  {(deletingCategory.recipeCount ?? 0) > 0 && (
+                    <span className="mt-1.5 block text-amber-700 font-medium">
+                      ⚠ Danh mục này đang có {deletingCategory.recipeCount} công thức liên kết.
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {deleteError && (
+              <div
+                role="alert"
+                className="mt-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700"
+              >
+                <AlertCircleIcon className="h-4 w-4 shrink-0 mt-0.5 text-red-600" />
+                <span>{deleteError}</span>
+              </div>
+            )}
+
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setDeletingCategory(null)}
+                disabled={deleting}
+                className="rounded-xl border border-surface-300 px-4 py-2 text-sm font-medium text-surface-700 hover:bg-surface-50 transition disabled:opacity-60"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                data-testid="delete-category-confirm-button"
+                className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 transition disabled:opacity-60 flex items-center gap-2 shadow-sm"
+              >
+                {deleting ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang xóa...</span>
+                  </>
+                ) : (
+                  <span>Xóa danh mục</span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
