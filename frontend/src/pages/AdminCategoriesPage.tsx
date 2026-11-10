@@ -244,7 +244,7 @@ export default function AdminCategoriesPage() {
                   name: trimmedName,
                   description: description.trim() || undefined,
                   orderIndex,
-                  slug: slugifyPreview(trimmedName),
+                  slug: c.slug, // Slug does NOT change when name updates (AC2)
                 }
               : c,
           ),
@@ -570,6 +570,7 @@ export default function AdminCategoriesPage() {
                               <button
                                 type="button"
                                 aria-label={`Chỉnh sửa ${cat.name}`}
+                                data-testid={`category-edit-btn-${cat.id}`}
                                 onClick={() => handleOpenEdit(cat)}
                                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-surface-500 hover:text-brand-600 hover:bg-brand-50 transition"
                               >
@@ -700,7 +701,15 @@ export default function AdminCategoriesPage() {
                   placeholder="Ví dụ: Món lẩu, Món cuốn, Đồ uống..."
                   className="w-full rounded-xl border border-surface-300 px-3.5 py-2 text-sm text-surface-900 placeholder:text-surface-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-surface-50 transition"
                 />
-                {previewSlug ? (
+                {dialogMode === 'edit' ? (
+                  <p className="mt-1.5 text-xs text-surface-500 flex items-center gap-1.5">
+                    <span>Đường dẫn (slug cố định):</span>
+                    <code className="bg-surface-100 text-surface-700 px-1.5 py-0.5 rounded font-mono text-[11px]">
+                      {editingCategory?.slug}
+                    </code>
+                    <span className="text-[11px] text-surface-400">(giữ nguyên để tránh hỏng liên kết)</span>
+                  </p>
+                ) : previewSlug ? (
                   <p className="mt-1.5 text-xs text-surface-500 flex items-center gap-1.5">
                     <span>Slug dự kiến:</span>
                     <code className="bg-surface-100 text-brand-600 px-1.5 py-0.5 rounded font-mono text-[11px]">

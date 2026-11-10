@@ -13,6 +13,7 @@ import {
   UpdateProfileCommand,
 } from '../../application/commands/auth/AuthCommands.js';
 import { CreateCategoryCommandHandler } from '../../application/commands/categories/CreateCategoryCommandHandler.js';
+import { UpdateCategoryCommandHandler } from '../../application/commands/categories/UpdateCategoryCommandHandler.js';
 import {
   ArchiveRecipeCommand,
   AddRecipeIngredientCommand,
@@ -115,6 +116,10 @@ export function createContainer(): Container {
   commandBus.registerCommandHandler(
     'CreateCategoryCommand',
     new CreateCategoryCommandHandler(prisma, categoryCache),
+  );
+  commandBus.registerCommandHandler(
+    'UpdateCategoryCommand',
+    new UpdateCategoryCommandHandler(prisma, categoryCache),
   );
 
   commandBus.registerCommandHandler(

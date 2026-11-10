@@ -157,7 +157,7 @@ New category created. Category cache deleted. Location header → `/api/v1/categ
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-catalog.md` §FR-CAT-004 |
 | Endpoint | `PUT /api/v1/categories/{id}` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -183,11 +183,11 @@ Category info updated. Cache invalidated. Slug unchanged.
 
 **Acceptance Criteria:**
 
-- [ ] Admin can update category → 200
-- [ ] Slug does NOT change after name update
-- [ ] Non-admin gets 403
-- [ ] Non-existent ID returns 404
-- [ ] Cache invalidated after update
+- [x] Admin can update category → 200
+- [x] Slug does NOT change after name update
+- [x] Non-admin gets 403
+- [x] Non-existent ID returns 404
+- [x] Cache invalidated after update
 
 ---
 

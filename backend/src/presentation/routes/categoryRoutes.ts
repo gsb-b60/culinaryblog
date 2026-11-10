@@ -99,8 +99,8 @@ router.put('/:id', authenticateJwt, authorize(UserRole.ADMIN), async (req, res, 
   try {
     const input = updateCategorySchema.parse(req.body);
     const command = new UpdateCategoryCommand(req.params.id!, input);
-    await commandBus.executeCommand(command);
-    res.json({ message: 'Category updated successfully' });
+    const category = await commandBus.executeCommand<UpdateCategoryCommand, CategoryDto>(command);
+    res.json({ message: 'Category updated successfully', ...category });
   } catch (error) {
     next(error);
   }

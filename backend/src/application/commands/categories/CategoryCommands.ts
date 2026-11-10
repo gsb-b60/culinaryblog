@@ -9,7 +9,7 @@ export class CreateCategoryCommand extends Command<CategoryDto> {
   }
 }
 
-export class UpdateCategoryCommand extends Command<void> {
+export class UpdateCategoryCommand extends Command<CategoryDto> {
   readonly type = 'UpdateCategoryCommand';
 
   constructor(

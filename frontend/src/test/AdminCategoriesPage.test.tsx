@@ -13,6 +13,8 @@ vi.mock('../lib/api', async () => {
     ...actual,
     listCategories: vi.fn(),
     createCategory: vi.fn(),
+    updateCategory: vi.fn(),
+    deleteCategory: vi.fn(),
   }
 })
 
@@ -192,5 +194,39 @@ describe('AdminCategoriesPage (Screen M13 — Quản trị danh mục)', () => {
     expect(screen.getByText('Món Lẩu')).toBeInTheDocument()
     expect(screen.getByText('mon-lau')).toBeInTheDocument()
     expect(screen.queryByTestId('create-category-dialog')).not.toBeInTheDocument()
+  })
+
+  it('opens edit modal, updates category name while keeping slug unchanged (Issue #18)', async () => {
+    vi.mocked(api.updateCategory).mockResolvedValueOnce({ message: 'Category updated successfully' })
+
+    render(
+      <MemoryRouter>
+        <AdminCategoriesPage />
+      </MemoryRouter>,
+    )
+
+    await screen.findByText('Món chính')
+    const editBtn = screen.getByTestId('category-edit-btn-cat-1')
+    fireEvent.click(editBtn)
+
+    expect(screen.getByText('Chỉnh sửa: Món chính')).toBeInTheDocument()
+    expect(screen.getAllByText('mon-chinh').length).toBeGreaterThanOrEqual(2)
+
+    const nameInput = screen.getByTestId('create-category-name-input')
+    fireEvent.change(nameInput, { target: { value: 'Món Chính Đặc Biệt' } })
+
+    fireEvent.click(screen.getByTestId('create-category-submit-button'))
+
+    await waitFor(() => {
+      expect(api.updateCategory).toHaveBeenCalledWith('mock-admin-token', 'cat-1', {
+        name: 'Món Chính Đặc Biệt',
+        description: 'Các món ăn chính trong bữa cơm hàng ngày',
+        orderIndex: 1,
+      })
+    })
+
+    expect(await screen.findByTestId('success-banner')).toBeInTheDocument()
+    expect(screen.getByText('Món Chính Đặc Biệt')).toBeInTheDocument()
+    expect(screen.getAllByText('mon-chinh').length).toBeGreaterThanOrEqual(1)
   })
 })
