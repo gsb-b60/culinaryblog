@@ -14,7 +14,9 @@ import {
 } from '../../application/queries/categories/CategoryQueries.js';
 import { 
   createCategorySchema, 
-  updateCategorySchema
+  updateCategorySchema,
+  categoryFiltersSchema,
+  categoryPaginationSchema 
 } from '../../application/validators/categoryValidators.js';
 import { paginationSchema } from '../../application/validators/paginationValidators.js';
 import { UserRole } from '../../domain/enums/UserRole.js';
@@ -31,9 +33,16 @@ const router: RouterType = Router();
 export const categoryListRoutes: RouterType = router;
 
 // Public routes
-router.get('/', generalRateLimiter, async (_req, res, next) => {
+router.get('/', generalRateLimiter, async (req, res, next) => {
   try {
-    const query = new GetCategoriesQuery();
+    const filters = categoryFiltersSchema.parse(req.query);
+    const pagination = categoryPaginationSchema.parse(req.query);
+
+    const query = new GetCategoriesQuery(
+      filters,
+      pagination.page,
+      pagination.pageSize
+    );
     const result = await commandBus.executeQuery(query);
     res.json(result);
   } catch (error) {

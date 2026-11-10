@@ -63,8 +63,6 @@ import {
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
-import { GetCategoriesQueryHandler } from '../../application/queries/categories/GetCategoriesQueryHandler.js';
-import { GetCategoryBySlugQueryHandler } from '../../application/queries/categories/GetCategoryBySlugQueryHandler.js';
 import { GetManagedRecipesQuery } from '../../application/queries/recipes/GetManagedRecipesQuery.js';
 import { GetRecipeOverviewQuery } from '../../application/queries/recipes/GetRecipeOverviewQuery.js';
 import { env } from '../../config-middleware/config/env.js';
@@ -186,15 +184,6 @@ export function createContainer(): Container {
   );
   commandBus.registerQueryHandler('GetCurrentUserQuery', new GetCurrentUserQueryHandler(prisma));
 
-  commandBus.registerQueryHandler(
-    'GetCategoriesQuery',
-    new GetCategoriesQueryHandler(prisma, categoryCache),
-  );
-
-  commandBus.registerQueryHandler(
-    'GetCategoryBySlugQuery',
-    new GetCategoryBySlugQueryHandler(prisma),
-  );
 
   commandBus.registerCommandHandler(
     UpdateProfileCommand.name,
