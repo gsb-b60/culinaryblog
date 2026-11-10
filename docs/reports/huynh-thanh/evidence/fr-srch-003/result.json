@@ -1,0 +1,40 @@
+{
+  "feature": "FR-SRCH-003",
+  "issue": 36,
+  "result": "passed",
+  "startedAt": "2026-10-29T12:55:17.280Z",
+  "finishedAt": "2026-10-29T12:56:37.805Z",
+  "sourceCommit": "cda2b9e7899e8b932f06865e0596e49a38b110ef",
+  "services": "Real PostgreSQL isolated schema, Express/CQRS/Prisma, Chromium and Vite. No mocked API.",
+  "checks": [
+    "Real HTTP 200 for title and descending cookTime; invalid sort returns 422",
+    "Default newest first in real browser",
+    "Title A-Z; descending cookTime; changing sort from page 2 resets to page 1",
+    "Reload and browser Back/Forward restore URL sort and page",
+    "Desktop: cookTime <=30 with descending sort",
+    "backend-tests: exit 0",
+    "frontend-tests: exit 0",
+    "backend-lint: exit 0",
+    "frontend-lint: exit 0"
+  ],
+  "records": [
+    {
+      "name": "backend-tests",
+      "exitCode": 0
+    },
+    {
+      "name": "frontend-tests",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-lint",
+      "exitCode": 0
+    },
+    {
+      "name": "frontend-lint",
+      "exitCode": 0
+    }
+  ],
+  "pageErrors": [],
+  "note": "Desktop PNGs are real browser screenshots. API/test/lint PNGs render captured HTTP/output text; not OS terminal or Scalar screenshots. API images project title/cookTime/createdAt/meta; JSON files preserve complete responses."
+}

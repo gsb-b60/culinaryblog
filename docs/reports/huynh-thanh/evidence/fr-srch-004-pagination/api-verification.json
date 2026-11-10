@@ -1,0 +1,75 @@
+{
+  "overlap": 0,
+  "cases": [
+    {
+      "request": "GET /api/v1/recipes?page=1&pageSize=12",
+      "http": 200,
+      "itemsReturned": 12,
+      "meta": {
+        "page": 1,
+        "pageSize": 12,
+        "totalCount": 194,
+        "totalPages": 17,
+        "hasNextPage": true,
+        "hasPreviousPage": false
+      }
+    },
+    {
+      "request": "GET /api/v1/recipes?page=2&pageSize=12",
+      "http": 200,
+      "itemsReturned": 12,
+      "meta": {
+        "page": 2,
+        "pageSize": 12,
+        "totalCount": 194,
+        "totalPages": 17,
+        "hasNextPage": true,
+        "hasPreviousPage": true
+      }
+    },
+    {
+      "request": "GET /api/v1/recipes?page=17&pageSize=12",
+      "http": 200,
+      "itemsReturned": 2,
+      "meta": {
+        "page": 17,
+        "pageSize": 12,
+        "totalCount": 194,
+        "totalPages": 17,
+        "hasNextPage": false,
+        "hasPreviousPage": true
+      }
+    },
+    {
+      "request": "GET /api/v1/recipes?page=18&pageSize=12",
+      "http": 200,
+      "itemsReturned": 0,
+      "meta": {
+        "page": 18,
+        "pageSize": 12,
+        "totalCount": 194,
+        "totalPages": 17,
+        "hasNextPage": false,
+        "hasPreviousPage": true
+      }
+    },
+    {
+      "request": "GET /api/v1/recipes?page=0",
+      "http": 422,
+      "errors": {
+        "page": [
+          "Number must be greater than 0"
+        ]
+      }
+    },
+    {
+      "request": "GET /api/v1/recipes?pageSize=51",
+      "http": 422,
+      "errors": {
+        "pageSize": [
+          "Number must be less than or equal to 50"
+        ]
+      }
+    }
+  ]
+}

@@ -1,94 +1,126 @@
-import { render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import CategoriesPage from '../pages/CategoriesPage'
-import * as api from '../lib/api'
-import type { CategoryDto } from '../types/category'
 
-vi.mock('../lib/api', () => ({
-  getCategories: vi.fn(),
-}))
-
-const MOCK_CATEGORIES: CategoryDto[] = [
-  {
-    id: 'cat-1',
-    name: 'Món chính',
-    slug: 'mon-chinh',
-    description: 'Các món ăn chính trong bữa cơm Việt Nam',
-    recipeCount: 42,
-  },
-  {
-    id: 'cat-2',
-    name: 'Đồ uống',
-    slug: 'do-uong',
-    description: 'Trà, cafe, sinh tố',
-    recipeCount: 18,
-  },
-]
-
-function renderCategories() {
-  return render(
-    <MemoryRouter initialEntries={['/categories']}>
-      <CategoriesPage />
-    </MemoryRouter>,
-  )
+const fetchMock = vi.fn()
+function response(page: number, totalCount = 13) {
+  return new Response(JSON.stringify({
+    items: totalCount && page <= 2 ? [{
+      id: String(page), name: page === 1 ? 'Món nước' : 'Món chay',
+      slug: String(page), orderIndex: 0, recipeCount: page, createdAt: '',
+    }] : [],
+    meta: { page, pageSize: 12, totalCount, totalPages: Math.ceil(totalCount / 12), hasNextPage: page < 2, hasPreviousPage: page > 1 },
+  }), { status: 200, headers: { 'Content-Type': 'application/json' } })
 }
+function Location() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  return <><output aria-label="URL">{location.search}</output><button onClick={() => navigate(-1)}>Quay lại</button></>
+}
+function mount(url = '/dashboard/categories') {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
+  render(<QueryClientProvider client={client}><MemoryRouter initialEntries={[url]}><CategoriesPage /><Location /></MemoryRouter></QueryClientProvider>)
+}
+beforeEach(() => { vi.stubGlobal('fetch', fetchMock); fetchMock.mockReset() })
+afterEach(() => { vi.unstubAllGlobals() })
 
-describe('CategoriesPage (Screen M4)', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    localStorage.clear()
-    sessionStorage.clear()
+describe('Paginated categories', () => {
+  it('links each category card to its dashboard detail route', async () => {
+    fetchMock.mockResolvedValue(response(1))
+    mount()
+    const link = await screen.findByRole('link', { name: /Món nước/ })
+    expect(link).toHaveAttribute('href', '/dashboard/categories/1')
   })
 
-  it('renders loading skeleton state initially', () => {
-    vi.mocked(api.getCategories).mockReturnValue(new Promise(() => {}))
-    renderCategories()
-
-    expect(screen.getByTestId('categories-loading')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 1, name: 'Danh mục công thức' })).toBeInTheDocument()
+  it('keeps detail links relative to the public category route', async () => {
+    fetchMock.mockResolvedValue(response(1))
+    mount('/categories')
+    const link = await screen.findByRole('link', { name: /Món nước/ })
+    expect(link).toHaveAttribute('href', '/categories/1')
   })
 
-  it('renders category cards with recipe count when data is populated', async () => {
-    vi.mocked(api.getCategories).mockResolvedValue(MOCK_CATEGORIES)
-    renderCategories()
-
-    await waitFor(() => {
-      expect(screen.queryByTestId('categories-loading')).not.toBeInTheDocument()
-    })
-
-    expect(screen.getByTestId('categories-grid')).toBeInTheDocument()
-    expect(screen.getByText('Món chính')).toBeInTheDocument()
-    expect(screen.getByText(/42 công thức/)).toBeInTheDocument()
-    expect(screen.getByText('Đồ uống')).toBeInTheDocument()
-    expect(screen.getByText(/18 công thức/)).toBeInTheDocument()
-
-    const link = screen.getByRole('link', { name: /Món chính/ })
-    expect(link).toHaveAttribute('href', '/categories/mon-chinh')
+  it('loads pages through the shared control and restores the page with browser history', async () => {
+    fetchMock.mockImplementation((url: string) => Promise.resolve(response(Number(new URL(url, 'http://localhost').searchParams.get('page')))))
+    mount()
+    expect(await screen.findByText('Món nước')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Trang trước' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
+    expect(await screen.findByText('Món chay')).toBeInTheDocument()
+    expect(screen.queryByText('Món nước')).not.toBeInTheDocument()
+    expect(screen.getByText('Trang 2/2 · 13 danh mục')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Trang sau' })).toBeDisabled()
+    expect(fetchMock.mock.calls[1][0]).toContain('/categories?page=2&pageSize=12')
+    await userEvent.click(screen.getByRole('button', { name: 'Quay lại' }))
+    expect(await screen.findByText('Món nước')).toBeInTheDocument()
   })
 
-  it('renders empty state when category list is empty', async () => {
-    vi.mocked(api.getCategories).mockResolvedValue([])
-    renderCategories()
-
-    await waitFor(() => {
-      expect(screen.queryByTestId('categories-loading')).not.toBeInTheDocument()
-    })
-
-    expect(screen.getByTestId('categories-empty')).toBeInTheDocument()
-    expect(screen.getByText('Chưa có danh mục nào')).toBeInTheDocument()
+  it('resets to page one when page size changes', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(response(2)))
+    mount('/dashboard/categories?page=2&pageSize=12')
+    await screen.findByText('Món chay')
+    fetchMock.mockImplementation(() => Promise.resolve(response(1)))
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Số mục mỗi trang' }), '24')
+    await screen.findByText('Món nước')
+    expect(fetchMock.mock.calls[1][0]).toContain('/categories?page=1&pageSize=24')
+    expect(screen.getByLabelText('URL')).toHaveTextContent('?page=1&pageSize=24')
   })
 
-  it('renders error state with retry button when API fails', async () => {
-    vi.mocked(api.getCategories).mockRejectedValue(new Error('Network error'))
-    renderCategories()
+  it('automatically returns to page one when an out-of-range list is empty', async () => {
+    fetchMock.mockImplementation((url: string) => Promise.resolve(
+      response(Number(new URL(url, 'http://localhost').searchParams.get('page')), 0),
+    ))
+    mount('/dashboard/categories?page=99&pageSize=12')
+    await screen.findByText('Chưa có danh mục')
+    expect(screen.getByLabelText('URL')).toHaveTextContent('?page=1&pageSize=12')
+    expect(fetchMock.mock.calls[1][0]).toContain('/categories?page=1&pageSize=12')
+    expect(screen.queryByRole('navigation', { name: 'Phân trang danh mục' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Trang 99\//)).not.toBeInTheDocument()
+  })
 
-    await waitFor(() => {
-      expect(screen.queryByTestId('categories-loading')).not.toBeInTheDocument()
-    })
+  it('replaces an out-of-range URL with the last page and preserves other parameters', async () => {
+    fetchMock.mockImplementation((url: string) => Promise.resolve(
+      response(Number(new URL(url, 'http://localhost').searchParams.get('page'))),
+    ))
+    mount('/dashboard/categories?page=99&pageSize=12&source=dashboard')
+    await screen.findByText('Món chay')
+    expect(screen.getByLabelText('URL')).toHaveTextContent('?page=2&pageSize=12&source=dashboard')
+    expect(screen.getByText('Trang 2/2 · 13 danh mục')).toBeInTheDocument()
+    expect(screen.queryByText(/Trang 99\//)).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Trang trước' }))
+    await screen.findByText('Món nước')
+    await userEvent.click(screen.getByRole('button', { name: 'Quay lại' }))
+    await screen.findByText('Món chay')
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).includes('page=99'))).toHaveLength(1)
+  })
 
-    expect(screen.getByText(/Không thể tải danh sách danh mục/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Thử lại' })).toBeInTheDocument()
+  it('allows retry if fetching the corrected category page fails', async () => {
+    fetchMock.mockResolvedValueOnce(response(99))
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce(response(2))
+    mount('/dashboard/categories?page=99&pageSize=12')
+    await screen.findByRole('alert')
+    expect(screen.getByLabelText('URL')).toHaveTextContent('?page=2&pageSize=12')
+    await userEvent.click(screen.getByRole('button', { name: 'Thử lại' }))
+    expect(await screen.findByText('Món chay')).toBeInTheDocument()
+    expect(fetchMock.mock.calls[2][0]).toContain('/categories?page=2&pageSize=12')
+  })
+
+  it('retries failures without displaying stale items', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(response(1))
+    mount()
+    await screen.findByRole('alert')
+    await userEvent.click(screen.getByRole('button', { name: 'Thử lại' }))
+    expect(await screen.findByText('Món nước')).toBeInTheDocument()
+  })
+
+  it('sanitizes malformed URL pagination before requesting the API', async () => {
+    fetchMock.mockResolvedValue(response(1))
+    mount('/dashboard/categories?page=-1&pageSize=51')
+    await screen.findByText('Món nước')
+    expect(fetchMock.mock.calls[0][0]).toContain('/categories?page=1&pageSize=12')
   })
 })

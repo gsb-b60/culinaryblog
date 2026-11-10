@@ -54,7 +54,17 @@ describe('AdminCategoriesPage (Screen M13 — Quản trị danh mục)', () => {
         },
       },
     })
-    vi.mocked(api.listCategories).mockResolvedValue(mockCategories)
+    vi.mocked(api.listCategories).mockResolvedValue({
+      items: mockCategories,
+      meta: {
+        page: 1,
+        pageSize: 12,
+        totalCount: mockCategories.length,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    })
   })
 
   it('renders Screen M13 populated with categories table and open dialog button', async () => {

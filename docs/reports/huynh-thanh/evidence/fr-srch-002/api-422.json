@@ -1,0 +1,17 @@
+{
+  "capturedAt": "2026-10-29T12:14:57.871Z",
+  "method": "GET",
+  "url": "http://localhost:3000/api/v1/recipes?difficulty=Invalid",
+  "status": 422,
+  "body": {
+    "type": "https://tools.ietf.org/html/rfc7807#section-3.1",
+    "title": "Validation Error",
+    "status": 422,
+    "detail": "Request validation failed",
+    "errors": {
+      "difficulty": [
+        "Invalid enum value. Expected 'Easy' | 'Medium' | 'Hard' | 'Expert' | 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT', received 'Invalid'"
+      ]
+    }
+  }
+}

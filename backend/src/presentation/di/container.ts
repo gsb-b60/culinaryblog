@@ -14,7 +14,12 @@ import {
 } from '../../application/commands/auth/AuthCommands.js';
 import { CreateCategoryCommandHandler } from '../../application/commands/categories/CreateCategoryCommandHandler.js';
 import {
+  ArchiveRecipeCommand,
   AddRecipeIngredientCommand,
+  DeleteRecipeCommand,
+  AddRecipeStepCommand,
+  UpdateRecipeStepCommand,
+  DeleteRecipeStepCommand,
   PublishRecipeCommand,
   UnpublishRecipeCommand,
   DeleteRecipeIngredientCommand,
@@ -30,6 +35,7 @@ import {
   type GoogleProfile,
 } from '../../application/handlers/AuthCommandHandlers.js';
 import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
+import { DeleteRecipeCommandHandler } from '../../application/handlers/DeleteRecipeCommandHandler.js';
 import { ManagedRecipeQueryHandler } from '../../application/handlers/ManagedRecipeQueryHandler.js';
 import {
   AddRecipeIngredientCommandHandler,
@@ -40,16 +46,27 @@ import {
   GetRecipeIngredientsQuery,
   GetRecipeIngredientsQueryHandler,
 } from '../../application/handlers/RecipeIngredientQueryHandler.js';
+import { RecipeOverviewQueryHandler } from '../../application/handlers/RecipeOverviewQueryHandler.js';
+import { GetRecipesQueryHandler, SearchRecipesQueryHandler, GetRecipeBySlugQueryHandler, GetCategoriesQueryHandler, GetCategoryBySlugQueryHandler } from '../../application/handlers/RecipeQueryHandlers.js';
 import {
+  ArchiveRecipeCommandHandler,
   PublishRecipeCommandHandler,
   UnpublishRecipeCommandHandler,
 } from '../../application/handlers/RecipeStatusCommandHandlers.js';
+import {
+  AddRecipeStepCommandHandler,
+  DeleteRecipeStepCommandHandler,
+  GetRecipeStepsQuery,
+  GetRecipeStepsQueryHandler,
+  UpdateRecipeStepCommandHandler,
+} from '../../application/handlers/RecipeStepCommandHandlers.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
 import { GetCategoriesQueryHandler } from '../../application/queries/categories/GetCategoriesQueryHandler.js';
 import { GetCategoryBySlugQueryHandler } from '../../application/queries/categories/GetCategoryBySlugQueryHandler.js';
 import { GetManagedRecipesQuery } from '../../application/queries/recipes/GetManagedRecipesQuery.js';
+import { GetRecipeOverviewQuery } from '../../application/queries/recipes/GetRecipeOverviewQuery.js';
 import { env } from '../../config-middleware/config/env.js';
 import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository.js';
 import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.js';
@@ -107,6 +124,18 @@ export function createContainer(): Container {
     new AddRecipeIngredientCommandHandler(prisma),
   );
   commandBus.registerCommandHandler(
+    AddRecipeStepCommand.name,
+    new AddRecipeStepCommandHandler(prisma, cacheService),
+  );
+  commandBus.registerCommandHandler(
+    UpdateRecipeStepCommand.name,
+    new UpdateRecipeStepCommandHandler(prisma, cacheService),
+  );
+  commandBus.registerCommandHandler(
+    DeleteRecipeStepCommand.name,
+    new DeleteRecipeStepCommandHandler(prisma, cacheService),
+  );
+  commandBus.registerCommandHandler(
     UpdateRecipeIngredientCommand.name,
     new UpdateRecipeIngredientCommandHandler(prisma),
   );
@@ -114,6 +143,16 @@ export function createContainer(): Container {
     DeleteRecipeIngredientCommand.name,
     new DeleteRecipeIngredientCommandHandler(prisma),
   );
+
+  commandBus.registerCommandHandler(
+    DeleteRecipeCommand.name,
+    new DeleteRecipeCommandHandler(prisma, async () => {
+      await cacheService.deletePattern('recipes:*');
+      await cacheService.deletePattern('categories:*');
+    }),
+  );
+
+  commandBus.registerCommandHandler(ArchiveRecipeCommand.name, new ArchiveRecipeCommandHandler(prisma, cacheService));
 
   commandBus.registerCommandHandler(
     PublishRecipeCommand.name,
@@ -124,6 +163,14 @@ export function createContainer(): Container {
     new UnpublishRecipeCommandHandler(prisma, cacheService),
   );
 
+  commandBus.registerQueryHandler('GetRecipesQuery', new GetRecipesQueryHandler(recipeRepository));
+  commandBus.registerQueryHandler('SearchRecipesQuery', new SearchRecipesQueryHandler(recipeRepository));
+  commandBus.registerQueryHandler('GetRecipeBySlugQuery', new GetRecipeBySlugQueryHandler(prisma));
+  commandBus.registerQueryHandler('GetCategoriesQuery', new GetCategoriesQueryHandler(categoryRepository));
+  commandBus.registerQueryHandler('GetCategoryBySlugQuery', new GetCategoryBySlugQueryHandler(categoryRepository, recipeRepository));
+
+  commandBus.registerQueryHandler(GetRecipeOverviewQuery.name, new RecipeOverviewQueryHandler(prisma));
+
   commandBus.registerQueryHandler(
     GetManagedRecipesQuery.name,
     new ManagedRecipeQueryHandler(prisma),
@@ -132,6 +179,10 @@ export function createContainer(): Container {
   commandBus.registerQueryHandler(
     GetRecipeIngredientsQuery.name,
     new GetRecipeIngredientsQueryHandler(prisma),
+  );
+  commandBus.registerQueryHandler(
+    GetRecipeStepsQuery.name,
+    new GetRecipeStepsQueryHandler(prisma),
   );
   commandBus.registerQueryHandler('GetCurrentUserQuery', new GetCurrentUserQueryHandler(prisma));
 

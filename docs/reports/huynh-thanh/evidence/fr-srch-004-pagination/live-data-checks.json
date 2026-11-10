@@ -1,0 +1,28 @@
+{
+  "public": {
+    "total": 194,
+    "categories": 20,
+    "pageSize": 12,
+    "detailWorks": true
+  },
+  "author": {
+    "stats": {
+      "total": 40,
+      "published": 40,
+      "draft": 0,
+      "archived": 0
+    },
+    "recent": 5,
+    "scopeCorrect": true
+  },
+  "admin": {
+    "stats": {
+      "total": 196,
+      "published": 194,
+      "draft": 0,
+      "archived": 2
+    },
+    "recent": 5,
+    "scopeCorrect": true
+  }
+}

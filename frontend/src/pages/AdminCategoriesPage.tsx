@@ -103,7 +103,7 @@ export default function AdminCategoriesPage() {
     listCategories()
       .then((data) => {
         if (!active) return
-        setCategories(data)
+        setCategories(Array.isArray(data) ? data : (data as { items?: Category[] })?.items ?? [])
       })
       .catch((err) => {
         if (!active) return

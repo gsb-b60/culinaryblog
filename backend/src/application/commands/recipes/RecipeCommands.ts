@@ -49,12 +49,13 @@ export class UnpublishRecipeCommand extends Command<RecipeDto> {
   }
 }
 
-export class ArchiveRecipeCommand extends Command<void> {
+export class ArchiveRecipeCommand extends Command<RecipeDto> {
   readonly type = 'ArchiveRecipeCommand';
 
   constructor(
     public readonly recipeId: string,
-    public readonly authorId: string
+    public readonly authorId: string,
+    public readonly isAdmin = false
   ) {
     super();
   }
@@ -65,7 +66,8 @@ export class DeleteRecipeCommand extends Command<void> {
 
   constructor(
     public readonly recipeId: string,
-    public readonly authorId: string
+    public readonly authorId: string,
+    public readonly isAdmin = false
   ) {
     super();
   }
@@ -80,7 +82,8 @@ export class AddRecipeStepCommand extends Command<string> {
     public readonly title: string,
     public readonly description: string,
     public readonly timerMinutes?: number,
-    public readonly imageUrl?: string
+    public readonly imageUrl?: string,
+    public readonly isAdmin = false
   ) {
     super();
   }
@@ -96,8 +99,9 @@ export class UpdateRecipeStepCommand extends Command<void> {
     public readonly stepNumber?: number,
     public readonly title?: string,
     public readonly description?: string,
-    public readonly timerMinutes?: number,
-    public readonly imageUrl?: string
+    public readonly timerMinutes?: number | null,
+    public readonly imageUrl?: string | null,
+    public readonly isAdmin = false
   ) {
     super();
   }
@@ -109,7 +113,8 @@ export class DeleteRecipeStepCommand extends Command<void> {
   constructor(
     public readonly recipeId: string,
     public readonly authorId: string,
-    public readonly stepId: string
+    public readonly stepId: string,
+    public readonly isAdmin = false
   ) {
     super();
   }

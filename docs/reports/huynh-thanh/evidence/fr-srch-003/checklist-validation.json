@@ -1,0 +1,38 @@
+{
+  "sourceCommit": "e65ceacff755123a587b2a13d560aeab1e5c1d4b",
+  "verifiedAt": "2026-10-29T13:14:46.977Z",
+  "backend": {
+    "tests": 335,
+    "files": 26,
+    "coverage": {
+      "statements": 91.35,
+      "lines": 91.35,
+      "branches": 90.41,
+      "functions": 92.09,
+      "requiredLines": 80
+    },
+    "exitCode": 0,
+    "lintExitCode": 0,
+    "lintWarnings": 196,
+    "buildExitCode": 0
+  },
+  "frontend": {
+    "tests": 242,
+    "files": 25,
+    "exitCode": 0,
+    "lintExitCode": 0,
+    "buildExitCode": 0
+  },
+  "prisma": {
+    "exitCode": 0,
+    "clientVersion": "5.22.0",
+    "schemaChanged": false
+  },
+  "prettier": {
+    "issueFiles": 11,
+    "checkExitCode": 0,
+    "wholeRepository": "not completed: existing invalid closing div in web-showcase.html:280",
+    "showcaseCheckExitCode": 2
+  },
+  "note": "PNG evidence pages display captured command output excerpts. Text log files were removed."
+}

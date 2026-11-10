@@ -145,20 +145,31 @@ export class RecipeRepository implements IRecipeRepository {
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
 
-  /** Load published recipes in a category with pagination. */
+  /**
+   * Load a category's published recipes, plus the viewer's own drafts when a
+   * viewer is supplied, with pagination.
+   */
   async findPublishedByCategory(
     categoryId: string,
     page: number,
     pageSize: number,
     sort?: RecipeSortOptions,
+    viewerId?: string,
   ): Promise<PagedResult<Recipe>> {
     const where: Prisma.RecipeWhereInput = {
       categoryId,
-      status: 'PUBLISHED',
       isDeleted: false,
+      ...(viewerId
+        ? {
+            OR: [
+              { status: 'PUBLISHED' },
+              { status: 'DRAFT', authorId: viewerId },
+            ],
+          }
+        : { status: 'PUBLISHED' }),
     };
 
-    const orderBy = sort ? this.buildOrderBy(sort) : { createdAt: 'desc' as const };
+    const orderBy = this.buildOrderBy(sort ?? { field: 'createdAt', order: 'desc' });
 
     const [items, totalCount] = await Promise.all([
       this.prisma.recipe.findMany({
@@ -289,6 +300,7 @@ export class RecipeRepository implements IRecipeRepository {
     if (filters.difficulty) where.difficulty = filters.difficulty;
     if (filters.status) where.status = filters.status;
     if (filters.authorId) where.authorId = filters.authorId;
+    if (filters.minServings !== undefined) where.servings = { gte: filters.minServings };
     if (filters.minPrepTime !== undefined || filters.maxPrepTime !== undefined) {
       where.prepTime = {};
       if (filters.minPrepTime !== undefined) where.prepTime.gte = filters.minPrepTime;
@@ -310,7 +322,7 @@ export class RecipeRepository implements IRecipeRepository {
   }
 
   /** Translate requested sorting into Prisma ordering with repository defaults. */
-  private buildOrderBy(sort: RecipeSortOptions): Prisma.RecipeOrderByWithRelationInput {
+  private buildOrderBy(sort: RecipeSortOptions): Prisma.RecipeOrderByWithRelationInput[] {
     const { field, order } = sort;
     const fieldMap: Record<string, string> = {
       createdAt: 'createdAt',
@@ -319,6 +331,6 @@ export class RecipeRepository implements IRecipeRepository {
       cookTime: 'cookTime',
       publishedAt: 'publishedAt',
     };
-    return { [fieldMap[field] || 'createdAt']: order };
+    return [{ [fieldMap[field] || 'createdAt']: order }, { id: 'asc' }];
   }
 }

@@ -16,34 +16,32 @@
 
 **Description:**
 
-Return the list of all recipe categories with published recipe count per category. Cached with node-cache (60-minute TTL), sorted by Name ascending. No authentication required.
+Return a paginated list of recipe categories with published recipe count per category. Sorted by the configured `orderIndex`, then `id`. No authentication required.
 
 **Main Flow:**
 
-1. Client sends `GET /api/v1/categories`.
-2. Dispatch `GetCategoriesQuery`.
-3. Check node-cache with key `"categories:all"`.
-4. Cache hit → return cached data.
-5. Cache miss → query DB: `prisma.category.findMany({ include: { _count: { select: { recipes: { where: { status: 'PUBLISHED' } } } }, orderBy: { name: 'asc' } })`.
-6. Store in node-cache with 60-min TTL.
-7. Return HTTP 200 with `CategoryDto[]`.
+1. Client sends `GET /api/v1/categories?page=1&pageSize=12` (`page` / `pageSize` optional; defaults applied).
+2. Dispatch `GetCategoriesQuery` with filters and pagination.
+3. Query DB with `_count` of published recipes and `orderBy: [{ orderIndex: 'asc' }, { id: 'asc' }]`.
+4. Return HTTP 200 with `PagedResult<CategoryDto>`.
 
 **Alternative / Exception Flows:**
 
-- A1 — No categories → HTTP 200 with empty array `[]`.
+- A1 — No categories → HTTP 200 with an empty `items` array.
 
 **Expected Result:**
 
-Array of `{ id, name, slug, description, recipeCount }`. Served from cache when available.
+`{ items: CategoryDto[], meta: { page, pageSize, totalCount, totalPages, ... } }` where each category includes `{ id, name, slug, description, recipeCount }`.
 
 **Acceptance Criteria:**
 
-- [ ] Returns 200 with array of categories (even empty array)
-- [ ] Each category includes `recipeCount` (PUBLISHED only)
-- [ ] Sorted by name ascending
-- [ ] Results cached with key `categories:all` (TTL 60 min)
-- [ ] Cache hit does not query database
-- [ ] No authentication required
+- [x] Returns 200 with a paginated category list (empty pages return an empty `items` array)
+- [x] Each category includes `recipeCount` (PUBLISHED only)
+- [x] Ordered by the configured `orderIndex`, then `id`
+- [x] Paginated responses are not cached, so page/filter results stay fresh
+- [x] No authentication required
+
+> **Recovery note (2026-11-07):** The category list now uses the shared paginated API contract introduced after the original PR. The original unpaginated `categories:all` cache and name-only sort were superseded by pagination (`page`, `pageSize`, `orderIndex`).
 
 ---
 
@@ -59,7 +57,7 @@ Array of `{ id, name, slug, description, recipeCount }`. Served from cache when 
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-catalog.md` §FR-CAT-002 |
 | Endpoint | `GET /api/v1/categories/{slug}?page=1&pageSize=12` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -81,7 +79,7 @@ Return detailed info for a specific category (by Slug) along with a paginated li
 
 **Expected Result:**
 
-`{ category: CategoryDto, recipes: { items, totalCount, page, pageSize, totalPages } }`
+`CategoryDetailDto = { ...category, recipes: { items, meta: { page, pageSize, totalCount, totalPages, ... } } }`
 
 **Acceptance Criteria:**
 
@@ -91,6 +89,8 @@ Return detailed info for a specific category (by Slug) along with a paginated li
 - [x] Invalid slug returns 404 with RFC 7807 body
 - [x] Pagination works (page, pageSize, totalCount, totalPages correct)
 - [x] Empty category returns 200 with empty items array
+
+> **Recovery note (2026-11-07):** Restored after the original merge commits were lost from `master`. The detail response uses the current flat `CategoryDetailDto` (`{ ...category, recipes: PagedResult<RecipeSummaryDto> }`) rather than the older nested `{ category, recipes }` shape.
 
 ---
 
