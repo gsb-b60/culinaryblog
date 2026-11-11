@@ -229,4 +229,68 @@ describe('AdminCategoriesPage (Screen M13 — Quản trị danh mục)', () => {
     expect(screen.getByText('Món Chính Đặc Biệt')).toBeInTheDocument()
     expect(screen.getAllByText('mon-chinh').length).toBeGreaterThanOrEqual(1)
   })
+
+  it('opens delete confirmation modal and deletes category successfully (Issue #19)', async () => {
+    vi.mocked(api.deleteCategory).mockResolvedValueOnce(null)
+
+    render(
+      <MemoryRouter>
+        <AdminCategoriesPage />
+      </MemoryRouter>,
+    )
+
+    await screen.findByText('Món chính')
+    const deleteBtn = screen.getByTestId('category-delete-btn-cat-1')
+    fireEvent.click(deleteBtn)
+
+    expect(screen.getByText('Xác nhận xóa danh mục')).toBeInTheDocument()
+    const confirmBtn = screen.getByTestId('delete-category-confirm-button')
+    fireEvent.click(confirmBtn)
+
+    await waitFor(() => {
+      expect(api.deleteCategory).toHaveBeenCalledWith('mock-admin-token', 'cat-1')
+    })
+
+    expect(await screen.findByTestId('success-banner')).toBeInTheDocument()
+    expect(screen.queryByText('Món chính')).not.toBeInTheDocument()
+  })
+
+  it('displays error alert when delete returns 409 conflict because category has recipes (Issue #19)', async () => {
+    const conflictError = new api.ApiError(
+      409,
+      'Cannot delete category because it still contains 10 recipe(s). Please move all recipes to another category first.',
+      {
+        type: 'CATEGORY_HAS_RECIPES',
+        status: 409,
+        detail: 'Cannot delete category because it still contains 10 recipe(s). Please move all recipes to another category first.',
+      },
+    )
+    vi.mocked(api.deleteCategory).mockRejectedValueOnce(conflictError)
+
+    render(
+      <MemoryRouter>
+        <AdminCategoriesPage />
+      </MemoryRouter>,
+    )
+
+    await screen.findByText('Món chính')
+    const deleteBtn = screen.getByTestId('category-delete-btn-cat-1')
+    fireEvent.click(deleteBtn)
+
+    expect(screen.getByText('Xác nhận xóa danh mục')).toBeInTheDocument()
+    const confirmBtn = screen.getByTestId('delete-category-confirm-button')
+    fireEvent.click(confirmBtn)
+
+    await waitFor(() => {
+      expect(api.deleteCategory).toHaveBeenCalledWith('mock-admin-token', 'cat-1')
+    })
+
+    expect(
+      await screen.findByText(
+        'Cannot delete category because it still contains 10 recipe(s). Please move all recipes to another category first.',
+      ),
+    ).toBeInTheDocument()
+    // Category row is still present in the list
+    expect(screen.getByText('Món chính')).toBeInTheDocument()
+  })
 })

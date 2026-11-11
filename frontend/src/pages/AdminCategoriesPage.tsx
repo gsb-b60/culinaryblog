@@ -580,6 +580,7 @@ export default function AdminCategoriesPage() {
                               <button
                                 type="button"
                                 aria-label={`Xóa ${cat.name}`}
+                                data-testid={`category-delete-btn-${cat.id}`}
                                 onClick={() => {
                                   setDeleteError(null)
                                   setDeletingCategory(cat)
