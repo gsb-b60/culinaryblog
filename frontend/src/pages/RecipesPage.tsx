@@ -193,6 +193,14 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
               : 'Xem danh sách, xuất bản hoặc chuyển công thức về bản nháp. Công thức cần có ít nhất một bước thực hiện để xuất bản.'}
           </p>
         </div>
+        {!archiveMode && (
+          <Link
+            to="/dashboard/recipes/new"
+            className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
+          >
+            Tạo công thức
+          </Link>
+        )}
         <button
           type="button"
           onClick={reload}
