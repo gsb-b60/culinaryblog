@@ -27,8 +27,8 @@ const formatMinutes = (value: number) => value >= 60 ? `${Math.floor(value / 60)
 export default function NewRecipePage() {
   const navigate = useNavigate()
   const session = useAuthStore((state) => state.session)
-  const { data: categoryList, isLoading: categoriesLoading, isError: categoriesFailed } = useCategories()
-  const categories = categoryList ?? []
+  const { data: categoryList, isLoading: categoriesLoading, isError: categoriesFailed } = useCategories({ page: 1, pageSize: 50 })
+  const categories = categoryList?.items ?? []
   const categoriesError = categoriesFailed ? 'Không thể tải danh mục. Vui lòng thử lại.' : ''
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({ title: '', description: '', categoryId: '', prepTime: 15, cookTime: 30, servings: 2, difficulty: 'EASY' as const, instructions: '' })
