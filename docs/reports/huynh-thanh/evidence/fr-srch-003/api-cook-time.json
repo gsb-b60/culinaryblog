@@ -1,0 +1,80 @@
+{
+  "query": "sort=-cookTime&pageSize=4",
+  "status": 200,
+  "body": {
+    "items": [
+      {
+        "id": "0f8e34c3-483b-46bc-930a-e85bdd27e657",
+        "title": "Soup 14",
+        "slug": "soup-14",
+        "description": "Sorting evidence: recipe 14, cooking time 70 minutes.",
+        "prepTime": 10,
+        "cookTime": 70,
+        "servings": 2,
+        "difficulty": "EASY",
+        "status": "PUBLISHED",
+        "categoryId": "a4f0c061-5f08-4edb-9e5b-b8e042bb97d2",
+        "categoryName": "Sorting Demo",
+        "authorId": "67541a39-127a-4b67-b03e-59acbedebac7",
+        "authorName": "Integration owner",
+        "createdAt": "2026-01-14T00:00:00.000Z"
+      },
+      {
+        "id": "95256a1e-fd4d-4790-a599-bc9fd3148180",
+        "title": "Soup 13",
+        "slug": "soup-13",
+        "description": "Sorting evidence: recipe 13, cooking time 65 minutes.",
+        "prepTime": 10,
+        "cookTime": 65,
+        "servings": 2,
+        "difficulty": "EASY",
+        "status": "PUBLISHED",
+        "categoryId": "a4f0c061-5f08-4edb-9e5b-b8e042bb97d2",
+        "categoryName": "Sorting Demo",
+        "authorId": "67541a39-127a-4b67-b03e-59acbedebac7",
+        "authorName": "Integration owner",
+        "createdAt": "2026-01-13T00:00:00.000Z"
+      },
+      {
+        "id": "764a8d00-9520-4dba-bd20-b47377d8f5db",
+        "title": "Soup 12",
+        "slug": "soup-12",
+        "description": "Sorting evidence: recipe 12, cooking time 60 minutes.",
+        "prepTime": 10,
+        "cookTime": 60,
+        "servings": 2,
+        "difficulty": "EASY",
+        "status": "PUBLISHED",
+        "categoryId": "a4f0c061-5f08-4edb-9e5b-b8e042bb97d2",
+        "categoryName": "Sorting Demo",
+        "authorId": "67541a39-127a-4b67-b03e-59acbedebac7",
+        "authorName": "Integration owner",
+        "createdAt": "2026-01-12T00:00:00.000Z"
+      },
+      {
+        "id": "b86e4028-0d44-4b8c-bd53-d9c5414b0d71",
+        "title": "Soup 11",
+        "slug": "soup-11",
+        "description": "Sorting evidence: recipe 11, cooking time 55 minutes.",
+        "prepTime": 10,
+        "cookTime": 55,
+        "servings": 2,
+        "difficulty": "EASY",
+        "status": "PUBLISHED",
+        "categoryId": "a4f0c061-5f08-4edb-9e5b-b8e042bb97d2",
+        "categoryName": "Sorting Demo",
+        "authorId": "67541a39-127a-4b67-b03e-59acbedebac7",
+        "authorName": "Integration owner",
+        "createdAt": "2026-01-11T00:00:00.000Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "pageSize": 4,
+      "totalCount": 14,
+      "totalPages": 4,
+      "hasNextPage": true,
+      "hasPreviousPage": false
+    }
+  }
+}

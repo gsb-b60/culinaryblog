@@ -1,4 +1,9 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
@@ -25,7 +30,7 @@ export class MinioFileStorageService implements IFileStorageService {
   async uploadFile(
     key: string,
     body: Buffer | ReadableStream | Blob,
-    contentType: string
+    contentType: string,
   ): Promise<string> {
     const command = new PutObjectCommand({
       Bucket: this.bucket,
@@ -45,17 +50,13 @@ export class MinioFileStorageService implements IFileStorageService {
       Key: key,
     });
 
-    try {
-      await this.client.send(command);
-    } catch (error) {
-      // Ignore if file doesn't exist (idempotent)
-      console.warn(`Failed to delete file ${key}:`, error);
-    }
+    await this.client.send(command);
   }
 
   getFileUrl(key: string): string {
     const endpoint = env.S3_ENDPOINT!.replace(/\/$/, '');
-    return `${endpoint}/${this.bucket}/${key}`;
+    const encodedKey = key.split('/').map(encodeURIComponent).join('/');
+    return `${endpoint}/${this.bucket}/${encodedKey}`;
   }
 
   async generatePresignedUrl(key: string, expiresIn: number = 3600): Promise<string> {

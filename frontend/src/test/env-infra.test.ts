@@ -31,7 +31,7 @@ describe('query client', () => {
 
 describe('date formatting', () => {
   it('formats ISO dates', () => {
-    expect(formatDate('2026-01-02T00:00:00.000Z', 'yyyy-MM-dd')).toBe('2026-01-02')
+    expect(formatDate(new Date(2026, 0, 2, 12).toISOString(), 'yyyy-MM-dd')).toBe('2026-01-02')
     expect(formatRelative('2026-01-01T00:00:00.000Z')).toMatch(/ago|trước|ngày|day|year/i)
   })
 })

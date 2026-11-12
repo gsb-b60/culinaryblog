@@ -1,0 +1,225 @@
+$ vitest run --coverage
+
+ RUN  v2.1.9 D:/udptwnc/culinaryblog/backend
+      Coverage enabled with v8
+
+ ✓ tests/loginCommandHandler.test.ts (20 tests) 215ms
+ ✓ tests/googleAuthCommandHandler.test.ts (11 tests) 30ms
+ ✓ tests/recipe-status.test.ts (57 tests) 4042ms
+   ✓ Publish/unpublish recipe endpoints > publishes as owner and returns the full DTO with updated timestamps 3416ms
+ ✓ tests/loginEndpoint.test.ts (12 tests) 638ms
+ ✓ tests/googleOAuthRedirect.test.ts (12 tests) 458ms
+ ✓ tests/domain-lifecycle.test.ts (18 tests) 94ms
+ ✓ tests/security.test.ts (10 tests) 971ms
+   ✓ authorization middleware > authenticateJwt returns 401 without a token 546ms
+ ✓ tests/registerCommandHandler.test.ts (8 tests) 7281ms
+   ✓ RegisterCommandHandler > creates the user with the AUTHOR role, persists the refresh token and enqueues the welcome email 2741ms
+   ✓ RegisterCommandHandler > maps a P2002 email race to 409 AUTH_EMAIL_EXISTS 949ms
+   ✓ RegisterCommandHandler > maps a P2002 userName race to 409 AUTH_USERNAME_EXISTS 1370ms
+   ✓ RegisterCommandHandler > still succeeds when enqueueWelcomeEmail throws (fire-and-forget) 1082ms
+   ✓ RegisterCommandHandler > rethrows non-unique-violation create errors 1131ms
+ ✓ tests/registerEndpoint.test.ts (10 tests) 7897ms
+   ✓ POST /api/v1/auth/register > returns 201 with a token pair and the created user (AC1, AC8) 1452ms
+   ✓ POST /api/v1/auth/register > stores the password as a bcrypt hash, never plaintext (AC4) 2435ms
+   ✓ POST /api/v1/auth/register > assigns the Author role on registration (AC5) 1227ms
+   ✓ POST /api/v1/auth/register > persists the refresh token as a sha256 hash (AC6) 1335ms
+   ✓ POST /api/v1/auth/register > enqueues the welcome email job in BullMQ (AC7) 1232ms
+ ✓ tests/googleAuthEndpoint.test.ts (6 tests) 329ms
+ ✓ tests/registerCommandValidator.test.ts (12 tests) 17ms
+ ✓ tests/delete-recipe.test.ts (6 tests) 28ms
+ ✓ tests/commandBus.test.ts (6 tests) 36ms
+ ✓ tests/recipe-ingredient-commands.test.ts (3 tests) 18ms
+ ✓ tests/loginCommandValidator.test.ts (9 tests) 23ms
+ ✓ tests/file-cleanup.test.ts (5 tests) 35ms
+ ✓ tests/delete-recipe-endpoint.test.ts (5 tests) 346ms
+ ✓ tests/openapi.test.ts (3 tests) 237ms
+stdout | tests/real-services.integration.test.ts
+✓ Created 6 users (1 admin, 5 authors)
+
+stdout | tests/real-services.integration.test.ts
+✓ Created 20 categories
+
+ ✓ tests/ingredients-master.integration.test.ts (7 tests) 21733ms
+   ✓ FR-RCP-009 on latest master: real PostgreSQL, Passport, routes and Command Bus > uses the master /manage contract and paginates owner recipes 1712ms
+   ✓ FR-RCP-009 on latest master: real PostgreSQL, Passport, routes and Command Bus > persists ingredient CRUD, excludes deleted rows and allows Admin 1577ms
+   ✓ FR-RCP-009 on latest master: real PostgreSQL, Passport, routes and Command Bus > returns 401 without JWT and 403 for non-owners for every ingredient method 444ms
+   ✓ FR-RCP-009 on latest master: real PostgreSQL, Passport, routes and Command Bus > returns 404 for missing recipes, missing ingredients and ingredients in another recipe 661ms
+ ✓ tests/file-storage-cleanup.test.ts (15 tests) 122ms
+ ✓ tests/duration.test.ts (7 tests) 13ms
+stdout | tests/real-services.integration.test.ts
+✓ Created 100 recipes with ingredients and steps
+
+stdout | tests/real-services.integration.test.ts
+✓ Created 20 categories
+
+stdout | tests/real-services.integration.test.ts > Real HTTP, JWT and ingredient command handlers > registers, logs in, rotates tokens, detects reuse and logs out with real persistence
+Welcome email sent to register-13c1cd1c5ae648449b266935a53d8d74@example.invalid
+
+stdout | tests/real-services.integration.test.ts > Real HTTP, JWT and ingredient command handlers > registers, logs in, rotates tokens, detects reuse and logs out with real persistence
+Welcome email job 1 completed
+
+stdout | tests/real-services.integration.test.ts > Real Redis, MinIO, MailHog and job queues > processes isolated Redis jobs and schedules sitemap generation
+Processing image resize for recipe c0a5e93c-67cb-4558-80a4-9a1cb99de376, image integration-image
+
+stdout | tests/real-services.integration.test.ts > Real Redis, MinIO, MailHog and job queues > processes isolated Redis jobs and schedules sitemap generation
+Image resize completed for integration-image
+
+stdout | tests/real-services.integration.test.ts > Real Redis, MinIO, MailHog and job queues > processes isolated Redis jobs and schedules sitemap generation
+Image resize job 1 completed
+
+stdout | tests/real-services.integration.test.ts > Real Redis, MinIO, MailHog and job queues > processes isolated Redis jobs and schedules sitemap generation
+Generating sitemap (trigger: manual)
+
+stdout | tests/real-services.integration.test.ts > Real Redis, MinIO, MailHog and job queues > hashes and verifies passwords with actual argon2 and bcrypt
+Sitemap generation completed
+
+stdout | tests/real-services.integration.test.ts > Real Redis, MinIO, MailHog and job queues > hashes and verifies passwords with actual argon2 and bcrypt
+Sitemap job 1 completed
+Generating sitemap (trigger: scheduled)
+
+stdout | tests/real-services.integration.test.ts > Real Redis, MinIO, MailHog and job queues > hashes and verifies passwords with actual argon2 and bcrypt
+Sitemap generation completed
+
+stdout | tests/real-services.integration.test.ts > Real Redis, MinIO, MailHog and job queues > hashes and verifies passwords with actual argon2 and bcrypt
+Sitemap job 2 completed
+
+ ✓ tests/real-services.integration.test.ts (22 tests) 54436ms
+   ✓ Real HTTP, JWT and ingredient command handlers > reads manageable recipes and enforces owner authorization 335ms
+   ✓ Real HTTP, JWT and ingredient command handlers > registers, logs in, rotates tokens, detects reuse and logs out with real persistence 3807ms
+   ✓ Real Redis, MinIO, MailHog and job queues > uploads to MinIO, downloads a real signed URL and deletes the object 332ms
+   ✓ Real Redis, MinIO, MailHog and job queues > processes isolated Redis jobs and schedules sitemap generation 1350ms
+   ✓ Real Redis, MinIO, MailHog and job queues > hashes and verifies passwords with actual argon2 and bcrypt 1012ms
+
+ Test Files  22 passed (22)
+      Tests  264 passed (264)
+   Start at  12:51:36
+   Duration  76.49s (transform 8.69s, setup 1.83s, collect 50.59s, tests 99.00s, environment 13ms, prepare 11.57s)
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   90.63 |    89.85 |   91.25 |   90.63 |                   
+ application       |   97.87 |    92.59 |     100 |   97.87 |                   
+  command-bus.ts   |   97.87 |    92.59 |     100 |   97.87 | 101-102           
+ .../commands/auth |     100 |      100 |     100 |     100 |                   
+  AuthCommands.ts  |     100 |      100 |     100 |     100 |                   
+ ...nds/categories |   59.09 |      100 |       0 |   59.09 |                   
+  ...ryCommands.ts |   59.09 |      100 |       0 |   59.09 | 8-9,16-20,27-28   
+ ...mmands/recipes |   73.04 |      100 |   58.33 |   73.04 |                   
+  ...peCommands.ts |   73.04 |      100 |   58.33 |   73.04 | ...95-105,112-117 
+ application/dtos  |     100 |      100 |     100 |     100 |                   
+  CategoryDto.ts   |       0 |        0 |       0 |       0 |                   
+  PagedResult.ts   |     100 |      100 |     100 |     100 |                   
+  RecipeDto.ts     |       0 |        0 |       0 |       0 |                   
+  UserDto.ts       |       0 |        0 |       0 |       0 |                   
+ ...ation/handlers |   98.33 |    91.08 |   98.11 |   98.33 |                   
+  ...ndHandlers.ts |   99.01 |       90 |     100 |   99.01 | 260-263           
+  ...ryHandlers.ts |     100 |       75 |     100 |     100 | 19                
+  ...andHandler.ts |   91.66 |    80.95 |     100 |   91.66 | 51-52,54-55       
+  ...eryHandler.ts |     100 |      100 |     100 |     100 |                   
+  ...ndHandlers.ts |     100 |    91.83 |     100 |     100 | 31,104-106        
+  ...eryHandler.ts |     100 |      100 |     100 |     100 |                   
+  ...ryHandlers.ts |   92.77 |    85.71 |      90 |   92.77 | 88-93             
+  ...ndHandlers.ts |     100 |    96.22 |     100 |     100 | 58-59             
+ ...ion/interfaces |       0 |        0 |       0 |       0 |                   
+  ICurrentUser.ts  |       0 |        0 |       0 |       0 |                   
+  IEmailService.ts |       0 |        0 |       0 |       0 |                   
+  ...ageService.ts |       0 |        0 |       0 |       0 |                   
+  IJwtService.ts   |       0 |        0 |       0 |       0 |                   
+ ...tion/pipelines |     100 |      100 |     100 |     100 |                   
+  ...Middleware.ts |     100 |      100 |     100 |     100 |                   
+ ...n/queries/auth |     100 |      100 |     100 |     100 |                   
+  AuthQueries.ts   |     100 |      100 |     100 |     100 |                   
+ ...ies/categories |   73.91 |      100 |      50 |   73.91 |                   
+  ...oryQueries.ts |   73.91 |      100 |      50 |   73.91 | 8-13              
+ ...ueries/recipes |     100 |      100 |     100 |     100 |                   
+  ...cipesQuery.ts |     100 |      100 |     100 |     100 |                   
+  RecipeQueries.ts |     100 |      100 |     100 |     100 |                   
+ ...ion/validators |     100 |      100 |     100 |     100 |                   
+  ...Validators.ts |     100 |      100 |     100 |     100 |                   
+  ...Validators.ts |     100 |      100 |     100 |     100 |                   
+  ...Validators.ts |     100 |      100 |     100 |     100 |                   
+ ...dleware/config |   97.56 |        0 |     100 |   97.56 |                   
+  env.ts           |     100 |      100 |     100 |     100 |                   
+  logger.ts        |    87.5 |        0 |     100 |    87.5 | 7                 
+ ...are/middleware |       0 |       50 |      50 |       0 |                   
+  errorHandler.ts  |       0 |        0 |       0 |       0 | 1-31              
+  ...undHandler.ts |       0 |      100 |     100 |       0 | 3-8               
+ ...hared/database |     100 |    60.86 |     100 |     100 |                   
+  client.ts        |     100 |    60.86 |     100 |     100 | ...20,28-29,38-39 
+ .../shared/errors |     100 |       90 |     100 |     100 |                   
+  AppError.ts      |     100 |       90 |     100 |     100 | 23                
+ domain/entities   |     100 |      100 |     100 |     100 |                   
+  Category.ts      |     100 |      100 |     100 |     100 |                   
+  Recipe.ts        |     100 |      100 |     100 |     100 |                   
+  RecipeImage.ts   |     100 |      100 |     100 |     100 |                   
+  ...Ingredient.ts |     100 |      100 |     100 |     100 |                   
+  RecipeStep.ts    |     100 |      100 |     100 |     100 |                   
+  User.ts          |     100 |      100 |     100 |     100 |                   
+ domain/enums      |     100 |      100 |     100 |     100 |                   
+  ...Difficulty.ts |     100 |      100 |     100 |     100 |                   
+  RecipeStatus.ts  |     100 |      100 |     100 |     100 |                   
+  UserRole.ts      |     100 |      100 |     100 |     100 |                   
+ ...n/repositories |       0 |        0 |       0 |       0 |                   
+  ...Repository.ts |       0 |        0 |       0 |       0 |                   
+  ...Repository.ts |       0 |        0 |       0 |       0 |                   
+  ...Repository.ts |       0 |        0 |       0 |       0 |                   
+ .../value-objects |     100 |    96.77 |     100 |     100 |                   
+  EmailAddress.ts  |     100 |    93.75 |     100 |     100 | 34                
+  Slug.ts          |     100 |      100 |     100 |     100 |                   
+ ...structure/auth |   89.41 |       75 |     100 |   89.41 |                   
+  JwtService.ts    |   95.12 |    88.88 |     100 |   95.12 | 52-53             
+  ...ordService.ts |   84.09 |    63.63 |     100 |   84.09 | ...29,35-36,48-49 
+ ...uth/strategies |   22.58 |    33.33 |   33.33 |   22.58 |                   
+  ...leStrategy.ts |       0 |        0 |       0 |       0 | 1-59              
+  JwtStrategy.ts   |    87.5 |       50 |     100 |    87.5 | 25-26,38-39       
+  LocalStrategy.ts |       0 |        0 |       0 |       0 | 1-62              
+ ...tructure/cache |   83.54 |    89.18 |      90 |   83.54 |                   
+  ...cheService.ts |   83.54 |    89.18 |      90 |   83.54 | ...67,78-79,87-88 
+ ...tructure/email |     100 |      100 |     100 |     100 |                   
+  ...ailService.ts |     100 |      100 |     100 |     100 |                   
+ ...e/file-storage |     100 |      100 |     100 |     100 |                   
+  ...ageService.ts |     100 |      100 |     100 |     100 |                   
+ ...ructure/health |   91.66 |    68.75 |     100 |   91.66 |                   
+  ...eckService.ts |   91.66 |    68.75 |     100 |   91.66 | 46-47,59-60       
+ ...structure/jobs |      92 |    88.88 |     100 |      92 |                   
+  ...pProcessor.ts |   89.18 |     87.5 |     100 |   89.18 | 13-14,21-22       
+  ...ileCleanup.ts |     100 |      100 |     100 |     100 |                   
+ ...re/jobs/queues |   85.36 |       50 |      80 |   85.36 |                   
+  ...eanupQueue.ts |       0 |        0 |       0 |       0 | 1-21              
+  ...esizeQueue.ts |     100 |       50 |     100 |     100 | 9                 
+  sitemapQueue.ts  |     100 |    66.66 |     100 |     100 | 9                 
+  ...EmailQueue.ts |     100 |       50 |     100 |     100 | 9                 
+ ...e/jobs/workers |   53.33 |    66.66 |      75 |   53.33 |                   
+  ...anupWorker.ts |       0 |        0 |       0 |       0 | 1-67              
+  ...sizeWorker.ts |   91.66 |       75 |     100 |   91.66 | 33-34             
+  sitemapWorker.ts |    91.3 |       75 |     100 |    91.3 | 32-33             
+  ...mailWorker.ts |    91.3 |    66.66 |     100 |    91.3 | 29-30             
+ ...e/repositories |   99.79 |     90.9 |     100 |   99.79 |                   
+  ...Repository.ts |     100 |    95.45 |     100 |     100 | 84                
+  ...Repository.ts |   99.62 |    85.96 |     100 |   99.62 | 41                
+  ...Repository.ts |     100 |      100 |     100 |     100 |                   
+ ...rsistence/seed |     100 |      100 |     100 |     100 |                   
+  ...gorySeeder.ts |     100 |      100 |     100 |     100 |                   
+  faker-data.ts    |     100 |      100 |     100 |     100 |                   
+  recipeSeeder.ts  |     100 |      100 |     100 |     100 |                   
+  userSeeder.ts    |     100 |      100 |     100 |     100 |                   
+ ...tructure/utils |     100 |      100 |     100 |     100 |                   
+  duration.ts      |     100 |      100 |     100 |     100 |                   
+ presentation/di   |   84.35 |    66.66 |   57.14 |   84.35 |                   
+  container.ts     |   84.35 |    66.66 |   57.14 |   84.35 | ...38-242,255-257 
+ presentation/docs |   99.76 |      100 |      50 |   99.76 |                   
+  openapi.ts       |   99.76 |      100 |      50 |   99.76 | 872-873           
+ ...ion/middleware |    90.2 |    82.85 |   72.72 |    90.2 |                   
+  ...Middleware.ts |   90.36 |    94.73 |     100 |   90.36 | 90-97             
+  ...Middleware.ts |       0 |        0 |       0 |       0 | 1-15              
+  ...rorHandler.ts |     100 |       80 |     100 |     100 | 38-39             
+  ...Middleware.ts |     100 |       60 |      60 |     100 | 8                 
+ ...ntation/routes |   75.23 |       87 |   58.33 |   75.23 |                   
+  authRoutes.ts    |   97.61 |    94.73 |     100 |   97.61 | 92-93             
+  ...goryRoutes.ts |   40.47 |       20 |     100 |   40.47 | ...97-105,108-115 
+  googleOAuth.ts   |   59.57 |       60 |    37.5 |   59.57 | ...52-57,59,62-67 
+  ...AuthRoutes.ts |   97.77 |     92.3 |     100 |   97.77 | 109-110           
+  recipeRoutes.ts  |   74.46 |    91.11 |     100 |   74.46 | ...56-281,289-296 
+-------------------|---------|----------|---------|---------|-------------------

@@ -1,0 +1,27 @@
+{
+  "baseCommit": "22ea59ec4d5dfc602452cce38a87ff389f58439b",
+  "files": {
+    "backend/src/application/commands/recipes/RecipeCommands.ts": "28a505835d1170093991ee2efbca49c0e53d34c29b084d44c9fcf811014699cb",
+    "backend/src/application/handlers/RecipeQueryHandlers.ts": "909b0c4d416e671dad6fa4ff171140cee97ec988a694b83e85065006ea73512a",
+    "backend/src/application/handlers/RecipeStatusCommandHandlers.ts": "e47acb27c1dd187fcd688ce0557515afb3957063cfb736a496cab3262475b4da",
+    "backend/src/application/validators/recipeValidators.ts": "5049fd0bc72833686f0f9e6a989ed2525ce6fbd268c4505dd15bb62b26d0a5ff",
+    "backend/src/presentation/di/container.ts": "1c55ccff8b0b54038d80e82e579bf718d5a12d4046c024237eb3c266bacdf4ff",
+    "backend/src/presentation/docs/openapi.ts": "3ba79a8871d4c6077058d8a534a388d964f959e646d660a6be1883fa1d98aae6",
+    "backend/src/presentation/routes/categoryRoutes.ts": "32abc6f089d5a5253c0ff5b91599c305c296410a895eeb53ab4273dad70d9694",
+    "backend/src/presentation/routes/recipeRoutes.ts": "c9476d4ca7b726fdf322b4afa508a7d132c2aff8dff02467fc2b31ebb1b8bc51",
+    "backend/tests/recipe-status.test.ts": "f62af19b2054db9fba4a1ee04075e4d84fdd38d9a3d55ab9761271bcd9b32ee2",
+    "docs/archive-recipe.md": "6eac8e69e045b014d7cf6760b9cc07e6a2478775fc7ddc3eb7dccbb697c0ed8c",
+    "frontend/src/hooks/useRecipes.ts": "65b88041cc0404e15a3162d3ceecd2f162d0e386b5b5dec71d409170ca28ef07",
+    "frontend/src/lib/api.ts": "12a50faf0c9bcb6aa53a5c3932d55daeba481cd59a61a0127bdf740270a74174",
+    "frontend/src/pages/RecipeDetailPage.tsx": "08c20986d2f86f3dd5150ee528032b192be6c6d100de8690fa9ca546379a8b15",
+    "frontend/src/pages/RecipesPage.tsx": "6a7be95db9c545d811f82df7244014ef53482b838227516aa2df3c28e5613657",
+    "frontend/src/test/RecipeDetailPage.test.tsx": "3f74eb91e613fd12b9b63d1ec917e9fb61f5ac4e6f1b2a34e93d61a0056aa547",
+    "frontend/src/test/RecipesPage.test.tsx": "33f6028c98a8e0d02b102e0b26ee6575757a5ba22ba38ebaa55d2f95dbe97435",
+    "frontend/src/test/static-blog.test.tsx": "e389e7c8aedb621969d2ce0a9f0b292ca129edaf209ef0fc50105b0235f21daa",
+    "frontend/src/types/recipe.ts": "9d7b26358c0d7e9bc8dca9ee9ac18085cb3b04a6ae480a45997eba570b6d763b",
+    "frontend/src/App.tsx": "7bf2bda0a84e8f1e0f70ac3d3e4faa41f04cbabb38c0b2df7e819768cc49cc3c",
+    "frontend/src/components/DashboardSidebar.tsx": "7846ebcf1b3e90a16aaa03d6a7c77d22954dd37a288b125927e8a85c12f041ae",
+    "frontend/src/components/layout/DashboardLayout.tsx": "cf9ba1161e38516f86145c638b46f412d3906f13dd0c3cfe7d34d02ea15cb350",
+    "frontend/src/pages/DashboardPage.tsx": "8f60c61b1f9d0c59c1cb50b066c320a44a52df2eb7c24f0d37feb7dec3383ac6"
+  }
+}

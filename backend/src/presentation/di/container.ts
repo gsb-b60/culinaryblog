@@ -13,11 +13,15 @@ import {
   UpdateProfileCommand,
 } from '../../application/commands/auth/AuthCommands.js';
 import {
+  ArchiveRecipeCommand,
   AddRecipeIngredientCommand,
-  CreateRecipeCommand,
-  DeleteRecipeIngredientCommand,
+  DeleteRecipeCommand,
+  AddRecipeStepCommand,
+  UpdateRecipeStepCommand,
+  DeleteRecipeStepCommand,
   PublishRecipeCommand,
   UnpublishRecipeCommand,
+  DeleteRecipeIngredientCommand,
   UpdateRecipeIngredientCommand,
 } from '../../application/commands/recipes/RecipeCommands.js';
 import {
@@ -30,19 +34,36 @@ import {
   type GoogleProfile,
 } from '../../application/handlers/AuthCommandHandlers.js';
 import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
-import { GetCategoriesQueryHandler, GetCategoryBySlugQueryHandler } from '../../application/handlers/CategoryQueryHandlers.js';
-import { CreateRecipeCommandHandler } from '../../application/handlers/CreateRecipeCommandHandler.js';
+import { DeleteRecipeCommandHandler } from '../../application/handlers/DeleteRecipeCommandHandler.js';
 import { ManagedRecipeQueryHandler } from '../../application/handlers/ManagedRecipeQueryHandler.js';
 import {
   AddRecipeIngredientCommandHandler,
   DeleteRecipeIngredientCommandHandler,
   UpdateRecipeIngredientCommandHandler,
 } from '../../application/handlers/RecipeIngredientCommandHandlers.js';
-import { PublishRecipeCommandHandler, UnpublishRecipeCommandHandler } from '../../application/handlers/RecipeStatusCommandHandlers.js';
+import {
+  GetRecipeIngredientsQuery,
+  GetRecipeIngredientsQueryHandler,
+} from '../../application/handlers/RecipeIngredientQueryHandler.js';
+import { RecipeOverviewQueryHandler } from '../../application/handlers/RecipeOverviewQueryHandler.js';
+import { GetRecipesQueryHandler, SearchRecipesQueryHandler, GetRecipeBySlugQueryHandler, GetCategoriesQueryHandler, GetCategoryBySlugQueryHandler } from '../../application/handlers/RecipeQueryHandlers.js';
+import {
+  ArchiveRecipeCommandHandler,
+  PublishRecipeCommandHandler,
+  UnpublishRecipeCommandHandler,
+} from '../../application/handlers/RecipeStatusCommandHandlers.js';
+import {
+  AddRecipeStepCommandHandler,
+  DeleteRecipeStepCommandHandler,
+  GetRecipeStepsQuery,
+  GetRecipeStepsQueryHandler,
+  UpdateRecipeStepCommandHandler,
+} from '../../application/handlers/RecipeStepCommandHandlers.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
 import { GetManagedRecipesQuery } from '../../application/queries/recipes/GetManagedRecipesQuery.js';
+import { GetRecipeOverviewQuery } from '../../application/queries/recipes/GetRecipeOverviewQuery.js';
 import { env } from '../../config-middleware/config/env.js';
 import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository.js';
 import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.js';
@@ -74,6 +95,7 @@ export interface Container {
 
 let container: Container | null = null;
 
+/** Wire repositories, services and command/query handlers for Express. */
 export function createContainer(): Container {
   if (container) return container;
 
@@ -89,12 +111,20 @@ export function createContainer(): Container {
   const emailService = new NodemailerEmailService();
 
   commandBus.registerCommandHandler(
-    CreateRecipeCommand.name,
-    new CreateRecipeCommandHandler(prisma, () => cacheService.deletePattern('recipes:*')),
-  );
-  commandBus.registerCommandHandler(
     AddRecipeIngredientCommand.name,
     new AddRecipeIngredientCommandHandler(prisma),
+  );
+  commandBus.registerCommandHandler(
+    AddRecipeStepCommand.name,
+    new AddRecipeStepCommandHandler(prisma, cacheService),
+  );
+  commandBus.registerCommandHandler(
+    UpdateRecipeStepCommand.name,
+    new UpdateRecipeStepCommandHandler(prisma, cacheService),
+  );
+  commandBus.registerCommandHandler(
+    DeleteRecipeStepCommand.name,
+    new DeleteRecipeStepCommandHandler(prisma, cacheService),
   );
   commandBus.registerCommandHandler(
     UpdateRecipeIngredientCommand.name,
@@ -106,6 +136,16 @@ export function createContainer(): Container {
   );
 
   commandBus.registerCommandHandler(
+    DeleteRecipeCommand.name,
+    new DeleteRecipeCommandHandler(prisma, async () => {
+      await cacheService.deletePattern('recipes:*');
+      await cacheService.deletePattern('categories:*');
+    }),
+  );
+
+  commandBus.registerCommandHandler(ArchiveRecipeCommand.name, new ArchiveRecipeCommandHandler(prisma, cacheService));
+
+  commandBus.registerCommandHandler(
     PublishRecipeCommand.name,
     new PublishRecipeCommandHandler(prisma, cacheService),
   );
@@ -114,23 +154,28 @@ export function createContainer(): Container {
     new UnpublishRecipeCommandHandler(prisma, cacheService),
   );
 
+  commandBus.registerQueryHandler('GetRecipesQuery', new GetRecipesQueryHandler(recipeRepository));
+  commandBus.registerQueryHandler('SearchRecipesQuery', new SearchRecipesQueryHandler(recipeRepository));
+  commandBus.registerQueryHandler('GetRecipeBySlugQuery', new GetRecipeBySlugQueryHandler(prisma));
+  commandBus.registerQueryHandler('GetCategoriesQuery', new GetCategoriesQueryHandler(categoryRepository));
+  commandBus.registerQueryHandler('GetCategoryBySlugQuery', new GetCategoryBySlugQueryHandler(categoryRepository, recipeRepository));
+
+  commandBus.registerQueryHandler(GetRecipeOverviewQuery.name, new RecipeOverviewQueryHandler(prisma));
+
   commandBus.registerQueryHandler(
     GetManagedRecipesQuery.name,
     new ManagedRecipeQueryHandler(prisma),
   );
 
   commandBus.registerQueryHandler(
-    'GetCurrentUserQuery',
-    new GetCurrentUserQueryHandler(prisma),
+    GetRecipeIngredientsQuery.name,
+    new GetRecipeIngredientsQueryHandler(prisma),
   );
   commandBus.registerQueryHandler(
-    'GetCategoriesQuery',
-    new GetCategoriesQueryHandler(prisma),
+    GetRecipeStepsQuery.name,
+    new GetRecipeStepsQueryHandler(prisma),
   );
-  commandBus.registerQueryHandler(
-    'GetCategoryBySlugQuery',
-    new GetCategoryBySlugQueryHandler(prisma),
-  );
+  commandBus.registerQueryHandler('GetCurrentUserQuery', new GetCurrentUserQueryHandler(prisma));
 
   commandBus.registerCommandHandler(
     UpdateProfileCommand.name,
@@ -172,10 +217,7 @@ export function createContainer(): Container {
     }),
   );
 
-  commandBus.registerCommandHandler(
-    LogoutCommand.name,
-    new LogoutCommandHandler({ prisma }),
-  );
+  commandBus.registerCommandHandler(LogoutCommand.name, new LogoutCommandHandler({ prisma }));
 
   const googleAuthClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
@@ -221,6 +263,7 @@ export function createContainer(): Container {
   return container;
 }
 
+/** Return the shared dependency container, creating it on first access. */
 export function getContainer(): Container {
   if (!container) {
     return createContainer();
@@ -228,6 +271,7 @@ export function getContainer(): Container {
   return container;
 }
 
+/** Close resources owned by the dependency container at shutdown or test teardown. */
 export async function destroyContainer(): Promise<void> {
   if (container) {
     await container.prisma.$disconnect();
@@ -236,6 +280,7 @@ export async function destroyContainer(): Promise<void> {
   }
 }
 
+/** Attach the dependency container to each Express request. */
 export function containerMiddleware(req: Request, _res: Response, next: NextFunction): void {
   (req as any).container = getContainer();
   next();

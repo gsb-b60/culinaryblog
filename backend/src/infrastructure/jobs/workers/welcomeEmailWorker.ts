@@ -12,12 +12,13 @@ const worker = new Worker<WelcomeEmailJobData>(
     console.log(`Welcome email sent to ${email}`);
   },
   {
+    prefix: env.BULLMQ_PREFIX,
     connection: {
       host: new URL(env.REDIS_URL).hostname,
       port: parseInt(new URL(env.REDIS_URL).port) || 6379,
     },
     concurrency: 5,
-  }
+  },
 );
 
 worker.on('completed', (job) => {
