@@ -26,7 +26,8 @@ export interface IRecipeRepository {
     filters: RecipeFilters,
     sort: RecipeSortOptions,
     page: number,
-    pageSize: number
+    pageSize: number,
+    viewer?: { userId?: string; role?: string; isAdmin?: boolean }
   ): Promise<PagedResult<Recipe>>;
   findPublishedByCategory(
     categoryId: string,

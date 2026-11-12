@@ -115,8 +115,9 @@ export class RecipeRepository implements IRecipeRepository {
     sort: RecipeSortOptions,
     page: number,
     pageSize: number,
+    viewer?: { userId?: string; role?: string; isAdmin?: boolean },
   ): Promise<PagedResult<Recipe>> {
-    const where = this.buildWhereClause(filters);
+    const where = this.buildWhereClause(filters, viewer);
     const orderBy = this.buildOrderBy(sort);
 
     const [items, totalCount] = await Promise.all([
@@ -293,12 +294,14 @@ export class RecipeRepository implements IRecipeRepository {
   }
 
   /** Translate repository filters into a Prisma predicate excluding deleted recipes. */
-  private buildWhereClause(filters: RecipeFilters): Prisma.RecipeWhereInput {
+  private buildWhereClause(
+    filters: RecipeFilters,
+    viewer?: { userId?: string; role?: string; isAdmin?: boolean },
+  ): Prisma.RecipeWhereInput {
     const where: Prisma.RecipeWhereInput = { isDeleted: false };
 
     if (filters.categoryId) where.categoryId = filters.categoryId;
     if (filters.difficulty) where.difficulty = filters.difficulty;
-    if (filters.status) where.status = filters.status;
     if (filters.authorId) where.authorId = filters.authorId;
     if (filters.minServings !== undefined) where.servings = { gte: filters.minServings };
     if (filters.minPrepTime !== undefined || filters.maxPrepTime !== undefined) {
@@ -316,6 +319,38 @@ export class RecipeRepository implements IRecipeRepository {
         { title: { contains: filters.searchQuery, mode: 'insensitive' } },
         { description: { contains: filters.searchQuery, mode: 'insensitive' } },
       ];
+    }
+
+    // Role-based visibility filter (FR-RCP-001)
+    if (viewer?.isAdmin) {
+      // Admin sees all statuses unless a specific status filter is requested
+      if (filters.status) {
+        where.status = filters.status;
+      }
+    } else if (viewer?.userId) {
+      // Author sees Published OR (own Draft / Archived)
+      if (filters.status) {
+        if (filters.status === RecipeStatus.PUBLISHED) {
+          where.status = RecipeStatus.PUBLISHED;
+        } else {
+          where.status = filters.status;
+          where.authorId = viewer.userId;
+        }
+      } else {
+        const authCondition: Prisma.RecipeWhereInput = {
+          OR: [
+            { status: RecipeStatus.PUBLISHED },
+            {
+              status: { in: [RecipeStatus.DRAFT, RecipeStatus.ARCHIVED] },
+              authorId: viewer.userId,
+            },
+          ],
+        };
+        where.AND = [authCondition];
+      }
+    } else {
+      // Guest sees only PUBLISHED
+      where.status = RecipeStatus.PUBLISHED;
     }
 
     return where;
