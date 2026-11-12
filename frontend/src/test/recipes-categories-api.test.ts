@@ -64,6 +64,31 @@ describe('recipes api client (typed)', () => {
     expect(url).toContain('difficulty=MEDIUM')
   })
 
+  it('creates a recipe with nested steps and ingredients using the authenticated request', async () => {
+    fetchMock.mockResolvedValue(json({ id: 'r1', slug: 'pho-bo', status: 'DRAFT' }))
+
+    const created = await createRecipe('tok', {
+      title: 'Pho Bo ngon',
+      description: 'Mo ta du 10 ky tu tro len',
+      categoryId: '123e4567-e89b-12d3-a456-426614174000',
+      prepTime: 15,
+      cookTime: 30,
+      servings: 2,
+      steps: [{ stepNumber: 1, title: 'Nau', description: 'Ninh nuoc' }],
+      ingredients: [{ name: 'Banh pho', quantity: 1, unit: 'kg', orderIndex: 0 }],
+    })
+
+    expect(created.status).toBe('DRAFT')
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/recipes')
+    expect(init.method).toBe('POST')
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer tok')
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      steps: [{ title: 'Nau' }],
+      ingredients: [{ name: 'Banh pho' }],
+    })
+  })
+
   it('searches, fetches detail, and publishes with auth header', async () => {
     fetchMock.mockResolvedValue(json({ items: [], meta: {} }))
     await searchRecipes('pho', { page: 1 })

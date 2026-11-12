@@ -147,8 +147,8 @@ router.post(
     try {
       const input = createRecipeSchema.parse(req.body);
       const command = new CreateRecipeCommand(req.user!.id, input);
-      const recipeId = await commandBus.executeCommand(command);
-      res.status(201).json({ id: recipeId, message: 'Recipe created successfully' });
+      const recipe = await commandBus.executeCommand(command);
+      res.status(201).json(recipe);
     } catch (error) {
       next(error);
     }

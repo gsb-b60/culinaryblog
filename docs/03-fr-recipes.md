@@ -109,7 +109,7 @@ An Author or Admin creates a new recipe. The initial status is always Draft (not
 
 **Main flow (Happy Path):**
 
-1. Author sends POST /api/v1/recipes with body: `{ title, description, categoryId, prepTimeMinutes, cookTimeMinutes, servings, difficulty, instructions?, nutrition?: {...}, steps?: [...], ingredients?: [...] }`.
+1. Author sends POST /api/v1/recipes with body: `{ title, description, categoryId, prepTime, cookTime, servings, difficulty, instructions?, nutrition?: {...}, steps?: [...], ingredients?: [...] }`.
 2. Authentication check (Passport.js JWT middleware).
 3. CreateRecipeCommand dispatched.
 4. Zod validation: title 5–200 characters, prepTime/cookTime/servings > 0, categoryId a valid UUID.

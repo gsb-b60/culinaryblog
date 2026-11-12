@@ -7,14 +7,14 @@ import { paginationSchema } from './paginationValidators.js';
 
 export const createRecipeStepSchema = z.object({
   stepNumber: z.number().int().positive(),
-  title: z.string().min(1).max(200),
-  description: z.string().min(1),
+  title: z.string().trim().min(1).max(200),
+  description: z.string().trim().min(1),
   timerMinutes: z.number().int().nonnegative().optional(),
   imageUrl: z.string().url().max(500).optional(),
 });
 
 export const createRecipeIngredientSchema = z.object({
-  name: z.string().min(1).max(200),
+  name: z.string().trim().min(1).max(200),
   quantity: z.number().positive().max(999999.999).optional(),
   unit: z.string().max(50).optional(),
   notes: z.string().max(500).optional(),
@@ -22,8 +22,8 @@ export const createRecipeIngredientSchema = z.object({
 });
 
 export const createRecipeSchema = z.object({
-  title: z.string().min(5).max(200),
-  description: z.string().min(10).max(2000),
+  title: z.string().trim().min(5).max(200),
+  description: z.string().trim().min(10).max(2000),
   categoryId: z.string().uuid(),
   prepTime: z.number().int().positive(),
   cookTime: z.number().int().nonnegative(),

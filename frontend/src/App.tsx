@@ -17,6 +17,7 @@ import HomePage from './pages/HomePage'
 import ProfilePage from './pages/ProfilePage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
+import NewRecipePage from './pages/NewRecipePage'
 
 /** Render the fallback for an unknown application route. */
 function NotFoundPage() {
@@ -65,6 +66,8 @@ export default function App() {
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/categories" element={<AdminCategoriesPage />} />
+        <Route path="/dashboard/categories/:slug" element={<CategoryDetailPage />} />
+        <Route path="/dashboard/recipes/new" element={<NewRecipePage />} />
         <Route path="/dashboard/recipes/delete" element={<DeleteRecipesPage />} />
         <Route
           path="/dashboard/recipes/archive"
