@@ -13,6 +13,8 @@ import type {
 import type {
   Category,
   CategoryDetail,
+  CategoryDto,
+  CategoryDetailDto,
   CategoryListQuery,
   CreateCategoryPayload,
   UpdateCategoryPayload,
@@ -256,6 +258,25 @@ export function logout(accessToken: string, refreshToken: string): Promise<null>
   })
 }
 
+export function getCategories(): Promise<CategoryDto[]> {
+  return request<CategoryDto[]>('/categories', {
+    method: 'GET',
+  })
+}
+
+export function getCategoryDetail(
+  slug: string,
+  page = 1,
+  pageSize = 12,
+  accessToken?: string,
+): Promise<CategoryDetailDto> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+  return request<CategoryDetailDto>(`/categories/${encodeURIComponent(slug)}?${params}`, {
+    method: 'GET',
+    ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {}),
+  })
+}
+
 /** Encode defined nonempty filters and pagination values in a query string. */
 function toQuery(params: Record<string, string | number | boolean | undefined>): string {
   const search = new URLSearchParams()
@@ -444,8 +465,8 @@ export function getCategoryBySlug(
 export function createCategory(
   accessToken: string,
   payload: CreateCategoryPayload,
-): Promise<{ id: string }> {
-  return request<{ id: string }>('/categories', {
+): Promise<Category> {
+  return request<Category>('/categories', {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(payload),
@@ -516,3 +537,4 @@ export function deleteRecipeIngredient(
     },
   )
 }
+

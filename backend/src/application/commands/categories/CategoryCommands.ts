@@ -1,7 +1,7 @@
 import { Command } from '../../command-bus.js';
-import { CreateCategoryInput, UpdateCategoryInput } from '../../dtos/CategoryDto.js';
+import { CategoryDto, CreateCategoryInput, UpdateCategoryInput } from '../../dtos/CategoryDto.js';
 
-export class CreateCategoryCommand extends Command<string> {
+export class CreateCategoryCommand extends Command<CategoryDto> {
   readonly type = 'CreateCategoryCommand';
 
   constructor(public readonly input: CreateCategoryInput) {
@@ -9,7 +9,7 @@ export class CreateCategoryCommand extends Command<string> {
   }
 }
 
-export class UpdateCategoryCommand extends Command<void> {
+export class UpdateCategoryCommand extends Command<CategoryDto> {
   readonly type = 'UpdateCategoryCommand';
 
   constructor(

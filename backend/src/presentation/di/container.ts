@@ -12,6 +12,9 @@ import {
   RegisterCommand,
   UpdateProfileCommand,
 } from '../../application/commands/auth/AuthCommands.js';
+import { CreateCategoryCommandHandler } from '../../application/commands/categories/CreateCategoryCommandHandler.js';
+import { DeleteCategoryCommandHandler } from '../../application/commands/categories/DeleteCategoryCommandHandler.js';
+import { UpdateCategoryCommandHandler } from '../../application/commands/categories/UpdateCategoryCommandHandler.js';
 import {
   ArchiveRecipeCommand,
   CreateRecipeCommand,
@@ -72,6 +75,7 @@ import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.j
 import { IUserRepository } from '../../domain/repositories/IUserRepository.js';
 import { JwtService } from '../../infrastructure/auth/JwtService.js';
 import { PasswordService } from '../../infrastructure/auth/PasswordService.js';
+import { categoryCache } from '../../infrastructure/cache/CategoryCache.js';
 import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
 import { NodemailerEmailService } from '../../infrastructure/email/NodemailerEmailService.js';
 import { MinioFileStorageService } from '../../infrastructure/file-storage/MinioFileStorageService.js';
@@ -111,6 +115,19 @@ export function createContainer(): Container {
   const jwtService = new JwtService();
   const fileStorageService = new MinioFileStorageService();
   const emailService = new NodemailerEmailService();
+
+  commandBus.registerCommandHandler(
+    'CreateCategoryCommand',
+    new CreateCategoryCommandHandler(prisma, categoryCache),
+  );
+  commandBus.registerCommandHandler(
+    'UpdateCategoryCommand',
+    new UpdateCategoryCommandHandler(prisma, categoryCache),
+  );
+  commandBus.registerCommandHandler(
+    'DeleteCategoryCommand',
+    new DeleteCategoryCommandHandler(prisma, categoryCache),
+  );
 
   commandBus.registerCommandHandler(
     CreateRecipeCommand.name,
@@ -186,6 +203,7 @@ export function createContainer(): Container {
     new GetRecipeStepsQueryHandler(prisma),
   );
   commandBus.registerQueryHandler('GetCurrentUserQuery', new GetCurrentUserQueryHandler(prisma));
+
 
   commandBus.registerCommandHandler(
     UpdateProfileCommand.name,

@@ -2,6 +2,7 @@ import { Link, Route, Routes } from 'react-router-dom'
 
 import AppLayout from './components/layout/AppLayout'
 import DashboardLayout from './components/layout/DashboardLayout'
+import AdminCategoriesPage from './pages/AdminCategoriesPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import RecipesPage from './pages/RecipesPage'
 import DeleteRecipesPage from './pages/DeleteRecipesPage'
@@ -64,7 +65,7 @@ export default function App() {
       {/* Authenticated area shell: sidebar, mobile navigation, sign-out dialog. */}
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/dashboard/categories" element={<CategoriesPage />} />
+        <Route path="/dashboard/categories" element={<AdminCategoriesPage />} />
         <Route path="/dashboard/categories/:slug" element={<CategoryDetailPage />} />
         <Route path="/dashboard/recipes/new" element={<NewRecipePage />} />
         <Route path="/dashboard/recipes/delete" element={<DeleteRecipesPage />} />
@@ -82,6 +83,9 @@ export default function App() {
       <Route path="/auth/register" element={<RegisterPage />} />
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      <Route path="/categories" element={<CategoriesPage />} />
+      <Route path="/categories/:slug" element={<CategoryDetailPage />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }
