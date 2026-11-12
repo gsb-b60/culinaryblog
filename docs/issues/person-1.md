@@ -371,7 +371,7 @@ An Author or Admin creates a new recipe. Initial status is always Draft (not pub
 
 **Main Flow:**
 
-1. Author sends `POST /api/v1/recipes` with `{ title, description, categoryId, prepTimeMinutes, cookTimeMinutes, servings, difficulty, instructions?, nutrition?, steps?, ingredients? }`.
+1. Author sends `POST /api/v1/recipes` with `{ title, description, categoryId, prepTime, cookTime, servings, difficulty, instructions?, nutrition?, steps?, ingredients? }`.
 2. Authentication check (Passport.js JWT middleware).
 3. Dispatch `CreateRecipeCommand`.
 4. Zod validation: title 5–200 chars, prepTime/cookTime/servings > 0, categoryId valid UUID.
@@ -392,15 +392,15 @@ New recipe created with Status = Draft, Slug auto-generated.
 
 **Acceptance Criteria:**
 
-- [ ] Recipe + steps + ingredients + nutrition created atomically in one `$transaction`
-- [ ] If any part fails, entire transaction rolls back (no partial data)
-- [ ] Slug auto-generated from title (lowercase, hyphenated, no diacritics)
-- [ ] Duplicate slug returns 409
-- [ ] Initial status is always DRAFT (never auto-published)
-- [ ] Invalid categoryId returns 422
-- [ ] Missing authentication returns 401
-- [ ] Recipe list cache invalidated after creation
-- [ ] Zod validation runs before any DB write
+- [x] Recipe + steps + ingredients + nutrition created atomically in one `$transaction`
+- [x] If any part fails, entire transaction rolls back (no partial data)
+- [x] Slug auto-generated from title (lowercase, hyphenated, no diacritics)
+- [x] Duplicate slug returns 409
+- [x] Initial status is always DRAFT (never auto-published)
+- [x] Invalid categoryId returns 422
+- [x] Missing authentication returns 401
+- [x] Recipe list cache invalidated after creation
+- [x] Zod validation runs before any DB write
 
 ---
 

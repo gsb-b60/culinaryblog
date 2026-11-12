@@ -293,8 +293,8 @@ export function getRecipeBySlug(slug: string, accessToken?: string, signal?: Abo
 export function createRecipe(
   accessToken: string,
   payload: CreateRecipePayload,
-): Promise<{ id: string }> {
-  return request<{ id: string }>('/recipes', {
+): Promise<RecipeDetail> {
+  return request<RecipeDetail>('/recipes', {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(payload),

@@ -1,7 +1,7 @@
 import { Command } from '../../command-bus.js';
 import { CreateRecipeInput, RecipeDto, RecipeIngredientDto, UpdateRecipeInput } from '../../dtos/RecipeDto.js';
 
-export class CreateRecipeCommand extends Command<string> {
+export class CreateRecipeCommand extends Command<RecipeDto> {
   readonly type = 'CreateRecipeCommand';
 
   constructor(

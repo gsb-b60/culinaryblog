@@ -147,6 +147,20 @@ export interface CreateRecipePayload {
   difficulty?: RecipeDifficulty;
   instructions?: string;
   nutrition?: RecipeNutrition;
+  steps?: Array<{
+    stepNumber: number;
+    title: string;
+    description: string;
+    timerMinutes?: number;
+    imageUrl?: string;
+  }>;
+  ingredients?: Array<{
+    name: string;
+    quantity?: number;
+    unit?: string;
+    notes?: string;
+    orderIndex: number;
+  }>;
 }
 
 export interface UpdateRecipePayload {
