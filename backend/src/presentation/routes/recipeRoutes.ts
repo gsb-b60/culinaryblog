@@ -159,9 +159,9 @@ router.get('/search', generalRateLimiter, async (req, res, next) => {
 
 router.get('/:slug', optionalAuth, recipeDetailCache, generalRateLimiter, async (req, res, next) => {
   try {
-    const isAdmin =
-      (req as AuthenticatedRequest).user?.roles?.includes(UserRole.ADMIN) ||
-      (req as AuthenticatedRequest).user?.roles?.includes('ADMIN');
+    const isAdmin = Boolean(
+      (req as AuthenticatedRequest).user?.roles?.includes(UserRole.ADMIN),
+    );
 
     const query = new GetRecipeBySlugQuery(
       req.params.slug!,
