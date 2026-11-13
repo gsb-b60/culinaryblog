@@ -322,14 +322,49 @@ export function createRecipe(
   })
 }
 
+export interface RecipeImageUploadResult {
+  originalUrl: string
+}
+
+/** Upload an image without overriding the browser-generated multipart boundary. */
+export function uploadRecipeImage(
+  accessToken: string,
+  recipeId: string,
+  file: File,
+  onProgress?: (percent: number) => void,
+): Promise<RecipeImageUploadResult> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `${API_BASE}/recipes/${encodeURIComponent(recipeId)}/images`)
+    xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`)
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100))
+    })
+    xhr.addEventListener('load', () => {
+      let body: RecipeImageUploadResult | ProblemDetails | null
+      try { body = xhr.responseText ? JSON.parse(xhr.responseText) as RecipeImageUploadResult | ProblemDetails : null } catch { body = null }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(body as RecipeImageUploadResult)
+      } else {
+        const problem = body as ProblemDetails | null
+        reject(new ApiError(xhr.status, problem?.detail ?? 'Không thể tải ảnh lên.', problem))
+      }
+    })
+    xhr.addEventListener('error', () => reject(new ApiError(0, 'Không thể kết nối máy chủ. Vui lòng thử lại.', null)))
+    const form = new FormData()
+    form.append('file', file)
+    xhr.send(form)
+  })
+}
+
 /** Persist editable recipe fields under backend ownership checks. */
 export function updateRecipe(
   accessToken: string,
   id: string,
   payload: UpdateRecipePayload,
   version?: number,
-): Promise<{ message: string }> {
-  return request<{ message: string }>(`/recipes/${encodeURIComponent(id)}`, {
+): Promise<RecipeDetail> {
+  return request<RecipeDetail>(`/recipes/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${accessToken}`,

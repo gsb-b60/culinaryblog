@@ -12,14 +12,15 @@ export class CreateRecipeCommand extends Command<RecipeDto> {
   }
 }
 
-export class UpdateRecipeCommand extends Command<void> {
+export class UpdateRecipeCommand extends Command<RecipeDto> {
   readonly type = 'UpdateRecipeCommand';
 
   constructor(
     public readonly recipeId: string,
     public readonly authorId: string,
     public readonly input: UpdateRecipeInput,
-    public readonly expectedVersion: number
+    public readonly expectedVersion: number,
+    public readonly isAdmin = false,
   ) {
     super();
   }

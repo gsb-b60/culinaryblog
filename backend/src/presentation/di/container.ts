@@ -20,6 +20,7 @@ import {
   CreateRecipeCommand,
   AddRecipeIngredientCommand,
   DeleteRecipeCommand,
+  UpdateRecipeCommand,
   AddRecipeStepCommand,
   UpdateRecipeStepCommand,
   DeleteRecipeStepCommand,
@@ -64,6 +65,7 @@ import {
   GetRecipeStepsQueryHandler,
   UpdateRecipeStepCommandHandler,
 } from '../../application/handlers/RecipeStepCommandHandlers.js';
+import { UpdateRecipeCommandHandler } from '../../application/handlers/UpdateRecipeCommandHandler.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
@@ -135,6 +137,11 @@ export function createContainer(): Container {
       await cacheService.deletePattern('recipes:*');
       await cacheService.deletePattern('categories:*');
     }),
+  );
+
+  commandBus.registerCommandHandler(
+    UpdateRecipeCommand.name,
+    new UpdateRecipeCommandHandler(prisma, cacheService),
   );
 
   commandBus.registerCommandHandler(
