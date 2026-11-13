@@ -1,4 +1,5 @@
-import { Router, type Router as RouterType } from 'express';
+import { Router, type Router as RouterType, type Request, type Response, type NextFunction } from 'express';
+import multer from 'multer';
 import { z } from 'zod';
 
 import { commandBus } from '../../application/command-bus.js';
@@ -32,15 +33,41 @@ import {
   recipeSortQuerySchema,
   paginationSchema,
 } from '../../application/validators/recipeValidators.js';
-import { ValidationError } from '../../config-middleware/shared/errors/AppError.js';
+import { AppError, ValidationError } from '../../config-middleware/shared/errors/AppError.js';
 import { UserRole } from '../../domain/index.js';
+import { getContainer } from '../di/container.js';
+import { buildImageKey, assertImageSize, detectAllowedImage, MAX_IMAGE_SIZE_BYTES } from '../file-upload.js';
 import {
   authenticateJwt,
   AuthenticatedRequest,
   authorize,
   optionalAuth,
 } from '../middleware/AuthMiddleware.js';
-import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
+import { uploadRateLimiter, generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
+
+const imageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_IMAGE_SIZE_BYTES },
+});
+
+function uploadImageFile(req: Request, res: Response, next: NextFunction): void {
+  imageUpload.single('file')(req, res, (error: unknown) => {
+    if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') {
+      next(new AppError(
+        400,
+        'Image must be 5 MB or smaller.',
+        'FILE_SIZE_EXCEEDED',
+        { type: 'FILE_SIZE_EXCEEDED', title: 'File too large' },
+      ));
+      return;
+    }
+    if (error) {
+      next(error);
+      return;
+    }
+    next();
+  });
+}
 
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
 const router: RouterType = Router();
@@ -237,6 +264,41 @@ router.delete('/:id', authenticateJwt, async (req: AuthenticatedRequest, res, ne
     next(error);
   }
 });
+
+// Recipe image upload
+router.post(
+  '/:id/images',
+  authenticateJwt,
+  authorize(UserRole.AUTHOR, UserRole.ADMIN),
+  uploadRateLimiter,
+  uploadImageFile,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      if (!req.file) {
+        throw new ValidationError({ file: ['An image file is required'] });
+      }
+      const recipe = await getContainer().prisma.recipe.findFirst({
+        where: { id: req.params.id!, isDeleted: false },
+        select: { authorId: true },
+      });
+      if (!recipe) throw new AppError(404, 'Recipe not found', 'NOT_FOUND', { title: 'Not Found' });
+      if (!req.user!.roles.includes(UserRole.ADMIN) && recipe.authorId !== req.user!.id) {
+        throw new AppError(403, 'You can only upload images to your own recipes', 'FORBIDDEN', { title: 'Forbidden' });
+      }
+      assertImageSize(req.file.size);
+      const detected = await detectAllowedImage(req.file.buffer);
+      const key = buildImageKey(req.params.id!, detected.extension);
+      const originalUrl = await getContainer().fileStorageService.uploadFile(
+        key,
+        req.file.buffer,
+        detected.mime,
+      );
+      res.status(201).json({ originalUrl });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 // Recipe Steps
 router.get('/:id/steps', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
