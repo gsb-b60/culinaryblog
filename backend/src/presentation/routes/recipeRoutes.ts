@@ -32,8 +32,8 @@ import {
   recipeSortQuerySchema,
   paginationSchema,
 } from '../../application/validators/recipeValidators.js';
-import { UserRole } from '../../domain/index.js';
 import { ValidationError } from '../../config-middleware/shared/errors/AppError.js';
+import { UserRole } from '../../domain/index.js';
 import {
   authenticateJwt,
   AuthenticatedRequest,

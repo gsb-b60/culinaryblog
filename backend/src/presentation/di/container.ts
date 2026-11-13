@@ -15,9 +15,9 @@ import {
 import {
   ArchiveRecipeCommand,
   CreateRecipeCommand,
-  UpdateRecipeCommand,
   AddRecipeIngredientCommand,
   DeleteRecipeCommand,
+  UpdateRecipeCommand,
   AddRecipeStepCommand,
   UpdateRecipeStepCommand,
   DeleteRecipeStepCommand,
@@ -38,8 +38,8 @@ import {
 import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQueryHandlers.js';
 import { CreateRecipeCommandHandler } from '../../application/handlers/CreateRecipeCommandHandler.js';
 import { DeleteRecipeCommandHandler } from '../../application/handlers/DeleteRecipeCommandHandler.js';
-import { UpdateRecipeCommandHandler } from '../../application/handlers/UpdateRecipeCommandHandler.js';
 import { ManagedRecipeQueryHandler } from '../../application/handlers/ManagedRecipeQueryHandler.js';
+import { UpdateRecipeCommandHandler } from '../../application/handlers/UpdateRecipeCommandHandler.js';
 import {
   AddRecipeIngredientCommandHandler,
   DeleteRecipeIngredientCommandHandler,

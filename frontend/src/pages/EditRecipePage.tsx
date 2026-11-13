@@ -53,12 +53,11 @@ export default function EditRecipePage() {
   useEffect(() => {
     if (!session || !slug) return
     let active = true
-    setLoading(true)
-    setError('')
-    setConflict(false)
     getRecipeBySlug(slug, session.accessToken)
       .then((loaded) => {
         if (!active) return
+        setError('')
+        setConflict(false)
         setRecipe(loaded)
         setForm(recipeForm(loaded))
       })
