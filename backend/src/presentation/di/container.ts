@@ -39,7 +39,6 @@ import { GetCurrentUserQueryHandler } from '../../application/handlers/AuthQuery
 import { CreateRecipeCommandHandler } from '../../application/handlers/CreateRecipeCommandHandler.js';
 import { DeleteRecipeCommandHandler } from '../../application/handlers/DeleteRecipeCommandHandler.js';
 import { ManagedRecipeQueryHandler } from '../../application/handlers/ManagedRecipeQueryHandler.js';
-import { UpdateRecipeCommandHandler } from '../../application/handlers/UpdateRecipeCommandHandler.js';
 import {
   AddRecipeIngredientCommandHandler,
   DeleteRecipeIngredientCommandHandler,
@@ -63,6 +62,7 @@ import {
   GetRecipeStepsQueryHandler,
   UpdateRecipeStepCommandHandler,
 } from '../../application/handlers/RecipeStepCommandHandlers.js';
+import { UpdateRecipeCommandHandler } from '../../application/handlers/UpdateRecipeCommandHandler.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
