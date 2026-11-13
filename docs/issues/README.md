@@ -33,9 +33,9 @@ Source of truth: [`docs/`](../) (English SRS translation of `srs.md`).
 | #14 | FR-JOB-002: Thumbnail Generation Job (Algorithm) | 🔄 Partial | [#25](https://github.com/gsb-b60/culinaryblog/issues/25) | Nguyen Dinh Hieu |
 | #15 | FR-CAT-001: View Category List | ✅ Done | [#2](https://github.com/gsb-b60/culinaryblog/issues/2) | Tran Duc Anh |
 | #16 | FR-CAT-002: View Category Detail and Recipes | ✅ Done | [#26](https://github.com/gsb-b60/culinaryblog/issues/26) | Tran Duc Anh |
-| #17 | FR-CAT-003: Create New Category [Admin] | ⬜ Open | [#27](https://github.com/gsb-b60/culinaryblog/issues/27) | Tran Duc Anh |
-| #18 | FR-CAT-004: Update Category [Admin] | ⬜ Open | [#28](https://github.com/gsb-b60/culinaryblog/issues/28) | Tran Duc Anh |
-| #19 | FR-CAT-005: Delete Category [Admin] | ⬜ Open | [#29](https://github.com/gsb-b60/culinaryblog/issues/29) | Tran Duc Anh |
+| #17 | FR-CAT-003: Create New Category [Admin] | ✅ Done | [#27](https://github.com/gsb-b60/culinaryblog/issues/27) | Tran Duc Anh |
+| #18 | FR-CAT-004: Update Category [Admin] | ✅ Done | [#28](https://github.com/gsb-b60/culinaryblog/issues/28) | Tran Duc Anh |
+| #19 | FR-CAT-005: Delete Category [Admin] | ✅ Done | [#29](https://github.com/gsb-b60/culinaryblog/issues/29) | Tran Duc Anh |
 | #20 | FR-RCP-001: View Recipe List (Paginated + Filtered + Sorted) | ✅ Done | [#30](https://github.com/gsb-b60/culinaryblog/issues/30) | Tran Duc Anh |
 | #21 | FR-RCP-002: View Recipe Detail | ✅ Done | [#31](https://github.com/gsb-b60/culinaryblog/issues/31) | Tran Duc Anh |
 | #22 | FR-RCP-005: Publish/Unpublish Recipe | ✅ Done | [#3](https://github.com/gsb-b60/culinaryblog/issues/3) | Nguyen Huynh Thanh |
