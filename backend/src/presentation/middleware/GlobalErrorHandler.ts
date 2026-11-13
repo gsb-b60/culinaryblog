@@ -39,6 +39,7 @@ export function globalErrorHandler(
         title: err.title || 'Error',
         status: err.statusCode,
         detail: err.message,
+        code: err.code,
         errors: err.errors,
       });
     return;

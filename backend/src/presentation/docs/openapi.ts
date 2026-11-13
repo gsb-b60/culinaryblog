@@ -788,7 +788,33 @@ export const openApiSpec = {
         },
       },
     },
-    '/recipes/{id}/steps': {
+    '/recipes/{id}/images': {
+    post: {
+      tags: ['recipes'],
+      summary: 'Upload a recipe image',
+      security: [{ bearerAuth: [] }],
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+      requestBody: {
+        required: true,
+        content: {
+          'multipart/form-data': {
+            schema: {
+              type: 'object',
+              required: ['file'],
+              properties: { file: { type: 'string', format: 'binary' } },
+            },
+          },
+        },
+      },
+      responses: {
+        '201': { description: 'Image uploaded successfully' },
+        '400': { description: 'File is too large or has an invalid MIME type' },
+        '401': { description: 'Authentication required' },
+        '403': { description: 'Only the recipe owner or an admin can upload images' },
+      },
+    },
+  },
+  '/recipes/{id}/steps': {
       get: {
         tags: ['recipes'],
         summary: 'List recipe steps in order (Owner/Admin)',
