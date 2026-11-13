@@ -297,6 +297,14 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
                     </p>
                     {canManage && (
                       <Link
+                        to={`/dashboard/recipes/${encodeURIComponent(recipe.slug)}/edit`}
+                        className="rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold text-brand-700"
+                      >
+                        Chỉnh sửa
+                      </Link>
+                    )}
+                    {canManage && (
+                      <Link
                         to={'/recipes/' + encodeURIComponent(recipe.slug)}
                         className="rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold text-brand-700"
                       >

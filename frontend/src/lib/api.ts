@@ -307,8 +307,8 @@ export function updateRecipe(
   id: string,
   payload: UpdateRecipePayload,
   version?: number,
-): Promise<{ message: string }> {
-  return request<{ message: string }>(`/recipes/${encodeURIComponent(id)}`, {
+): Promise<RecipeDetail> {
+  return request<RecipeDetail>(`/recipes/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${accessToken}`,

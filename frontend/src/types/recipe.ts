@@ -59,6 +59,9 @@ export interface RecipeImage {
 }
 
 export interface RecipeDetail extends RecipeSummary {
+  /** Mutation metadata returned by the authenticated detail endpoint. */
+  updatedAt?: string;
+  version?: number;
   instructions?: string;
   nutrition?: RecipeNutrition;
   steps: RecipeStep[];
