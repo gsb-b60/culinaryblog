@@ -137,6 +137,20 @@ export const openApiSpec = {
           createdAt: { type: 'string', format: 'date-time' },
         },
       },
+      UpdateRecipeRequest: {
+        type: 'object',
+        properties: {
+          title: { type: 'string', minLength: 5, maxLength: 200 },
+          description: { type: 'string', minLength: 10, maxLength: 2000 },
+          categoryId: { type: 'string', format: 'uuid' },
+          prepTime: { type: 'integer', minimum: 1 },
+          cookTime: { type: 'integer', minimum: 0 },
+          servings: { type: 'integer', minimum: 1 },
+          difficulty: { type: 'string', enum: ['EASY', 'MEDIUM', 'HARD', 'EXPERT'] },
+          instructions: { type: 'string', maxLength: 10000 },
+          nutrition: { type: 'object' },
+        },
+      },
       RecipeDetail: {
         allOf: [
           { $ref: '#/components/schemas/RecipeSummary' },
@@ -697,12 +711,22 @@ export const openApiSpec = {
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
-          { name: 'If-Match', in: 'header', schema: { type: 'integer' } },
+          { name: 'If-Match', in: 'header', required: true, schema: { type: 'integer', minimum: 1 } },
         ],
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/UpdateRecipeRequest' } } },
+        },
         responses: {
-          '200': { description: 'OK' },
+          '200': {
+            description: 'Updated recipe',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/RecipeDetail' } } },
+          },
           '401': { description: 'Unauthorized' },
           '403': { description: 'Forbidden' },
+          '404': { description: 'Recipe not found' },
+          '409': { description: 'Recipe version or slug conflict' },
+          '422': { description: 'Validation error' },
         },
       },
       delete: {

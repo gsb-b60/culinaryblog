@@ -32,12 +32,12 @@ import {
   recipeSortQuerySchema,
   paginationSchema,
 } from '../../application/validators/recipeValidators.js';
+import { ValidationError } from '../../config-middleware/shared/errors/AppError.js';
 import { UserRole } from '../../domain/index.js';
 import {
   authenticateJwt,
   AuthenticatedRequest,
   authorize,
-  authorizeOwnerOrAdmin,
   optionalAuth,
 } from '../middleware/AuthMiddleware.js';
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
@@ -158,14 +158,25 @@ router.post(
 router.put(
   '/:id',
   authenticateJwt,
-  authorizeOwnerOrAdmin(async (req) => req.params.id!),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const input = updateRecipeSchema.parse(req.body);
-      const expectedVersion = parseInt((req.headers['if-match'] as string) || '0');
-      const command = new UpdateRecipeCommand(req.params.id!, req.user!.id, input, expectedVersion);
-      await commandBus.executeCommand(command);
-      res.json({ message: 'Recipe updated successfully' });
+      const rawVersion = req.headers['if-match'];
+      const expectedVersion = typeof rawVersion === 'string' && /^\d+$/.test(rawVersion)
+        ? Number(rawVersion)
+        : NaN;
+      if (!Number.isInteger(expectedVersion) || expectedVersion < 1) {
+        throw new ValidationError({ 'If-Match': ['A valid recipe version is required'] });
+      }
+      const command = new UpdateRecipeCommand(
+        req.params.id!,
+        req.user!.id,
+        input,
+        expectedVersion,
+        req.user!.roles.includes(UserRole.ADMIN),
+      );
+      const recipe = await commandBus.executeCommand(command);
+      res.status(200).json(recipe);
     } catch (error) {
       next(error);
     }
