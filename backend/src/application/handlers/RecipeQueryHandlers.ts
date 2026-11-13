@@ -29,11 +29,17 @@ export class GetRecipesQueryHandler implements IQueryHandler<
   constructor(private readonly repository: RecipeRepository) {}
 
   async execute(query: GetRecipesQuery): Promise<PagedResult<RecipeSummaryDto>> {
+    const isAdmin = query.userRole === UserRole.ADMIN || query.userRole === 'ADMIN';
     return (await this.repository.findMany(
-      { ...query.filters, status: RecipeStatus.PUBLISHED },
+      query.filters,
       query.sort,
       query.page,
       query.pageSize,
+      {
+        userId: query.userId,
+        role: query.userRole,
+        isAdmin,
+      },
     )) as unknown as PagedResult<RecipeSummaryDto>;
   }
 }
@@ -66,11 +72,12 @@ export class GetRecipeBySlugQueryHandler implements IQueryHandler<
       where: { slug: query.slug, isDeleted: false },
       include: recipeInclude,
     });
-    if (!recipe) return null;
+    if (!recipe || recipe.isDeleted) return null;
+    const isAdmin = query.userRole === UserRole.ADMIN || query.userRole === 'ADMIN';
     if (
       recipe.status !== RecipeStatus.PUBLISHED &&
       recipe.authorId !== query.userId &&
-      query.userRole !== UserRole.ADMIN
+      !isAdmin
     ) {
       throw new ForbiddenError('You cannot view this private recipe');
     }

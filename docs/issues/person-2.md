@@ -106,7 +106,7 @@ Return detailed info for a specific category (by Slug) along with a paginated li
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-catalog.md` §FR-CAT-003 |
 | Endpoint | `POST /api/v1/categories` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -135,13 +135,13 @@ New category created. Category cache deleted. Location header → `/api/v1/categ
 
 **Acceptance Criteria:**
 
-- [ ] Admin can create category → 201 with Location header
-- [ ] Slug auto-generated (lowercase, hyphenated, no diacritics)
-- [ ] Slug collision appends numeric suffix (-2, -3, ...)
-- [ ] Non-admin gets 403
-- [ ] name < 2 or > 50 chars returns 422
-- [ ] HTML in name rejected (422)
-- [ ] Cache key `categories:all` deleted after creation
+- [x] Admin can create category → 201 with Location header
+- [x] Slug auto-generated (lowercase, hyphenated, no diacritics)
+- [x] Slug collision appends numeric suffix (-2, -3, ...)
+- [x] Non-admin gets 403
+- [x] name < 2 or > 50 chars returns 422
+- [x] HTML in name rejected (422)
+- [x] Cache key `categories:all` deleted after creation
 
 ---
 
@@ -157,7 +157,7 @@ New category created. Category cache deleted. Location header → `/api/v1/categ
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-catalog.md` §FR-CAT-004 |
 | Endpoint | `PUT /api/v1/categories/{id}` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -183,11 +183,11 @@ Category info updated. Cache invalidated. Slug unchanged.
 
 **Acceptance Criteria:**
 
-- [ ] Admin can update category → 200
-- [ ] Slug does NOT change after name update
-- [ ] Non-admin gets 403
-- [ ] Non-existent ID returns 404
-- [ ] Cache invalidated after update
+- [x] Admin can update category → 200
+- [x] Slug does NOT change after name update
+- [x] Non-admin gets 403
+- [x] Non-existent ID returns 404
+- [x] Cache invalidated after update
 
 ---
 
@@ -203,7 +203,7 @@ Category info updated. Cache invalidated. Slug unchanged.
 | Priority | S – Should Have |
 | Doc reference | `docs/03-fr-catalog.md` §FR-CAT-005 |
 | Endpoint | `DELETE /api/v1/categories/{id}` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -229,11 +229,11 @@ Category deleted from database. HTTP 204 returned.
 
 **Acceptance Criteria:**
 
-- [ ] Empty category deleted → 204
-- [ ] Category with recipes → 409 with recipe count in message
-- [ ] Non-admin gets 403
-- [ ] Non-existent ID returns 404
-- [ ] Cache invalidated after delete
+- [x] Empty category deleted → 204
+- [x] Category with recipes → 409 with recipe count in message
+- [x] Non-admin gets 403
+- [x] Non-existent ID returns 404
+- [x] Cache invalidated after delete
 
 ---
 
@@ -281,15 +281,15 @@ Returns a paginated list of recipes. Guests/Authors see Published only; Authors 
 
 **Acceptance Criteria:**
 
-- [ ] Returns 200 with paginated recipe list
-- [ ] Guests only see PUBLISHED recipes
-- [ ] Author sees own DRAFT recipes additionally
-- [ ] Admin sees all statuses
-- [ ] Filters combine with AND (categoryId + difficulty + maxCookTime)
-- [ ] Sort: `-field` = descending, default `-createdAt`
-- [ ] Pagination metadata correct (totalCount, totalPages, hasNext, hasPrev)
-- [ ] pageSize > 50 or page < 1 returns 422
-- [ ] Results cached (15-min TTL)
+- [x] Returns 200 with paginated recipe list
+- [x] Guests only see PUBLISHED recipes
+- [x] Author sees own DRAFT recipes additionally
+- [x] Admin sees all statuses
+- [x] Filters combine with AND (categoryId + difficulty + maxCookTime)
+- [x] Sort: `-field` = descending, default `-createdAt`
+- [x] Pagination metadata correct (totalCount, totalPages, hasNext, hasPrev)
+- [x] pageSize > 50 or page < 1 returns 422
+- [x] Results cached (15-min TTL)
 
 ---
 
@@ -332,13 +332,13 @@ Full RecipeDetailDto including all nested data.
 
 **Acceptance Criteria:**
 
-- [ ] Published recipe returns 200 with full detail (steps, ingredients, images, nutrition, category, author)
-- [ ] Steps sorted by stepNumber ascending
-- [ ] Ingredients sorted by sortOrder ascending
-- [ ] Draft recipe: only owner or Admin gets 200; others get 403
-- [ ] Non-existent slug returns 404
-- [ ] Result cached (60-min TTL)
-- [ ] No N+1 queries (eager loading via Prisma `include`)
+- [x] Published recipe returns 200 with full detail (steps, ingredients, images, nutrition, category, author)
+- [x] Steps sorted by stepNumber ascending
+- [x] Ingredients sorted by sortOrder ascending
+- [x] Draft recipe: only owner or Admin gets 200; others get 403
+- [x] Non-existent slug returns 404
+- [x] Result cached (60-min TTL)
+- [x] No N+1 queries (eager loading via Prisma `include`)
 
 ---
 **UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)

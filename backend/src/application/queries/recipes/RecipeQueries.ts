@@ -8,7 +8,9 @@ export class GetRecipesQuery extends Query<import('../../dtos/PagedResult.js').P
     public readonly filters: RecipeFilters,
     public readonly sort: RecipeSortOptions,
     public readonly page: number,
-    public readonly pageSize: number
+    public readonly pageSize: number,
+    public readonly userId?: string,
+    public readonly userRole?: string,
   ) {
     super();
   }

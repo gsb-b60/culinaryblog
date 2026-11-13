@@ -172,6 +172,7 @@ function PublicHomePage() {
           </Button>
         </div>
       </section>
+
     </main>
   )
 }

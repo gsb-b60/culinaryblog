@@ -1,3 +1,4 @@
+import apicache from 'apicache';
 import { Router, type Router as RouterType, type Request, type Response, type NextFunction } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
@@ -101,14 +102,32 @@ router.get('/manage', authenticateJwt, async (req: AuthenticatedRequest, res, ne
   }
 });
 
+export const recipeListCache = apicache.middleware('15 minutes', (req: Request, res: Response) => {
+  return res.statusCode === 200 && !(req as AuthenticatedRequest).user;
+});
+
+export const recipeDetailCache = apicache.middleware('60 minutes', (req: Request, res: Response) => {
+  return res.statusCode === 200 && !(req as AuthenticatedRequest).user;
+});
+
 // Public routes
-router.get('/', generalRateLimiter, async (req, res, next) => {
+router.get('/', optionalAuth, recipeListCache, generalRateLimiter, async (req: AuthenticatedRequest, res, next) => {
   try {
     const filters = recipeFiltersSchema.parse(req.query);
     const sort = recipeSortQuerySchema.parse(req.query);
     const pagination = paginationSchema.parse(req.query);
 
-    const query = new GetRecipesQuery(filters, sort, pagination.page, pagination.pageSize);
+    const userId = req.user?.id;
+    const userRole = req.user?.roles?.[0];
+
+    const query = new GetRecipesQuery(
+      filters,
+      sort,
+      pagination.page,
+      pagination.pageSize,
+      userId,
+      userRole,
+    );
     const result = await commandBus.executeQuery(query);
     res.json(result);
   } catch (error) {
@@ -138,14 +157,16 @@ router.get('/search', generalRateLimiter, async (req, res, next) => {
   }
 });
 
-router.get('/:slug', generalRateLimiter, optionalAuth, async (req, res, next) => {
+router.get('/:slug', optionalAuth, recipeDetailCache, generalRateLimiter, async (req, res, next) => {
   try {
+    const isAdmin = Boolean(
+      (req as AuthenticatedRequest).user?.roles?.includes(UserRole.ADMIN),
+    );
+
     const query = new GetRecipeBySlugQuery(
       req.params.slug!,
       (req as AuthenticatedRequest).user?.id,
-      (req as AuthenticatedRequest).user?.roles.includes(UserRole.ADMIN)
-        ? UserRole.ADMIN
-        : undefined,
+      isAdmin ? UserRole.ADMIN : (req as AuthenticatedRequest).user?.roles?.[0],
     );
     const recipe = await commandBus.executeQuery(query);
 
@@ -175,6 +196,7 @@ router.post(
       const input = createRecipeSchema.parse(req.body);
       const command = new CreateRecipeCommand(req.user!.id, input);
       const recipe = await commandBus.executeCommand(command);
+      apicache.clear();
       res.status(201).json(recipe);
     } catch (error) {
       next(error);
@@ -203,6 +225,7 @@ router.put(
         req.user!.roles.includes(UserRole.ADMIN),
       );
       const recipe = await commandBus.executeCommand(command);
+      apicache.clear();
       res.status(200).json(recipe);
     } catch (error) {
       next(error);
@@ -218,6 +241,7 @@ router.patch('/:id/publish', authenticateJwt, async (req: AuthenticatedRequest, 
       req.user!.roles.includes(UserRole.ADMIN),
     );
     const recipe = await commandBus.executeCommand(command);
+    apicache.clear();
     res.status(200).json(recipe);
   } catch (error) {
     next(error);
@@ -232,6 +256,7 @@ router.patch('/:id/unpublish', authenticateJwt, async (req: AuthenticatedRequest
       req.user!.roles.includes(UserRole.ADMIN),
     );
     const recipe = await commandBus.executeCommand(command);
+    apicache.clear();
     res.status(200).json(recipe);
   } catch (error) {
     next(error);
@@ -245,7 +270,9 @@ router.patch('/:id/archive', authenticateJwt, async (req: AuthenticatedRequest, 
       req.user!.id,
       req.user!.roles.includes(UserRole.ADMIN),
     );
-    res.status(200).json(await commandBus.executeCommand(command));
+    const result = await commandBus.executeCommand(command);
+    apicache.clear();
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -259,6 +286,7 @@ router.delete('/:id', authenticateJwt, async (req: AuthenticatedRequest, res, ne
       req.user!.roles.includes(UserRole.ADMIN),
     );
     await commandBus.executeCommand(command);
+    apicache.clear();
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -339,6 +367,7 @@ router.post(
         req.user!.roles.includes(UserRole.ADMIN),
       );
       const stepId = await commandBus.executeCommand(command);
+      apicache.clear();
       res.status(201).json({ id: stepId, message: 'Step added successfully' });
     } catch (error) {
       next(error);
@@ -372,6 +401,7 @@ router.put(
         req.user!.roles.includes(UserRole.ADMIN),
       );
       await commandBus.executeCommand(command);
+      apicache.clear();
       res.json({ message: 'Step updated successfully' });
     } catch (error) {
       next(error);
@@ -391,6 +421,7 @@ router.delete(
         req.user!.roles.includes(UserRole.ADMIN),
       );
       await commandBus.executeCommand(command);
+      apicache.clear();
       res.status(204).send();
     } catch (error) {
       next(error);
@@ -436,6 +467,7 @@ router.post('/:id/ingredients', authenticateJwt, async (req: AuthenticatedReques
       req.user!.roles.includes(UserRole.ADMIN),
     );
     const ingredient = await commandBus.executeCommand(command);
+    apicache.clear();
     res.status(201).json(ingredient);
   } catch (error) {
     next(error);
@@ -468,6 +500,7 @@ router.put(
         req.user!.roles.includes(UserRole.ADMIN),
       );
       const ingredient = await commandBus.executeCommand(command);
+      apicache.clear();
       res.json(ingredient);
     } catch (error) {
       next(error);
@@ -487,6 +520,7 @@ router.delete(
         req.user!.roles.includes(UserRole.ADMIN),
       );
       await commandBus.executeCommand(command);
+      apicache.clear();
       res.status(204).send();
     } catch (error) {
       next(error);
