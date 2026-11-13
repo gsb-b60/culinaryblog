@@ -1,6 +1,6 @@
 ## 👥 Team & Issue Assignment
 
-**34 issues** across 7 FR modules (AUTH, CAT, RCP, SRCH, FILE, JOB, OBS). Full issue details: [`docs/issues/`](./docs/issues/).
+**34 issues** across 7 FR modules (AUTH, CAT, RCP, SRCH, FILE, JOB, OBS). **25 done · 5 partial · 4 open** (checked against the backend, Nov 2026). Full issue details: [`docs/issues/`](./docs/issues/).
 
 ### Team Split
 
@@ -22,33 +22,47 @@
 | #5 | FR-AUTH-005: Logout / Token Revocation | ✅ Done | [#10](https://github.com/gsb-b60/culinaryblog/issues/10) | Nguyen Dinh Hieu |
 | #6 | FR-AUTH-006: View Profile | ✅ Done | [#11](https://github.com/gsb-b60/culinaryblog/issues/11) | Nguyen Dinh Hieu |
 | #7 | FR-AUTH-007: Update Profile | ✅ Done | [#12](https://github.com/gsb-b60/culinaryblog/issues/12) | Nguyen Dinh Hieu |
-| #8 | FR-RCP-003: Create New Recipe ⭐ HARDEST | ⬜ Open | [#13](https://github.com/gsb-b60/culinaryblog/issues/13) | Nguyen Dinh Hieu |
-| #9 | FR-RCP-004: Update Recipe (Optimistic Concurrency) | ⬜ Open | [#20](https://github.com/gsb-b60/culinaryblog/issues/20) | Nguyen Dinh Hieu |
-| #10 | FR-FILE-001: Upload File to MinIO | ⬜ Open | [#21](https://github.com/gsb-b60/culinaryblog/issues/21) | Nguyen Dinh Hieu |
-| #11 | FR-FILE-002: Delete File from MinIO | ⬜ Open | [#22](https://github.com/gsb-b60/culinaryblog/issues/22) | Nguyen Dinh Hieu |
+| #8 | FR-RCP-003: Create New Recipe ⭐ HARDEST | ✅ Done | [#13](https://github.com/gsb-b60/culinaryblog/issues/13) | Nguyen Dinh Hieu |
+| #9 | FR-RCP-004: Update Recipe (Optimistic Concurrency) | ✅ Done | [#20](https://github.com/gsb-b60/culinaryblog/issues/20) | Nguyen Dinh Hieu |
+| #10 | FR-FILE-001: Upload File to MinIO | 🔄 Partial | [#21](https://github.com/gsb-b60/culinaryblog/issues/21) | Nguyen Dinh Hieu |
+| #11 | FR-FILE-002: Delete File from MinIO | ✅ Done | [#22](https://github.com/gsb-b60/culinaryblog/issues/22) | Nguyen Dinh Hieu |
 | #12 | FR-RCP-008: Recipe Image Management | ⬜ Open | [#23](https://github.com/gsb-b60/culinaryblog/issues/23) | Nguyen Dinh Hieu |
-| #13 | FR-SRCH-001: Full-Text Search (Algorithm) | ⬜ Open | [#24](https://github.com/gsb-b60/culinaryblog/issues/24) | Nguyen Dinh Hieu |
-| #14 | FR-JOB-002: Thumbnail Generation Job (Algorithm) | ⬜ Open | [#25](https://github.com/gsb-b60/culinaryblog/issues/25) | Nguyen Dinh Hieu |
-| #15 | FR-CAT-001: View Category List | ⬜ Open | [#2](https://github.com/gsb-b60/culinaryblog/issues/2) | Tran Duc Anh |
-| #16 | FR-CAT-002: View Category Detail and Recipes | ⬜ Open | [#26](https://github.com/gsb-b60/culinaryblog/issues/26) | Tran Duc Anh |
+| #13 | FR-SRCH-001: Full-Text Search (Algorithm) | 🔄 Partial | [#24](https://github.com/gsb-b60/culinaryblog/issues/24) | Nguyen Dinh Hieu |
+| #14 | FR-JOB-002: Thumbnail Generation Job (Algorithm) | 🔄 Partial | [#25](https://github.com/gsb-b60/culinaryblog/issues/25) | Nguyen Dinh Hieu |
+| #15 | FR-CAT-001: View Category List | ✅ Done | [#2](https://github.com/gsb-b60/culinaryblog/issues/2) | Tran Duc Anh |
+| #16 | FR-CAT-002: View Category Detail and Recipes | ✅ Done | [#26](https://github.com/gsb-b60/culinaryblog/issues/26) | Tran Duc Anh |
 | #17 | FR-CAT-003: Create New Category [Admin] | ⬜ Open | [#27](https://github.com/gsb-b60/culinaryblog/issues/27) | Tran Duc Anh |
 | #18 | FR-CAT-004: Update Category [Admin] | ⬜ Open | [#28](https://github.com/gsb-b60/culinaryblog/issues/28) | Tran Duc Anh |
 | #19 | FR-CAT-005: Delete Category [Admin] | ⬜ Open | [#29](https://github.com/gsb-b60/culinaryblog/issues/29) | Tran Duc Anh |
-| #20 | FR-RCP-001: View Recipe List (Paginated + Filtered + Sorted) | ⬜ Open | [#30](https://github.com/gsb-b60/culinaryblog/issues/30) | Tran Duc Anh |
-| #21 | FR-RCP-002: View Recipe Detail | ⬜ Open | [#31](https://github.com/gsb-b60/culinaryblog/issues/31) | Tran Duc Anh |
-| #22 | FR-RCP-005: Publish/Unpublish Recipe | ⬜ Open | [#3](https://github.com/gsb-b60/culinaryblog/issues/3) | Nguyen Huynh Thanh |
-| #23 | FR-RCP-006: Archive Recipe | ⬜ Open | [#32](https://github.com/gsb-b60/culinaryblog/issues/32) | Nguyen Huynh Thanh |
-| #24 | FR-RCP-007: Delete Recipe | ⬜ Open | [#33](https://github.com/gsb-b60/culinaryblog/issues/33) | Nguyen Huynh Thanh |
+| #20 | FR-RCP-001: View Recipe List (Paginated + Filtered + Sorted) | ✅ Done | [#30](https://github.com/gsb-b60/culinaryblog/issues/30) | Tran Duc Anh |
+| #21 | FR-RCP-002: View Recipe Detail | ✅ Done | [#31](https://github.com/gsb-b60/culinaryblog/issues/31) | Tran Duc Anh |
+| #22 | FR-RCP-005: Publish/Unpublish Recipe | ✅ Done | [#3](https://github.com/gsb-b60/culinaryblog/issues/3) | Nguyen Huynh Thanh |
+| #23 | FR-RCP-006: Archive Recipe | ✅ Done | [#32](https://github.com/gsb-b60/culinaryblog/issues/32) | Nguyen Huynh Thanh |
+| #24 | FR-RCP-007: Delete Recipe | ✅ Done | [#33](https://github.com/gsb-b60/culinaryblog/issues/33) | Nguyen Huynh Thanh |
 | #25 | FR-RCP-009: Ingredient Management (CRUD) | ✅ Done | [#6](https://github.com/gsb-b60/culinaryblog/issues/6) | Nguyen Huynh Thanh |
-| #26 | FR-RCP-010: Steps Management (CRUD) | ⬜ Open | [#34](https://github.com/gsb-b60/culinaryblog/issues/34) | Nguyen Huynh Thanh |
-| #27 | FR-SRCH-002: Filtering Recipes | ⬜ Open | [#35](https://github.com/gsb-b60/culinaryblog/issues/35) | Nguyen Huynh Thanh |
-| #28 | FR-SRCH-003: Sorting Recipes | ⬜ Open | [#36](https://github.com/gsb-b60/culinaryblog/issues/36) | Nguyen Huynh Thanh |
-| #29 | FR-SRCH-004: Pagination | ⬜ Open | [#37](https://github.com/gsb-b60/culinaryblog/issues/37) | Nguyen Huynh Thanh |
-| #30 | FR-JOB-001: Welcome Email Job | ⬜ Open | [#4](https://github.com/gsb-b60/culinaryblog/issues/4) | Bich Tran |
-| #31 | FR-JOB-003: Sitemap Generation Job | ⬜ Open | [#38](https://github.com/gsb-b60/culinaryblog/issues/38) | Bich Tran |
-| #32 | FR-OBS-001: Health Check Endpoints | ⬜ Open | [#5](https://github.com/gsb-b60/culinaryblog/issues/5) | Bich Tran |
-| #33 | FR-OBS-002: Structured Logging | ⬜ Open | [#39](https://github.com/gsb-b60/culinaryblog/issues/39) | Bich Tran |
-| #34 | FR-OBS-003: Distributed Tracing & Metrics | ⬜ Open | [#40](https://github.com/gsb-b60/culinaryblog/issues/40) | Bich Tran |
+| #26 | FR-RCP-010: Steps Management (CRUD) | ✅ Done | [#34](https://github.com/gsb-b60/culinaryblog/issues/34) | Nguyen Huynh Thanh |
+| #27 | FR-SRCH-002: Filtering Recipes | ✅ Done | [#35](https://github.com/gsb-b60/culinaryblog/issues/35) | Nguyen Huynh Thanh |
+| #28 | FR-SRCH-003: Sorting Recipes | ✅ Done | [#36](https://github.com/gsb-b60/culinaryblog/issues/36) | Nguyen Huynh Thanh |
+| #29 | FR-SRCH-004: Pagination | ✅ Done | [#37](https://github.com/gsb-b60/culinaryblog/issues/37) | Nguyen Huynh Thanh |
+| #30 | FR-JOB-001: Welcome Email Job | ✅ Done | [#4](https://github.com/gsb-b60/culinaryblog/issues/4) | Bich Tran |
+| #31 | FR-JOB-003: Sitemap Generation Job | 🔄 Partial | [#38](https://github.com/gsb-b60/culinaryblog/issues/38) | Bich Tran |
+| #32 | FR-OBS-001: Health Check Endpoints | ✅ Done | [#5](https://github.com/gsb-b60/culinaryblog/issues/5) | Bich Tran |
+| #33 | FR-OBS-002: Structured Logging | ✅ Done | [#39](https://github.com/gsb-b60/culinaryblog/issues/39) | Bich Tran |
+| #34 | FR-OBS-003: Distributed Tracing & Metrics | 🔄 Partial | [#40](https://github.com/gsb-b60/culinaryblog/issues/40) | Bich Tran |
+
+**Status legend:** ✅ Done · 🔄 Partial (wired, but a required piece is missing or stubbed) · ⬜ Open
+
+**Still open or incomplete**
+
+| Issue | Why it is not done |
+|---|---|
+| #10 FR-FILE-001 | `MinioFileStorageService.uploadFile` puts objects and returns a public URL, but there is no upload endpoint, no 5 MB / MIME / magic-byte checks, and filenames are caller-supplied. |
+| #12 FR-RCP-008 | No `POST/PATCH/DELETE /recipes/:id/images` routes. Images are only read and cleaned up when a recipe is deleted. |
+| #13 FR-SRCH-001 | `GET /recipes/search` exists, but ranking is `ILIKE` on title/description — not `tsvector` / `ts_rank` / `unaccent`, and the response has no `relevanceScore`. |
+| #14 FR-JOB-002 | `imageResizeWorker` is registered, but the processor is a `setTimeout` stub (`TODO: sharp`). No 300×300 / 800×600 output and no `thumbnailUrl` write-back. |
+| #17–#19 FR-CAT-003/004/005 | Routes and command classes exist, but no command handlers are registered in the DI container, so admin create/update/delete cannot run. |
+| #31 FR-JOB-003 | Daily BullMQ job is scheduled, but `sitemapWorker` only logs and sleeps (`TODO: Implement actual sitemap generation`). No XML, MinIO upload, or Google ping. |
+| #34 FR-OBS-003 | OpenTelemetry tracing initializes in production only. Metrics (Prometheus or equivalent) are not implemented. |
 
 ---
 

@@ -12,7 +12,7 @@
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-recipes.md` §FR-RCP-005 |
 | Endpoints | `PATCH /api/v1/recipes/{id}/publish` · `PATCH /api/v1/recipes/{id}/unpublish` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -62,7 +62,7 @@ Recipe status changed. Cache invalidated.
 | Priority | S – Should Have |
 | Doc reference | `docs/03-fr-recipes.md` §FR-RCP-006 |
 | Endpoint | `PATCH /api/v1/recipes/{id}/archive` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -104,7 +104,7 @@ Recipe archived. Hidden from public listings, still in DB.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-recipes.md` §FR-RCP-007 |
 | Endpoint | `DELETE /api/v1/recipes/{id}` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -153,7 +153,7 @@ Recipe and all children deleted. HTTP 204 returned. MinIO files cleaned up async
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-recipes.md` §FR-RCP-009 |
 | Endpoints | `POST /api/v1/recipes/{id}/ingredients` · `PUT /api/v1/recipes/{id}/ingredients/{ingId}` · `DELETE /api/v1/recipes/{id}/ingredients/{ingId}` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -194,7 +194,7 @@ Ingredient CRUD operations succeed with correct status codes.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-recipes.md` §FR-RCP-010 |
 | Endpoints | `POST /api/v1/recipes/{id}/steps` · `PUT /api/v1/recipes/{id}/steps/{stepId}` · `DELETE /api/v1/recipes/{id}/steps/{stepId}` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -235,7 +235,7 @@ Step CRUD succeeds. Auto-renumbering after delete.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.4 FR-SRCH-002 |
 | Endpoint | Query params on `GET /api/v1/recipes` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -276,7 +276,7 @@ Filtered recipe list. Filters combine with AND.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.4 FR-SRCH-003 |
 | Endpoint | Query param on `GET /api/v1/recipes` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -316,7 +316,7 @@ Recipes sorted by specified field and direction.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.4 FR-SRCH-004 |
 | Endpoint | Query params on `GET /api/v1/recipes` and other list endpoints |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
