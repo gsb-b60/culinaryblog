@@ -332,13 +332,13 @@ Full RecipeDetailDto including all nested data.
 
 **Acceptance Criteria:**
 
-- [ ] Published recipe returns 200 with full detail (steps, ingredients, images, nutrition, category, author)
-- [ ] Steps sorted by stepNumber ascending
-- [ ] Ingredients sorted by sortOrder ascending
-- [ ] Draft recipe: only owner or Admin gets 200; others get 403
-- [ ] Non-existent slug returns 404
-- [ ] Result cached (60-min TTL)
-- [ ] No N+1 queries (eager loading via Prisma `include`)
+- [x] Published recipe returns 200 with full detail (steps, ingredients, images, nutrition, category, author)
+- [x] Steps sorted by stepNumber ascending
+- [x] Ingredients sorted by sortOrder ascending
+- [x] Draft recipe: only owner or Admin gets 200; others get 403
+- [x] Non-existent slug returns 404
+- [x] Result cached (60-min TTL)
+- [x] No N+1 queries (eager loading via Prisma `include`)
 
 ---
 **UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)

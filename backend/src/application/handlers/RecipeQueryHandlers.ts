@@ -72,11 +72,12 @@ export class GetRecipeBySlugQueryHandler implements IQueryHandler<
       where: { slug: query.slug, isDeleted: false },
       include: recipeInclude,
     });
-    if (!recipe) return null;
+    if (!recipe || recipe.isDeleted) return null;
+    const isAdmin = query.userRole === UserRole.ADMIN || query.userRole === 'ADMIN';
     if (
       recipe.status !== RecipeStatus.PUBLISHED &&
       recipe.authorId !== query.userId &&
-      query.userRole !== UserRole.ADMIN
+      !isAdmin
     ) {
       throw new ForbiddenError('You cannot view this private recipe');
     }
