@@ -363,7 +363,7 @@ User profile updated in the database. Returns the new profile.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-recipes.md` §FR-RCP-003 |
 | Endpoint | `POST /api/v1/recipes` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -416,7 +416,7 @@ New recipe created with Status = Draft, Slug auto-generated.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-recipes.md` §FR-RCP-004 |
 | Endpoint | `PUT /api/v1/recipes/{id}` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -468,7 +468,7 @@ Recipe updated, cache invalidated, returns latest RecipeDto.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.5 FR-FILE-001 |
 | Endpoint | Used internally by `POST /api/v1/recipes/{id}/images` |
-| Status | ⬜ Open |
+| Status | 🔄 Partial |
 
 **Description:**
 
@@ -516,7 +516,7 @@ File stored on MinIO, public URL returned.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.5 FR-FILE-002 |
 | Endpoint | Invoked via BullMQ job after recipe/image deletion |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -605,7 +605,7 @@ Images uploaded, primary set, deleted with async MinIO cleanup.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.4 FR-SRCH-001 |
 | Endpoint | `GET /api/v1/recipes/search?q=...&page=1&pageSize=10` |
-| Status | ⬜ Open |
+| Status | 🔄 Partial |
 
 **Description:**
 
@@ -655,7 +655,7 @@ Ranked list of published recipes matching the search query.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.6 FR-JOB-002 |
 | Endpoint | BullMQ worker (triggered after FR-RCP-008 image upload) |
-| Status | ⬜ Open |
+| Status | 🔄 Partial |
 
 **Description:**
 

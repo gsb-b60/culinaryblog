@@ -12,7 +12,7 @@
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.6 FR-JOB-001 |
 | Trigger | After FR-AUTH-001 (registration) succeeds |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -60,7 +60,7 @@ Welcome email sent. Registration does not fail if email fails.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.6 FR-JOB-003 |
 | Trigger | Recurring — daily at 02:00 AM UTC (cron: `0 2 * * *`) |
-| Status | ⬜ Open |
+| Status | 🔄 Partial |
 
 **Description:**
 
@@ -110,7 +110,7 @@ sitemap.xml generated, stored, and Google notified.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.7 FR-OBS-001 |
 | Endpoints | `GET /health` · `GET /health/live` · `GET /health/ready` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -154,7 +154,7 @@ Health endpoints return correct status based on dependency health.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.7 FR-OBS-002 |
 | Endpoint | Middleware (applies to all HTTP requests) |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -198,7 +198,7 @@ Every request logged with correlation ID and timing. Slow queries warned.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.7 FR-OBS-003 |
 | Endpoint | OpenTelemetry SDK (application-wide) |
-| Status | ⬜ Open |
+| Status | 🔄 Partial |
 
 **Description:**
 
