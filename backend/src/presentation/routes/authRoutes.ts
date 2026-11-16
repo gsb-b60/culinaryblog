@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { z } from 'zod';
 
 import { commandBus } from '../../application/command-bus.js';
 import { 
@@ -7,15 +6,18 @@ import {
   LoginCommand, 
   RefreshTokenCommand, 
   GoogleAuthCommand,
-  LogoutCommand 
+  LogoutCommand,
+  UpdateProfileCommand,
 } from '../../application/commands/auth/AuthCommands.js';
 import { GetCurrentUserQuery } from '../../application/queries/auth/AuthQueries.js';
 import { 
   registerSchema, 
   loginSchema, 
   refreshTokenSchema, 
-  googleAuthSchema 
+  googleAuthSchema,
+  updateProfileSchema,
 } from '../../application/validators/authValidators.js';
+import { logger } from '../../config-middleware/config/logger.js';
 import { authenticateJwt, AuthenticatedRequest } from '../middleware/AuthMiddleware.js';
 import { authRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
@@ -25,8 +27,19 @@ router.post('/register', authRateLimiter, async (req, res, next) => {
   try {
     const input = registerSchema.parse(req.body);
     const command = new RegisterCommand(input);
-    const userId = await commandBus.executeCommand(command);
-    res.status(201).json({ userId });
+    const userId = await commandBus.executeCommand<RegisterCommand, string>(command);
+    void import('../../infrastructure/jobs/queues/welcomeEmailQueue.js')
+      .then(({ addWelcomeEmailJob }) => addWelcomeEmailJob({
+        userId,
+        email: input.email,
+      }))
+      .catch(error => {
+        logger.error({
+          userId,
+          errorName: error instanceof Error ? error.name : 'UnknownError',
+        }, 'Failed to enqueue welcome email');
+      });
+    res.status(201).json({ userId, email: input.email, displayName: input.displayName });
   } catch (error) {
     next(error);
   }
@@ -67,8 +80,8 @@ router.post('/refresh', authRateLimiter, async (req, res, next) => {
 
 router.post('/logout', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { refreshToken } = req.body;
-    const command = new LogoutCommand(refreshToken);
+    const { refreshToken } = refreshTokenSchema.parse(req.body);
+    const command = new LogoutCommand(refreshToken, req.user!.id);
     await commandBus.executeCommand(command);
     res.status(204).send();
   } catch (error) {
@@ -88,15 +101,9 @@ router.get('/me', authenticateJwt, async (req: AuthenticatedRequest, res, next) 
 
 router.patch('/me', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const updateProfileSchema = z.object({
-      displayName: z.string().min(2).max(100).optional(),
-      avatarUrl: z.string().url().max(500).optional(),
-      bio: z.string().max(2000).optional(),
-    });
-    
-    updateProfileSchema.parse(req.body);
-    // TODO: Implement UpdateProfileCommand
-    res.json({ message: 'Profile updated successfully' });
+    const input = updateProfileSchema.parse(req.body);
+    const user = await commandBus.executeCommand(new UpdateProfileCommand(req.user!.id, input));
+    res.json(user);
   } catch (error) {
     next(error);
   }

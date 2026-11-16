@@ -75,6 +75,7 @@ export class AddRecipeStepCommand extends Command<string> {
   constructor(
     public readonly recipeId: string,
     public readonly authorId: string,
+    public readonly stepNumber: number,
     public readonly title: string,
     public readonly description: string,
     public readonly timerMinutes?: number,

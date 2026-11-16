@@ -1,8 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 
+import { instrumentPrismaClient } from '../../../infrastructure/observability/PrismaTracing.js';
+
 export const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
+
+instrumentPrismaClient(prisma);
 
 // Middleware for audit fields and soft delete
 prisma.$use(async (params, next) => {

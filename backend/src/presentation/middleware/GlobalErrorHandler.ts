@@ -19,10 +19,10 @@ export function globalErrorHandler(
       errors[path].push(issue.message);
     }
     
-    res.status(422).json({
+    res.status(400).json({
       type: 'https://tools.ietf.org/html/rfc7807#section-3.1',
       title: 'Validation Error',
-      status: 422,
+      status: 400,
       detail: 'Request validation failed',
       errors,
     });

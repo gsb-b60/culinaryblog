@@ -1,6 +1,7 @@
 import { Redis } from 'ioredis';
 
 import { env } from '../../config-middleware/config/env.js';
+import { logger } from '../../config-middleware/config/logger.js';
 
 class RedisCacheService {
   private client: Redis | null = null;
@@ -19,16 +20,25 @@ class RedisCacheService {
       lazyConnect: true,
     });
 
-    this.client.on('connect', () => {
+    this.client.on('ready', () => {
       this.isConnected = true;
     });
 
-    this.client.on('error', (err) => {
+    this.client.on('close', () => {
       this.isConnected = false;
-      console.error('Redis connection error:', err);
+    });
+    this.client.on('error', () => {
+      this.isConnected = false;
     });
 
-    await this.client.connect();
+    try {
+      await this.client.connect();
+    } catch (error) {
+      this.client.disconnect();
+      this.client = null;
+      this.isConnected = false;
+      throw error;
+    }
   }
 
   async disconnect(): Promise<void> {
@@ -43,18 +53,19 @@ class RedisCacheService {
     if (!this.client || !this.isConnected) return null;
     try {
       const data = await this.client.get(key);
-      return data ? JSON.parse(data) : null;
+      return data ? JSON.parse(data) as T : null;
     } catch {
       return null;
     }
   }
 
-  async set(key: string, value: any, ttlSeconds: number): Promise<void> {
+  async set(key: string, value: unknown, ttlSeconds: number): Promise<void> {
     if (!this.client || !this.isConnected) return;
     try {
-      await this.client.setex(key, ttlSeconds, JSON.stringify(value));
+      const serialized = JSON.stringify(value);
+      if (serialized !== undefined) await this.client.setex(key, ttlSeconds, serialized);
     } catch (error) {
-      console.error('Cache set error:', error);
+      logger.error({ err: error }, 'Cache set error');
     }
   }
 
@@ -63,7 +74,7 @@ class RedisCacheService {
     try {
       await this.client.del(key);
     } catch (error) {
-      console.error('Cache delete error:', error);
+      logger.error({ err: error }, 'Cache delete error');
     }
   }
 
@@ -75,7 +86,7 @@ class RedisCacheService {
         await this.client.del(...keys);
       }
     } catch (error) {
-      console.error('Cache delete pattern error:', error);
+      logger.error({ err: error }, 'Cache delete pattern error');
     }
   }
 
@@ -90,6 +101,12 @@ class RedisCacheService {
 
   isReady(): boolean {
     return this.isConnected && this.client !== null;
+  }
+
+  async ping(): Promise<void> {
+    if (!this.client || !this.isConnected) throw new Error('Redis is not ready');
+    const response = await this.client.ping();
+    if (response !== 'PONG') throw new Error('Redis ping returned an unexpected response');
   }
 }
 

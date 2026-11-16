@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
 
+import { registerApiHandlers } from '../../application/ApiHandlers.js';
 import { commandBus } from '../../application/command-bus.js';
 import { RefreshTokenCommandHandler } from '../../application/commands/auth/RefreshTokenCommandHandler.js';
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
-import { GetRecipesQueryHandler } from '../../application/queries/recipes/RecipeQueryHandlers.js';
 import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository.js';
 import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.js';
 import { IUserRepository } from '../../domain/repositories/IUserRepository.js';
@@ -15,6 +15,7 @@ import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
 import { NodemailerEmailService } from '../../infrastructure/email/NodemailerEmailService.js';
 import { MinioFileStorageService } from '../../infrastructure/file-storage/MinioFileStorageService.js';
 import { healthCheckService } from '../../infrastructure/health/HealthCheckService.js';
+import { instrumentPrismaClient } from '../../infrastructure/observability/PrismaTracing.js';
 import { CategoryRepository } from '../../infrastructure/persistence/repositories/CategoryRepository.js';
 import { RecipeRepository } from '../../infrastructure/persistence/repositories/RecipeRepository.js';
 import { UserRepository } from '../../infrastructure/persistence/repositories/UserRepository.js';
@@ -40,6 +41,7 @@ export function createContainer(): Container {
   const prisma = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
+  instrumentPrismaClient(prisma);
 
   const recipeRepository = new RecipeRepository(prisma);
   const categoryRepository = new CategoryRepository(prisma);
@@ -51,7 +53,7 @@ export function createContainer(): Container {
     'RefreshTokenCommand',
     new RefreshTokenCommandHandler(prisma, jwtService),
   );
-  commandBus.registerQueryHandler('GetRecipesQuery', new GetRecipesQueryHandler(recipeRepository));
+  registerApiHandlers(commandBus, prisma, jwtService, userRepository, categoryRepository, recipeRepository);
 
   container = {
     prisma,

@@ -19,8 +19,8 @@ export const categoryFiltersSchema = z.object({
 });
 
 export const categoryPaginationSchema = z.object({
-  page: z.number().int().positive().default(1),
-  pageSize: z.number().int().positive().max(50).default(20),
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().max(50).default(20),
 });
 
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;

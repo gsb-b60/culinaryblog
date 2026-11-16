@@ -1,13 +1,11 @@
 import { Queue } from 'bullmq';
 
-import { env } from '../../../config-middleware/config/env.js';
+import { createQueueConnection } from '../queueConnection.js';
 
 export const welcomeEmailQueue = new Queue('welcome-email', {
-  connection: {
-    host: new URL(env.REDIS_URL).hostname,
-    port: parseInt(new URL(env.REDIS_URL).port) || 6379,
-  },
+  connection: createQueueConnection(),
   defaultJobOptions: {
+    // The acceptance criteria require three total attempts.
     attempts: 3,
     backoff: {
       type: 'exponential',
@@ -19,8 +17,8 @@ export const welcomeEmailQueue = new Queue('welcome-email', {
 });
 
 export interface WelcomeEmailJobData {
+  userId: string;
   email: string;
-  displayName: string;
 }
 
 export async function addWelcomeEmailJob(data: WelcomeEmailJobData): Promise<void> {

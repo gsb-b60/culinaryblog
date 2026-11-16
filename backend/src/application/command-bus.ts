@@ -1,4 +1,5 @@
 import { logger } from '../config-middleware/config/logger.js';
+import { getCorrelationId } from '../config-middleware/shared/logging/LoggingContext.js';
 
 export abstract class Command<TResponse = void> {
   abstract readonly type: string;
@@ -111,6 +112,8 @@ export class CommandBus {
     handler: () => Promise<TResponse>
   ): Promise<TResponse> {
     let index = 0;
+    const correlationId = getCorrelationId();
+    const requestLogger = correlationId ? logger.child({ correlationId }) : logger;
 
     const next = async (): Promise<TResponse> => {
       if (index >= this.middlewares.length) {
@@ -122,27 +125,25 @@ export class CommandBus {
     };
 
     const startTime = Date.now();
+    requestLogger.debug({ operation: request.type }, 'Command or query started');
     try {
       const result = await next();
       const duration = Date.now() - startTime;
-      
+
       if (duration > 500) {
-        logger.warn({ 
-          type: request.type, 
-          duration,
-          message: 'Slow request detected' 
-        });
+        requestLogger.warn({ operation: request.type, durationMs: duration }, 'Slow command or query');
+      } else {
+        requestLogger.info({ operation: request.type, durationMs: duration }, 'Command or query completed');
       }
-      
+
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
-      logger.error({ 
-        type: request.type, 
-        duration,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        message: 'Request failed' 
-      });
+      requestLogger.error({
+        operation: request.type,
+        durationMs: duration,
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      }, 'Command or query failed');
       throw error;
     }
   }

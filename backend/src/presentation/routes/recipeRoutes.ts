@@ -1,9 +1,12 @@
-import { Request, Router } from 'express';
+import { randomUUID } from 'node:crypto';
+
 import apicache from 'apicache';
+import { NextFunction, Request, Response, Router } from 'express';
+import { fileTypeFromBuffer } from 'file-type';
+import multer from 'multer';
 import { z } from 'zod';
 
 import { commandBus } from '../../application/command-bus.js';
-import { UserRole } from '../../domain/enums/UserRole.js';
 import { 
   CreateRecipeCommand, 
   UpdateRecipeCommand, 
@@ -30,10 +33,28 @@ import {
   recipeSortSchema,
   paginationSchema 
 } from '../../application/validators/recipeValidators.js';
-import { authenticateJwt, AuthenticatedRequest, authorizeOwnerOrAdmin, optionalAuth } from '../middleware/AuthMiddleware.js';
-import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
+import { env } from '../../config-middleware/config/env.js';
+import { ValidationError, NotFoundError } from '../../config-middleware/shared/errors/AppError.js';
+import { UserRole } from '../../domain/enums/UserRole.js';
+import { getContainer } from '../di/container.js';
+import { authenticateJwt, AuthenticatedRequest, authorize, authorizeOwnerOrAdmin, optionalAuth } from '../middleware/AuthMiddleware.js';
+import { uploadRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 const router: Router = Router();
+const imageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 2, fieldSize: 2048 },
+});
+
+const parseImageUpload = (req: Request, res: Response, next: NextFunction): void => {
+  imageUpload.single('file')(req, res, (error: unknown) => {
+    if (error) {
+      next(new ValidationError({ file: [error instanceof Error ? error.message : 'Invalid image upload'] }));
+      return;
+    }
+    next();
+  });
+};
 
 apicache.options({
   appendKey: (req: Request) => {
@@ -42,10 +63,116 @@ apicache.options({
   },
 });
 
+async function getRecipeOwnerId(req: AuthenticatedRequest): Promise<string | null> {
+  const recipe = await getContainer().prisma.recipe.findFirst({
+    where: { id: req.params.id, isDeleted: false },
+    select: { authorId: true },
+  });
+  return recipe?.authorId ?? null;
+}
+
+function getImageStorageKey(imageUrl: string): string {
+  const prefix = `${env.S3_ENDPOINT!.replace(/\/$/, '')}/${env.S3_BUCKET}/`;
+  if (!imageUrl.startsWith(prefix)) throw new Error('Image URL does not match configured object storage');
+  return decodeURIComponent(imageUrl.slice(prefix.length));
+}
+
+router.post('/:id/images', authenticateJwt, uploadRateLimiter, authorizeOwnerOrAdmin(getRecipeOwnerId), parseImageUpload, async (req: AuthenticatedRequest, res, next) => {
+  let uploadedKey: string | undefined;
+  try {
+    if (!req.file) throw new ValidationError({ file: ['An image file is required'] });
+    const fileType = await fileTypeFromBuffer(req.file.buffer);
+    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
+    if (!fileType || !allowedTypes.has(fileType.mime)) {
+      throw new ValidationError({ file: ['Only JPEG, PNG, WebP, GIF, and AVIF images are allowed'] });
+    }
+    const metadata = z.object({
+      altText: z.string().max(200).optional(),
+      isPrimary: z.enum(['true', 'false']).optional(),
+    }).parse(req.body);
+
+    const container = getContainer();
+    const key = `recipes/${req.params.id}/${randomUUID()}.${fileType.ext}`;
+    uploadedKey = key;
+    const originalUrl = await container.fileStorageService.uploadFile(key, req.file.buffer, fileType.mime);
+    const isPrimary = metadata.isPrimary === 'true';
+    const maxOrder = await container.prisma.recipeImage.aggregate({
+      where: { recipeId: req.params.id, isDeleted: false },
+      _max: { orderIndex: true },
+    });
+    const image = await container.prisma.$transaction(async transaction => {
+      if (isPrimary) {
+        await transaction.recipeImage.updateMany({
+          where: { recipeId: req.params.id, isDeleted: false },
+          data: { isPrimary: false },
+        });
+      }
+      return transaction.recipeImage.create({
+        data: {
+          recipeId: req.params.id!,
+          originalUrl,
+          altText: metadata.altText,
+          isPrimary,
+          orderIndex: (maxOrder._max.orderIndex ?? -1) + 1,
+        },
+      });
+    });
+    res.status(201).json({ imageId: image.id, originalUrl: image.originalUrl, altText: image.altText, isPrimary: image.isPrimary });
+  } catch (error) {
+    if (uploadedKey) getContainer().fileStorageService.deleteFile(uploadedKey).catch(() => undefined);
+    next(error);
+  }
+});
+
+router.patch('/:id/images/:imageId', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const input = z.object({
+      altText: z.string().max(200).nullable().optional(),
+      isPrimary: z.boolean().optional(),
+      orderIndex: z.number().int().nonnegative().optional(),
+    }).parse(req.body);
+    const container = getContainer();
+    const existing = await container.prisma.recipeImage.findFirst({
+      where: { id: req.params.imageId, recipeId: req.params.id, isDeleted: false },
+    });
+    if (!existing) throw new NotFoundError('Recipe image');
+
+    const image = await container.prisma.$transaction(async transaction => {
+      if (input.isPrimary) {
+        await transaction.recipeImage.updateMany({
+          where: { recipeId: req.params.id, isDeleted: false },
+          data: { isPrimary: false },
+        });
+      }
+      return transaction.recipeImage.update({
+        where: { id: existing.id },
+        data: input,
+      });
+    });
+    res.json(image);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete('/:id/images/:imageId', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const container = getContainer();
+    const image = await container.prisma.recipeImage.findFirst({
+      where: { id: req.params.imageId, recipeId: req.params.id, isDeleted: false },
+    });
+    if (!image) throw new NotFoundError('Recipe image');
+    await container.prisma.recipeImage.update({ where: { id: image.id }, data: { isDeleted: true, isPrimary: false } });
+    await container.fileStorageService.deleteFile(getImageStorageKey(image.originalUrl));
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Public routes
 router.get(
   '/',
-  generalRateLimiter,
   optionalAuth,
   apicache.middleware('15 minutes'),
   async (req: AuthenticatedRequest, res, next) => {
@@ -54,8 +181,9 @@ router.get(
       const filters = recipeFiltersSchema.parse(queryFilters);
       const parsedSort = typeof sortValue === 'string' ? sortValue : '-createdAt';
       const descending = parsedSort.startsWith('-');
-      const field = descending ? parsedSort.slice(1) : parsedSort;
-      const sort = recipeSortSchema.parse({ field, order: descending ? 'desc' : 'asc' });
+      const field = typeof req.query.sortBy === 'string' ? req.query.sortBy : descending ? parsedSort.slice(1) : parsedSort;
+      const order = typeof req.query.sortOrder === 'string' ? req.query.sortOrder : descending ? 'desc' : 'asc';
+      const sort = recipeSortSchema.parse({ field, order });
       const pagination = paginationSchema.parse(req.query);
 
       const query = new GetRecipesQuery(
@@ -78,17 +206,21 @@ router.get(
   }
 );
 
-router.get('/search', generalRateLimiter, async (req, res, next) => {
+router.get('/search', async (req, res, next) => {
   try {
     const searchSchema = z.object({
       q: z.string().min(2),
-    }).merge(recipeFiltersSchema).merge(recipeSortSchema).merge(paginationSchema);
+      sortBy: z.enum(['createdAt', 'title', 'prepTime', 'cookTime', 'publishedAt']).optional(),
+      sortOrder: z.enum(['asc', 'desc']).optional(),
+      field: z.enum(['createdAt', 'title', 'prepTime', 'cookTime', 'publishedAt']).optional(),
+      order: z.enum(['asc', 'desc']).optional(),
+    }).merge(recipeFiltersSchema).merge(paginationSchema);
 
     const input = searchSchema.parse(req.query);
     
-    const { q, field, order, page, pageSize, ...filters } = input;
+    const { q, sortBy, sortOrder, field, order, page, pageSize, ...filters } = input;
 
-    const sortObj = { field: field || 'createdAt', order: order || 'desc' };
+    const sortObj = recipeSortSchema.parse({ field: sortBy ?? field ?? 'createdAt', order: sortOrder ?? order ?? 'desc' });
 
     const query = new SearchRecipesQuery(
       q,
@@ -104,12 +236,12 @@ router.get('/search', generalRateLimiter, async (req, res, next) => {
   }
 });
 
-router.get('/:slug', generalRateLimiter, async (req, res, next) => {
+router.get('/:slug', optionalAuth, async (req: AuthenticatedRequest, res, next) => {
   try {
     const query = new GetRecipeBySlugQuery(
       req.params.slug!,
-      (req as AuthenticatedRequest).user?.id,
-      (req as AuthenticatedRequest).user?.roles[0]
+      req.user?.id,
+      req.user?.roles.includes(UserRole.ADMIN) ? UserRole.ADMIN : req.user ? UserRole.AUTHOR : UserRole.GUEST
     );
     const recipe = await commandBus.executeQuery(query);
     
@@ -130,7 +262,7 @@ router.get('/:slug', generalRateLimiter, async (req, res, next) => {
 });
 
 // Protected routes
-router.post('/', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+router.post('/', authenticateJwt, authorize(UserRole.AUTHOR, UserRole.ADMIN), async (req: AuthenticatedRequest, res, next) => {
   try {
     const input = createRecipeSchema.parse(req.body);
     const command = new CreateRecipeCommand(req.user!.id, input);
@@ -141,7 +273,7 @@ router.post('/', authenticateJwt, async (req: AuthenticatedRequest, res, next) =
   }
 });
 
-router.put('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.put('/:id', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const input = updateRecipeSchema.parse(req.body);
     const expectedVersion = parseInt(req.headers['if-match'] as string || '0');
@@ -153,7 +285,7 @@ router.put('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.par
   }
 });
 
-router.patch('/:id/publish', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/publish', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const command = new PublishRecipeCommand(req.params.id!, req.user!.id);
     await commandBus.executeCommand(command);
@@ -163,7 +295,7 @@ router.patch('/:id/publish', authenticateJwt, authorizeOwnerOrAdmin(async (req) 
   }
 });
 
-router.patch('/:id/unpublish', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/unpublish', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const command = new UnpublishRecipeCommand(req.params.id!, req.user!.id);
     await commandBus.executeCommand(command);
@@ -173,7 +305,7 @@ router.patch('/:id/unpublish', authenticateJwt, authorizeOwnerOrAdmin(async (req
   }
 });
 
-router.patch('/:id/archive', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/archive', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const command = new ArchiveRecipeCommand(req.params.id!, req.user!.id);
     await commandBus.executeCommand(command);
@@ -183,7 +315,7 @@ router.patch('/:id/archive', authenticateJwt, authorizeOwnerOrAdmin(async (req) 
   }
 });
 
-router.delete('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.delete('/:id', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const command = new DeleteRecipeCommand(req.params.id!, req.user!.id);
     await commandBus.executeCommand(command);
@@ -194,9 +326,10 @@ router.delete('/:id', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.
 });
 
 // Recipe Steps
-router.post('/:id/steps', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.post('/:id/steps', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const stepSchema = z.object({
+      stepNumber: z.number().int().positive(),
       title: z.string().min(1).max(200),
       description: z.string().min(1),
       timerMinutes: z.number().int().nonnegative().optional(),
@@ -207,6 +340,7 @@ router.post('/:id/steps', authenticateJwt, authorizeOwnerOrAdmin(async (req) => 
     const command = new AddRecipeStepCommand(
       req.params.id!,
       req.user!.id,
+      input.stepNumber,
       input.title,
       input.description,
       input.timerMinutes,
@@ -219,7 +353,7 @@ router.post('/:id/steps', authenticateJwt, authorizeOwnerOrAdmin(async (req) => 
   }
 });
 
-router.put('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.put('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const stepSchema = z.object({
       stepNumber: z.number().int().positive().optional(),
@@ -247,7 +381,7 @@ router.put('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async (r
   }
 });
 
-router.delete('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.delete('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const command = new DeleteRecipeStepCommand(req.params.id!, req.user!.id, req.params.stepId!);
     await commandBus.executeCommand(command);
@@ -258,7 +392,7 @@ router.delete('/:id/steps/:stepId', authenticateJwt, authorizeOwnerOrAdmin(async
 });
 
 // Recipe Ingredients
-router.post('/:id/ingredients', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.post('/:id/ingredients', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const ingredientSchema = z.object({
       name: z.string().min(1).max(200),
@@ -285,7 +419,7 @@ router.post('/:id/ingredients', authenticateJwt, authorizeOwnerOrAdmin(async (re
   }
 });
 
-router.put('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.put('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const ingredientSchema = z.object({
       name: z.string().min(1).max(200).optional(),
@@ -313,7 +447,7 @@ router.put('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAd
   }
 });
 
-router.delete('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAdmin(async (req) => req.params.id!), async (req: AuthenticatedRequest, res, next) => {
+router.delete('/:id/ingredients/:ingredientId', authenticateJwt, authorizeOwnerOrAdmin(getRecipeOwnerId), async (req: AuthenticatedRequest, res, next) => {
   try {
     const command = new DeleteRecipeIngredientCommand(req.params.id!, req.user!.id, req.params.ingredientId!);
     await commandBus.executeCommand(command);

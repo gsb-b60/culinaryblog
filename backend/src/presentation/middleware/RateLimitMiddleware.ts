@@ -13,7 +13,6 @@ export const generalRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip || 'unknown',
 });
 
 export const authRateLimiter = rateLimit({
@@ -27,12 +26,11 @@ export const authRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip || 'unknown',
 });
 
 export const uploadRateLimiter = rateLimit({
   windowMs: env.RATE_LIMIT_WINDOW_MS,
-  max: 5, // 5 uploads per minute
+  max: env.RATE_LIMIT_UPLOAD,
   message: {
     type: 'https://tools.ietf.org/html/rfc7807#section-3.1',
     title: 'Too Many Requests',
@@ -41,5 +39,4 @@ export const uploadRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip || 'unknown',
 });

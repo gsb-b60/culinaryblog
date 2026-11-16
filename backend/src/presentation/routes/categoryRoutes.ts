@@ -19,12 +19,11 @@ import {
 } from '../../application/validators/categoryValidators.js';
 import { UserRole } from '../../domain/enums/UserRole.js';
 import { authenticateJwt, AuthenticatedRequest, authorize } from '../middleware/AuthMiddleware.js';
-import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 const router: Router = Router();
 
 // Public routes
-router.get('/', generalRateLimiter, async (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
     const filters = categoryFiltersSchema.parse(req.query);
     const pagination = categoryPaginationSchema.parse(req.query);
@@ -41,11 +40,11 @@ router.get('/', generalRateLimiter, async (req, res, next) => {
   }
 });
 
-router.get('/:slug', generalRateLimiter, async (req, res, next) => {
+router.get('/:slug', async (req, res, next) => {
   try {
     const paginationSchema = z.object({
-      page: z.number().int().positive().default(1),
-      pageSize: z.number().int().positive().max(50).default(12),
+      page: z.coerce.number().int().positive().default(1),
+      pageSize: z.coerce.number().int().positive().max(50).default(12),
     });
     
     const pagination = paginationSchema.parse(req.query);

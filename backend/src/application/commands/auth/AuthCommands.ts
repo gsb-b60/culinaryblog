@@ -1,5 +1,5 @@
 import { Command } from '../../command-bus.js';
-import { RegisterInput, LoginInput, RefreshTokenInput, GoogleAuthInput } from '../../dtos/UserDto.js';
+import { RegisterInput, LoginInput, RefreshTokenInput, GoogleAuthInput, UpdateProfileInput, UserDto } from '../../dtos/UserDto.js';
 
 export class RegisterCommand extends Command<string> {
   readonly type = 'RegisterCommand';
@@ -36,7 +36,15 @@ export class GoogleAuthCommand extends Command<import('../../dtos/UserDto.js').A
 export class LogoutCommand extends Command<void> {
   readonly type = 'LogoutCommand';
 
-  constructor(public readonly refreshToken: string) {
+  constructor(public readonly refreshToken: string, public readonly userId: string) {
+    super();
+  }
+}
+
+export class UpdateProfileCommand extends Command<UserDto> {
+  readonly type = 'UpdateProfileCommand';
+
+  constructor(public readonly userId: string, public readonly input: UpdateProfileInput) {
     super();
   }
 }

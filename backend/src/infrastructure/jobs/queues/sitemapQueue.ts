@@ -1,14 +1,12 @@
 import { Queue } from 'bullmq';
 
-import { env } from '../../../config-middleware/config/env.js';
+import { createQueueConnection } from '../queueConnection.js';
 
 export const sitemapQueue = new Queue('sitemap', {
-  connection: {
-    host: new URL(env.REDIS_URL).hostname,
-    port: parseInt(new URL(env.REDIS_URL).port) || 6379,
-  },
+  connection: createQueueConnection(),
   defaultJobOptions: {
-    attempts: 2,
+    // BullMQ counts the first execution, so three attempts provide two retries.
+    attempts: 3,
     backoff: {
       type: 'exponential',
       delay: 5000,
@@ -32,7 +30,7 @@ export async function scheduleSitemapJob(): Promise<void> {
     'generate-sitemap',
     { trigger: 'scheduled' },
     {
-      repeat: { pattern: '0 2 * * *' }, // Cron: daily at 2 AM
+      repeat: { pattern: '0 2 * * *', tz: 'UTC' },
       jobId: 'daily-sitemap-generation',
     }
   );

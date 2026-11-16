@@ -48,6 +48,21 @@ pnpm dev
 
 Server runs at `http://localhost:3000` (or configured PORT)
 
+## Background Jobs and Observability
+
+The backend starts BullMQ workers when Redis is available. Registration enqueues a welcome-email job without waiting for the SMTP send; local development can use MailHog at `localhost:1025` and its inbox UI at `http://localhost:8025`. The sitemap worker runs daily at 02:00 UTC and writes `wwwroot/sitemap.xml`, served at `/sitemap.xml`.
+
+The public health endpoints are:
+
+- `GET /health/live` — process liveness.
+- `GET /health/ready` — PostgreSQL and Redis readiness.
+- `GET /health` — PostgreSQL, Redis, and MinIO status.
+- `GET /metrics` — Prometheus text-format request counters, error counters, and duration histograms.
+
+Logs are JSON on stdout and are also written to daily files in `backend/logs` (14-day retention by default). Set `SEQ_URL=http://localhost:5342` to forward development logs to Seq; open the Seq UI at `http://localhost:5341`. OpenTelemetry traces use `OTEL_EXPORTER_OTLP_ENDPOINT` (the Compose Jaeger collector listens at `http://localhost:4318`; UI: `http://localhost:16686`). If the configured collector accepts OTLP metrics, set `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`; otherwise scrape `/metrics`.
+
+Copy the development values from `.env.example`. `FRONTEND_URL` is used by email links; `SITEMAP_BASE_URL` is the canonical public base URL used in the sitemap. Set deployment-appropriate values before publishing either output.
+
 ---
 
 ## 📦 Available Scripts

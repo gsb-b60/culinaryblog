@@ -60,6 +60,7 @@ export class Category {
 
   update(data: Partial<Omit<CategoryProps, 'id' | 'slug' | 'createdAt' | 'isDeleted' | 'version'>>): void {
     Object.assign(this.props, data);
+    if (data.name !== undefined) this.props.slug = Slug.create(data.name);
     this.props.updatedAt = new Date();
     this.props.version += 1;
   }
