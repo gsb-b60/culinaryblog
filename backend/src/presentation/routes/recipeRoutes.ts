@@ -393,6 +393,56 @@ router.patch(
     }
   },
 );
+
+router.delete(
+  ':id/images/:imageId',
+  authenticateJwt,
+  authorize(UserRole.AUTHOR, UserRole.ADMIN),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { prisma } = getContainer();
+      const recipeId = req.params.id!;
+      const imageId = req.params.imageId!;
+
+      await assertRecipeAccess(recipeId, req.user!);
+
+      const image = await prisma.recipeImage.findFirst({
+        where: { id: imageId, recipeId, isDeleted: false },
+      });
+      if (!image) throw new NotFoundError('Image');
+      await prisma.$transaction(async (tx) => {
+        const urls = [image.originalUrl, image.mediumUrl, image.thumbnailUrl].filter(
+          (url): url is string => Boolean(url),
+        );
+        if (urls.length > 0) {
+          await tx.fileCleanupTask.createMany({
+            data: urls.map((url) => ({ recipeId, url })),
+          });
+        }
+        await tx.recipeImage.delete({
+          where: { id: imageId },
+        });
+
+        if (image.isPrimary) {
+          const nextImage = await tx.recipeImage.findFirst({
+            where: { recipeId, isDeleted: false },
+            orderBy: { orderIndex: 'asc' },
+            select: { id: true },
+          });
+          if (nextImage) {
+            await tx.recipeImage.update({
+              where: { id: nextImage.id },
+              data: { isPrimary: true },
+            });
+          }
+        }
+      });
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 // Recipe Steps
 router.get('/:id/steps', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
   try {
