@@ -1,4 +1,10 @@
-import { Router, type Router as RouterType, type Request, type Response, type NextFunction } from 'express';
+import {
+  Router,
+  type Router as RouterType,
+  type Request,
+  type Response,
+  type NextFunction,
+} from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 
@@ -33,10 +39,20 @@ import {
   recipeSortQuerySchema,
   paginationSchema,
 } from '../../application/validators/recipeValidators.js';
-import { AppError, ValidationError } from '../../config-middleware/shared/errors/AppError.js';
+import {
+  AppError,
+  ValidationError,
+  ForbiddenError,
+  NotFoundError,
+} from '../../config-middleware/shared/errors/AppError.js';
 import { UserRole } from '../../domain/index.js';
 import { getContainer } from '../di/container.js';
-import { buildImageKey, assertImageSize, detectAllowedImage, MAX_IMAGE_SIZE_BYTES } from '../file-upload.js';
+import {
+  buildImageKey,
+  assertImageSize,
+  detectAllowedImage,
+  MAX_IMAGE_SIZE_BYTES,
+} from '../file-upload.js';
 import {
   authenticateJwt,
   AuthenticatedRequest,
@@ -44,6 +60,7 @@ import {
   optionalAuth,
 } from '../middleware/AuthMiddleware.js';
 import { uploadRateLimiter, generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
+import { prisma } from '../../config-middleware/shared/database/client.js';
 
 const imageUpload = multer({
   storage: multer.memoryStorage(),
@@ -53,12 +70,12 @@ const imageUpload = multer({
 function uploadImageFile(req: Request, res: Response, next: NextFunction): void {
   imageUpload.single('file')(req, res, (error: unknown) => {
     if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') {
-      next(new AppError(
-        400,
-        'Image must be 5 MB or smaller.',
-        'FILE_SIZE_EXCEEDED',
-        { type: 'FILE_SIZE_EXCEEDED', title: 'File too large' },
-      ));
+      next(
+        new AppError(400, 'Image must be 5 MB or smaller.', 'FILE_SIZE_EXCEEDED', {
+          type: 'FILE_SIZE_EXCEEDED',
+          title: 'File too large',
+        }),
+      );
       return;
     }
     if (error) {
@@ -68,7 +85,19 @@ function uploadImageFile(req: Request, res: Response, next: NextFunction): void 
     next();
   });
 }
-
+async function assertRecipeAccess(
+  recipeId: string,
+  user: NonNullable<AuthenticatedRequest['user']>,
+): Promise<void> {
+  const recipe = await getContainer().prisma.recipe.findFirst({
+    where: { id: recipeId, isDeleted: false },
+    select: { authorId: true },
+  });
+  if (!recipe) throw new NotFoundError('Recipe');
+  if (!user.roles.includes(UserRole.ADMIN) && recipe.authorId !== user.id) {
+    throw new ForbiddenError('You can only manage images for your own recipes');
+  }
+}
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
 const router: RouterType = Router();
 
@@ -182,33 +211,28 @@ router.post(
   },
 );
 
-router.put(
-  '/:id',
-  authenticateJwt,
-  async (req: AuthenticatedRequest, res, next) => {
-    try {
-      const input = updateRecipeSchema.parse(req.body);
-      const rawVersion = req.headers['if-match'];
-      const expectedVersion = typeof rawVersion === 'string' && /^\d+$/.test(rawVersion)
-        ? Number(rawVersion)
-        : NaN;
-      if (!Number.isInteger(expectedVersion) || expectedVersion < 1) {
-        throw new ValidationError({ 'If-Match': ['A valid recipe version is required'] });
-      }
-      const command = new UpdateRecipeCommand(
-        req.params.id!,
-        req.user!.id,
-        input,
-        expectedVersion,
-        req.user!.roles.includes(UserRole.ADMIN),
-      );
-      const recipe = await commandBus.executeCommand(command);
-      res.status(200).json(recipe);
-    } catch (error) {
-      next(error);
+router.put('/:id', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const input = updateRecipeSchema.parse(req.body);
+    const rawVersion = req.headers['if-match'];
+    const expectedVersion =
+      typeof rawVersion === 'string' && /^\d+$/.test(rawVersion) ? Number(rawVersion) : NaN;
+    if (!Number.isInteger(expectedVersion) || expectedVersion < 1) {
+      throw new ValidationError({ 'If-Match': ['A valid recipe version is required'] });
     }
-  },
-);
+    const command = new UpdateRecipeCommand(
+      req.params.id!,
+      req.user!.id,
+      input,
+      expectedVersion,
+      req.user!.roles.includes(UserRole.ADMIN),
+    );
+    const recipe = await commandBus.executeCommand(command);
+    res.status(200).json(recipe);
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.patch('/:id/publish', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
   try {
@@ -277,23 +301,54 @@ router.post(
       if (!req.file) {
         throw new ValidationError({ file: ['An image file is required'] });
       }
-      const recipe = await getContainer().prisma.recipe.findFirst({
-        where: { id: req.params.id!, isDeleted: false },
-        select: { authorId: true },
-      });
-      if (!recipe) throw new AppError(404, 'Recipe not found', 'NOT_FOUND', { title: 'Not Found' });
-      if (!req.user!.roles.includes(UserRole.ADMIN) && recipe.authorId !== req.user!.id) {
-        throw new AppError(403, 'You can only upload images to your own recipes', 'FORBIDDEN', { title: 'Forbidden' });
-      }
+      const { altText } = z
+        .object({ altText: z.string().trim().max(200).optional() })
+        .parse(req.body ?? {});
+
+      const recipeId = req.params.id!;
+      await assertRecipeAccess(req.params.id!, req.user!);
       assertImageSize(req.file.size);
       const detected = await detectAllowedImage(req.file.buffer);
+
       const key = buildImageKey(req.params.id!, detected.extension);
       const originalUrl = await getContainer().fileStorageService.uploadFile(
         key,
         req.file.buffer,
         detected.mime,
       );
-      res.status(201).json({ originalUrl });
+
+      let image;
+      try {
+        image = await prisma.$transaction(async (tx) => {
+          const existing = await tx.recipeImage.count({
+            where: { recipeId, idDeleted: false },
+          });
+          const highest = await tx.recipeImage.aggregate({
+            where: { recipeId },
+            _max: { orderIndex: true },
+          });
+          return tx.recipeImage.create({
+            data: {
+              recipeId,
+              originalUrl,
+              altText,
+              isPrimary: existing === 0,
+              orderIndex: (highest._max.orderIndex ?? -1) + 1,
+            },
+          });
+        });
+      } catch (error) {
+        await getContainer()
+          .fileStorageService.deleteFile(key)
+          .catch(() => undefined);
+        throw error;
+      }
+      res.status(201).json({
+        imageId: image.id,
+        originalUrl: image.originalUrl,
+        altText: image.altText,
+        isPrimary: image.isPrimary,
+      });
     } catch (error) {
       next(error);
     }
@@ -316,68 +371,62 @@ router.get('/:id/steps', authenticateJwt, async (req: AuthenticatedRequest, res,
   }
 });
 
-router.post(
-  '/:id/steps',
-  authenticateJwt,
-  async (req: AuthenticatedRequest, res, next) => {
-    try {
-      const stepSchema = z.object({
-        title: z.string().trim().min(1).max(200),
-        description: z.string().trim().min(1),
-        timerMinutes: z.number().int().nonnegative().optional(),
-        imageUrl: z.string().url().max(500).optional(),
-      });
+router.post('/:id/steps', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const stepSchema = z.object({
+      title: z.string().trim().min(1).max(200),
+      description: z.string().trim().min(1),
+      timerMinutes: z.number().int().nonnegative().optional(),
+      imageUrl: z.string().url().max(500).optional(),
+    });
 
-      const input = stepSchema.parse(req.body);
-      const command = new AddRecipeStepCommand(
-        req.params.id!,
-        req.user!.id,
-        input.title,
-        input.description,
-        input.timerMinutes,
-        input.imageUrl,
-        req.user!.roles.includes(UserRole.ADMIN),
-      );
-      const stepId = await commandBus.executeCommand(command);
-      res.status(201).json({ id: stepId, message: 'Step added successfully' });
-    } catch (error) {
-      next(error);
-    }
-  },
-);
+    const input = stepSchema.parse(req.body);
+    const command = new AddRecipeStepCommand(
+      req.params.id!,
+      req.user!.id,
+      input.title,
+      input.description,
+      input.timerMinutes,
+      input.imageUrl,
+      req.user!.roles.includes(UserRole.ADMIN),
+    );
+    const stepId = await commandBus.executeCommand(command);
+    res.status(201).json({ id: stepId, message: 'Step added successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
 
-router.put(
-  '/:id/steps/:stepId',
-  authenticateJwt,
-  async (req: AuthenticatedRequest, res, next) => {
-    try {
-      const stepSchema = z.object({
+router.put('/:id/steps/:stepId', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const stepSchema = z
+      .object({
         stepNumber: z.number().int().positive().optional(),
         title: z.string().trim().min(1).max(200).optional(),
         description: z.string().trim().min(1).optional(),
         timerMinutes: z.number().int().nonnegative().nullable().optional(),
         imageUrl: z.string().url().max(500).nullable().optional(),
-      }).refine((value) => Object.keys(value).length > 0, 'At least one field is required');
+      })
+      .refine((value) => Object.keys(value).length > 0, 'At least one field is required');
 
-      const input = stepSchema.parse(req.body);
-      const command = new UpdateRecipeStepCommand(
-        req.params.id!,
-        req.user!.id,
-        req.params.stepId!,
-        input.stepNumber,
-        input.title,
-        input.description,
-        input.timerMinutes,
-        input.imageUrl,
-        req.user!.roles.includes(UserRole.ADMIN),
-      );
-      await commandBus.executeCommand(command);
-      res.json({ message: 'Step updated successfully' });
-    } catch (error) {
-      next(error);
-    }
-  },
-);
+    const input = stepSchema.parse(req.body);
+    const command = new UpdateRecipeStepCommand(
+      req.params.id!,
+      req.user!.id,
+      req.params.stepId!,
+      input.stepNumber,
+      input.title,
+      input.description,
+      input.timerMinutes,
+      input.imageUrl,
+      req.user!.roles.includes(UserRole.ADMIN),
+    );
+    await commandBus.executeCommand(command);
+    res.json({ message: 'Step updated successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.delete(
   '/:id/steps/:stepId',
