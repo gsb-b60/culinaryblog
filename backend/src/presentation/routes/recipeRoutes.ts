@@ -355,6 +355,44 @@ router.post(
   },
 );
 
+router.patch(
+  '/:id/images/:imageId/primary',
+  authenticateJwt,
+  authorize(UserRole.AUTHOR, UserRole.ADMIN),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { prisma } = getContainer();
+      const recipeId = req.params.id!;
+      const imageId = req.params.imageId!;
+      await assertRecipeAccess(recipeId, req.user!);
+      const image = await prisma.recipeImage.findFirst({
+        where: { id: imageId, recipeId, isDeleted: false },
+      });
+      if (!image) throw new NotFoundError('Image');
+
+      const updated = await prisma.$transaction(async (tx) => {
+        await tx.recipeImage.updateMany({
+          where: { recipeId, isPrimary: true },
+          data: { idPrimary: false },
+        });
+        return tx.recipeImage.update({
+          where: { id: imageId },
+          data: { isPrimary: true },
+        });
+      });
+      res.json({
+        id: updated.id,
+        originalUrl: updated.originalUrl,
+        mediumUrl: updated.mediumUrl,
+        thumbnailUrl: updated.thumbnailUrl,
+        altText: updated.altText,
+        orderIndex: updated.orderIndex,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 // Recipe Steps
 router.get('/:id/steps', authenticateJwt, async (req: AuthenticatedRequest, res, next) => {
   try {
