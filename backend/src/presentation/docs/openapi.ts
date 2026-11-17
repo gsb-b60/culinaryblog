@@ -711,16 +711,25 @@ export const openApiSpec = {
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
-          { name: 'If-Match', in: 'header', required: true, schema: { type: 'integer', minimum: 1 } },
+          {
+            name: 'If-Match',
+            in: 'header',
+            required: true,
+            schema: { type: 'integer', minimum: 1 },
+          },
         ],
         requestBody: {
           required: true,
-          content: { 'application/json': { schema: { $ref: '#/components/schemas/UpdateRecipeRequest' } } },
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/UpdateRecipeRequest' } },
+          },
         },
         responses: {
           '200': {
             description: 'Updated recipe',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/RecipeDetail' } } },
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/RecipeDetail' } },
+            },
           },
           '401': { description: 'Unauthorized' },
           '403': { description: 'Forbidden' },
@@ -789,32 +798,81 @@ export const openApiSpec = {
       },
     },
     '/recipes/{id}/images': {
-    post: {
-      tags: ['recipes'],
-      summary: 'Upload a recipe image',
-      security: [{ bearerAuth: [] }],
-      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-      requestBody: {
-        required: true,
-        content: {
-          'multipart/form-data': {
-            schema: {
-              type: 'object',
-              required: ['file'],
-              properties: { file: { type: 'string', format: 'binary' } },
+      post: {
+        tags: ['recipes'],
+        summary: 'Upload a recipe image',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'multipart/form-data': {
+              schema: {
+                type: 'object',
+                required: ['file'],
+                properties: { file: { type: 'string', format: 'binary' } },
+              },
             },
           },
         },
+        responses: {
+          '201': { description: 'Image uploaded successfully' },
+          '400': { description: 'File is too large or has an invalid MIME type' },
+          '401': { description: 'Authentication required' },
+          '403': { description: 'Only the recipe owner or an admin can upload images' },
+        },
       },
-      responses: {
-        '201': { description: 'Image uploaded successfully' },
-        '400': { description: 'File is too large or has an invalid MIME type' },
-        '401': { description: 'Authentication required' },
-        '403': { description: 'Only the recipe owner or an admin can upload images' },
+      'recipes/{id}/images/{imageId}/primary': {
+        patch: {
+          tags: ['recipes'],
+          summary: 'Set a recipe image as the primary image',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+            {
+              name: 'imageId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string', format: 'uuid' },
+            },
+          ],
+          responses: {
+            '200': {
+              description: 'The updated image',
+              content: {
+                'application/json': { schema: { $ref: '#/components/schemas/RecipeImage' } },
+              },
+            },
+            '401': { description: 'Authentication required' },
+            '403': { description: 'Not recipe owner/Admin' },
+            '404': { description: 'Recipe or image not found' },
+          },
+        },
       },
     },
-  },
-  '/recipes/{id}/steps': {
+    '/recipes/{id}/images/{imageId}': {
+      delete: {
+        tags: ['recipes'],
+        summary: 'Delete a recipe image and queue MinIO cleanup',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+          {
+            name: 'imageId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string', format: 'uuid' },
+          },
+        ],
+        responses: {
+          '204': { description: 'Image deleted; object cleanup queued' },
+          '401': { description: 'Authentication required' },
+          '403': { description: 'Not recipe owner/Admin' },
+          '404': { description: 'Recipe or image not found' },
+        },
+      },
+    },
+    '/recipes/{id}/steps': {
       get: {
         tags: ['recipes'],
         summary: 'List recipe steps in order (Owner/Admin)',
