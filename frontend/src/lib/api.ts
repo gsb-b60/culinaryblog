@@ -302,7 +302,10 @@ export function createRecipe(
 }
 
 export interface RecipeImageUploadResult {
+  imageId: string
   originalUrl: string
+  altText?: string | null
+  isPrimary: boolean
 }
 
 /** Upload an image without overriding the browser-generated multipart boundary. */
@@ -334,6 +337,34 @@ export function uploadRecipeImage(
     form.append('file', file)
     xhr.send(form)
   })
+}
+
+/**
+ * Promote one uploaded image to the recipe's primary image.
+ */
+export function setPrimaryRecipeImage(
+  accessToken: string,
+  recipeId: string,
+  imageId: string,
+): Promise<void> {
+  return request<void>(
+    `/recipes/${encodeURIComponent(recipeId)}/images/${encodeURIComponent(imageId)}/primary`,
+    { method: 'PATCH', headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+}
+
+/**
+ * Delete one uploaded image. The backend removes the MinIO object asynchronously.
+ */
+export function deleteRecipeImage(
+  accessToken: string,
+  recipeId: string,
+  imageId: string,
+): Promise<void> {
+  return request<void>(
+    `/recipes/${encodeURIComponent(recipeId)}/images/${encodeURIComponent(imageId)}`,
+    { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } },
+  )
 }
 
 /** Persist editable recipe fields under backend ownership checks. */

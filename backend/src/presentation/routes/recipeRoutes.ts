@@ -60,7 +60,6 @@ import {
   optionalAuth,
 } from '../middleware/AuthMiddleware.js';
 import { uploadRateLimiter, generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
-import { prisma } from '../../config-middleware/shared/database/client.js';
 
 const imageUpload = multer({
   storage: multer.memoryStorage(),
@@ -297,6 +296,7 @@ router.post(
   uploadRateLimiter,
   uploadImageFile,
   async (req: AuthenticatedRequest, res, next) => {
+    const { prisma, fileStorageService } = getContainer();
     try {
       if (!req.file) {
         throw new ValidationError({ file: ['An image file is required'] });
@@ -306,12 +306,12 @@ router.post(
         .parse(req.body ?? {});
 
       const recipeId = req.params.id!;
-      await assertRecipeAccess(req.params.id!, req.user!);
+      await assertRecipeAccess(recipeId, req.user!);
       assertImageSize(req.file.size);
       const detected = await detectAllowedImage(req.file.buffer);
 
-      const key = buildImageKey(req.params.id!, detected.extension);
-      const originalUrl = await getContainer().fileStorageService.uploadFile(
+      const key = buildImageKey(recipeId, detected.extension);
+      const originalUrl = await fileStorageService.uploadFile(
         key,
         req.file.buffer,
         detected.mime,
@@ -321,7 +321,7 @@ router.post(
       try {
         image = await prisma.$transaction(async (tx) => {
           const existing = await tx.recipeImage.count({
-            where: { recipeId, idDeleted: false },
+            where: { recipeId, isDeleted: false },
           });
           const highest = await tx.recipeImage.aggregate({
             where: { recipeId },
@@ -338,9 +338,7 @@ router.post(
           });
         });
       } catch (error) {
-        await getContainer()
-          .fileStorageService.deleteFile(key)
-          .catch(() => undefined);
+        await fileStorageService.deleteFile(key).catch(() => undefined);
         throw error;
       }
       res.status(201).json({
@@ -373,7 +371,7 @@ router.patch(
       const updated = await prisma.$transaction(async (tx) => {
         await tx.recipeImage.updateMany({
           where: { recipeId, isPrimary: true },
-          data: { idPrimary: false },
+          data: { isPrimary: false },
         });
         return tx.recipeImage.update({
           where: { id: imageId },
@@ -386,6 +384,7 @@ router.patch(
         mediumUrl: updated.mediumUrl,
         thumbnailUrl: updated.thumbnailUrl,
         altText: updated.altText,
+        isPrimary: updated.isPrimary,
         orderIndex: updated.orderIndex,
       });
     } catch (error) {
@@ -395,7 +394,7 @@ router.patch(
 );
 
 router.delete(
-  ':id/images/:imageId',
+  '/:id/images/:imageId',
   authenticateJwt,
   authorize(UserRole.AUTHOR, UserRole.ADMIN),
   async (req: AuthenticatedRequest, res, next) => {

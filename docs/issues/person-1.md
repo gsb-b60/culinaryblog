@@ -468,7 +468,7 @@ Recipe updated, cache invalidated, returns latest RecipeDto.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.5 FR-FILE-001 |
 | Endpoint | Used internally by `POST /api/v1/recipes/{id}/images` |
-| Status | 🔄 Partial |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -495,12 +495,12 @@ File stored on MinIO, public URL returned.
 
 **Acceptance Criteria:**
 
-- [ ] Valid JPEG/PNG/WebP/AVIF ≤ 5MB uploads successfully, returns URL
-- [ ] File > 5 MB rejected with `FILE_SIZE_EXCEEDED` error
-- [ ] Disallowed MIME type rejected with `FILE_MIME_INVALID` error
-- [ ] Magic bytes validated (not just Content-Type header)
-- [ ] Filename is UUID-based (no path traversal possible)
-- [ ] Uploaded file accessible via public URL (bucket public-read)
+- [x] Valid JPEG/PNG/WebP/AVIF ≤ 5MB uploads successfully, returns URL
+- [x] File > 5 MB rejected with `FILE_SIZE_EXCEEDED` error
+- [x] Disallowed MIME type rejected with `FILE_MIME_INVALID` error
+- [x] Magic bytes validated (not just Content-Type header)
+- [x] Filename is UUID-based (no path traversal possible)
+- [x] Uploaded file accessible via public URL (bucket public-read)
 
 ---
 
@@ -560,7 +560,7 @@ File deleted from MinIO. Idempotent on repeated calls.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-recipes.md` §FR-RCP-008 |
 | Endpoints | `POST /api/v1/recipes/{id}/images` · `PATCH /api/v1/recipes/{id}/images/{imgId}/primary` · `DELETE /api/v1/recipes/{id}/images/{imgId}` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -583,13 +583,13 @@ Images uploaded, primary set, deleted with async MinIO cleanup.
 
 **Acceptance Criteria:**
 
-- [ ] Upload returns 201 with `{ imageId, originalUrl, altText, isPrimary }`
-- [ ] MIME + size validation enforced (5 MB, JPEG/PNG/WebP/AVIF)
-- [ ] Magic bytes checked
-- [ ] Path: `recipes/{recipeId}/{uuid}.{ext}`
-- [ ] Set-primary returns 200, only one image has `isPrimary = true`
-- [ ] Delete returns 204, MinIO file removed async via BullMQ
-- [ ] Ownership check: only owner/Admin can manage images (403 otherwise)
+- [x] Upload returns 201 with `{ imageId, originalUrl, altText, isPrimary }`
+- [x] MIME + size validation enforced (5 MB, JPEG/PNG/WebP/AVIF)
+- [x] Magic bytes checked
+- [x] Path: `recipes/{recipeId}/{uuid}.{ext}`
+- [x] Set-primary returns 200, only one image has `isPrimary = true`
+- [x] Delete returns 204, MinIO file removed async via BullMQ
+- [x] Ownership check: only owner/Admin can manage images (403 otherwise)
 
 ---
 

@@ -810,43 +810,63 @@ export const openApiSpec = {
               schema: {
                 type: 'object',
                 required: ['file'],
-                properties: { file: { type: 'string', format: 'binary' } },
+                properties: {
+                  file: { type: 'string', format: 'binary' },
+                  altText: { type: 'string', maxLength: 200 },
+                },
               },
             },
           },
         },
         responses: {
-          '201': { description: 'Image uploaded successfully' },
+          '201': {
+            description: 'Image uploaded and persisted',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['imageId', 'originalUrl', 'isPrimary'],
+                  properties: {
+                    imageId: { type: 'string', format: 'uuid' },
+                    originalUrl: { type: 'string' },
+                    altText: { type: 'string', nullable: true },
+                    isPrimary: { type: 'boolean' },
+                  },
+                },
+              },
+            },
+          },
           '400': { description: 'File is too large or has an invalid MIME type' },
           '401': { description: 'Authentication required' },
           '403': { description: 'Only the recipe owner or an admin can upload images' },
+          '404': { description: 'Recipe not found' },
         },
       },
-      'recipes/{id}/images/{imageId}/primary': {
-        patch: {
-          tags: ['recipes'],
-          summary: 'Set a recipe image as the primary image',
-          security: [{ bearerAuth: [] }],
-          parameters: [
-            { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
-            {
-              name: 'imageId',
-              in: 'path',
-              required: true,
-              schema: { type: 'string', format: 'uuid' },
-            },
-          ],
-          responses: {
-            '200': {
-              description: 'The updated image',
-              content: {
-                'application/json': { schema: { $ref: '#/components/schemas/RecipeImage' } },
-              },
-            },
-            '401': { description: 'Authentication required' },
-            '403': { description: 'Not recipe owner/Admin' },
-            '404': { description: 'Recipe or image not found' },
+    },
+    '/recipes/{id}/images/{imageId}/primary': {
+      patch: {
+        tags: ['recipes'],
+        summary: 'Set a recipe image as the primary image',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+          {
+            name: 'imageId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string', format: 'uuid' },
           },
+        ],
+        responses: {
+          '200': {
+            description: 'The updated image',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/RecipeImage' } },
+            },
+          },
+          '401': { description: 'Authentication required' },
+          '403': { description: 'Not recipe owner/Admin' },
+          '404': { description: 'Recipe or image not found' },
         },
       },
     },

@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
-import { ApiError, getRecipeBySlug, updateRecipe } from '../lib/api'
+import {
+  ApiError,
+  deleteRecipeImage,
+  getRecipeBySlug,
+  setPrimaryRecipeImage,
+  updateRecipe,
+  uploadRecipeImage,
+} from '../lib/api'
 import { useAuthStore } from '../store'
 import type { RecipeDetail, RecipeDifficulty, UpdateRecipePayload } from '../types/recipe'
 
@@ -49,6 +56,8 @@ export default function EditRecipePage() {
   const [error, setError] = useState('')
   const [conflict, setConflict] = useState(false)
   const [revision, setRevision] = useState(0)
+  const [imageBusy, setImageBusy] = useState(false)
+  const [imageError, setImageError] = useState('')
 
   useEffect(() => {
     if (!session || !slug) return
@@ -113,6 +122,48 @@ export default function EditRecipePage() {
     }
   }
 
+  async function handleImageUpload(file: File | null) {
+    if (!file || !session || !recipe) return
+    setImageBusy(true)
+    setImageError('')
+    try {
+      await uploadRecipeImage(session.accessToken, recipe.id, file)
+      setRevision((value) => value + 1)
+    } catch (reason) {
+      setImageError(errorMessage(reason))
+    } finally {
+      setImageBusy(false)
+    }
+  }
+
+  async function handleMakePrimary(imageId: string) {
+    if (!session || !recipe) return
+    setImageBusy(true)
+    setImageError('')
+    try {
+      await setPrimaryRecipeImage(session.accessToken, recipe.id, imageId)
+      setRevision((value) => value + 1)
+    } catch (reason) {
+      setImageError(errorMessage(reason))
+    } finally {
+      setImageBusy(false)
+    }
+  }
+
+  async function handleDeleteImage(imageId: string) {
+    if (!session || !recipe) return
+    setImageBusy(true)
+    setImageError('')
+    try {
+      await deleteRecipeImage(session.accessToken, recipe.id, imageId)
+      setRevision((value) => value + 1)
+    } catch (reason) {
+      setImageError(errorMessage(reason))
+    } finally {
+      setImageBusy(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 flex items-start justify-between gap-4">
@@ -130,6 +181,76 @@ export default function EditRecipePage() {
           <button type="button" onClick={() => setRevision((value) => value + 1)} className="ml-3 font-semibold underline">Tải phiên bản mới nhất</button>
         </div>
       )}
+      <section className="mb-6 rounded-xl border border-surface-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-bold">Ảnh món ăn</h2>
+          <span className="text-xs text-surface-500">{recipe.images.length} ảnh</span>
+        </div>
+
+        {recipe.images.length === 0 ? (
+          <p className="rounded-lg border-2 border-dashed border-surface-300 p-6 text-center text-sm text-surface-500">
+            Chưa có ảnh nào. Ảnh đầu tiên sẽ được đặt làm ảnh chính.
+          </p>
+        ) : (
+          <ul className="grid gap-4 sm:grid-cols-2">
+            {recipe.images.map((image) => (
+              <li key={image.id} className="overflow-hidden rounded-lg border border-surface-200">
+                <img
+                  src={image.thumbnailUrl ?? image.mediumUrl ?? image.originalUrl}
+                  alt={image.altText ?? recipe.title}
+                  className="h-40 w-full object-cover"
+                />
+                <div className="space-y-2 p-3">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="rounded bg-surface-100 px-2 py-1">Ảnh #{image.orderIndex + 1}</span>
+                    {image.isPrimary && (
+                      <span className="rounded bg-brand-100 px-2 py-1 font-medium text-brand-700">Ảnh chính</span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    {!image.isPrimary && (
+                      <button
+                        type="button"
+                        disabled={imageBusy}
+                        onClick={() => handleMakePrimary(image.id)}
+                        className="rounded-lg border border-surface-300 px-3 py-2 text-xs disabled:opacity-60"
+                      >
+                        Đặt làm ảnh chính
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      disabled={imageBusy}
+                      onClick={() => handleDeleteImage(image.id)}
+                      className="rounded-lg border border-red-200 px-3 py-2 text-xs text-red-700 disabled:opacity-60"
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <label className="mt-4 block rounded-lg border-2 border-dashed border-surface-300 p-4 text-center">
+          <span className="block text-sm text-surface-600">Tải thêm ảnh (JPEG, PNG, WebP, AVIF — tối đa 5 MB)</span>
+          <input
+            className="mt-2"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/avif"
+            disabled={imageBusy}
+            onChange={(event) => {
+              const file = event.target.files?.[0] ?? null
+              event.target.value = ''
+              void handleImageUpload(file)
+            }}
+          />
+        </label>
+
+        {imageError && <p role="alert" className="mt-2 text-sm text-red-600">{imageError}</p>}
+      </section>
+
       <form onSubmit={submit} className="space-y-5 rounded-xl border border-surface-200 bg-white p-5 shadow-sm sm:p-6">
         <label className="block"><span className="mb-1 block text-sm font-medium">Tên công thức</span><input required minLength={5} maxLength={200} value={form.title ?? ''} onChange={(event) => update('title', event.target.value)} className="w-full rounded-lg border border-surface-300 p-3" /></label>
         <label className="block"><span className="mb-1 block text-sm font-medium">Mô tả</span><textarea required minLength={10} maxLength={2000} value={form.description ?? ''} onChange={(event) => update('description', event.target.value)} className="min-h-28 w-full rounded-lg border border-surface-300 p-3" /></label>
