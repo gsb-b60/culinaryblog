@@ -39,7 +39,8 @@ export interface IRecipeRepository {
   search(
     query: string,
     filters: RecipeFilters,
-    sort: RecipeSortOptions,
+    /** When omitted, results are ordered by text-search relevance. */
+    sort: RecipeSortOptions | undefined,
     page: number,
     pageSize: number
   ): Promise<PagedResult<Recipe>>;

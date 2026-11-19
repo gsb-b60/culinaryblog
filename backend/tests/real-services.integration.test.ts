@@ -109,6 +109,15 @@ beforeAll(async () => {
     [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
     { env: process.env, stdio: 'pipe', timeout: 60000 },
   );
+  const { ensureRecipeFullTextSearch } = await import('./support/searchMigration.js');
+  const migrationPrisma = new PrismaClient({
+    datasources: { db: { url: testUrl.toString() } },
+  });
+  try {
+    await ensureRecipeFullTextSearch(migrationPrisma);
+  } finally {
+    await migrationPrisma.$disconnect();
+  }
   s3 = new S3Client({
     endpoint: process.env.S3_ENDPOINT,
     region: process.env.S3_REGION ?? 'us-east-1',
@@ -170,10 +179,10 @@ beforeAll(async () => {
   workers.push(welcomeEmailWorker, imageResizeWorker, sitemapWorker);
   const { welcomeEmailQueue } =
     await import('../src/infrastructure/jobs/queues/welcomeEmailQueue.js');
-  const { imageResizeQueue } =
+  const { getImageResizeQueue } =
     await import('../src/infrastructure/jobs/queues/imageResizeQueue.js');
   const { sitemapQueue } = await import('../src/infrastructure/jobs/queues/sitemapQueue.js');
-  queues.push(welcomeEmailQueue, imageResizeQueue, sitemapQueue);
+  queues.push(welcomeEmailQueue, getImageResizeQueue(), sitemapQueue);
   const { default: authRoutes } = await import('../src/presentation/routes/authRoutes.js');
   const { default: recipeRoutes } = await import('../src/presentation/routes/recipeRoutes.js');
   const { default: categoryRoutes } = await import('../src/presentation/routes/categoryRoutes.js');
@@ -818,7 +827,7 @@ describe('Real Redis, MinIO, MailHog and job queues', () => {
         imageId: 'integration-image',
         originalUrl: 'https://example.invalid/test.png',
       });
-      const jobs = await images.imageResizeQueue.getJobs(['waiting', 'active', 'completed']);
+      const jobs = await images.getImageResizeQueue().getJobs(['waiting', 'active', 'completed']);
       expect(jobs).toHaveLength(1);
       await jobs[0].waitUntilFinished(events, 15000);
       expect(await jobs[0].getState()).toBe('completed');

@@ -39,6 +39,7 @@ import {
   recipeSortQuerySchema,
   paginationSchema,
 } from '../../application/validators/recipeValidators.js';
+import { logger } from '../../config-middleware/config/logger.js';
 import {
   AppError,
   ValidationError,
@@ -46,6 +47,7 @@ import {
   NotFoundError,
 } from '../../config-middleware/shared/errors/AppError.js';
 import { UserRole } from '../../domain/index.js';
+import { addImageResizeJob } from '../../infrastructure/jobs/queues/imageResizeQueue.js';
 import { getContainer } from '../di/container.js';
 import {
   buildImageKey,
@@ -148,7 +150,7 @@ router.get('/search', generalRateLimiter, async (req, res, next) => {
   try {
     const searchSchema = z
       .object({
-        q: z.string().min(2),
+        q: z.string().trim().min(2),
       })
       .merge(recipeFiltersSchema)
       .merge(paginationSchema);
@@ -156,7 +158,10 @@ router.get('/search', generalRateLimiter, async (req, res, next) => {
     const input = searchSchema.parse(req.query);
 
     const { q, page, pageSize, ...filters } = input;
-    const sortObj = recipeSortQuerySchema.parse(req.query);
+    // Relevance is the default; only an explicit sort switches to field order.
+    const hasExplicitSort =
+      req.query.sort !== undefined || req.query.field !== undefined || req.query.order !== undefined;
+    const sortObj = hasExplicitSort ? recipeSortQuerySchema.parse(req.query) : undefined;
 
     const query = new SearchRecipesQuery(q, filters, sortObj, page, pageSize);
     const result = await commandBus.executeQuery(query);
@@ -341,6 +346,17 @@ router.post(
         await fileStorageService.deleteFile(key).catch(() => undefined);
         throw error;
       }
+
+      // Fire-and-forget: the original image is already usable if variant
+      // generation fails, and BullMQ retries the job three times.
+      void addImageResizeJob({
+        recipeId,
+        imageId: image.id,
+        originalUrl: image.originalUrl,
+      }).catch((error) => {
+        logger.warn({ err: error, recipeId, imageId: image.id }, 'Failed to enqueue image resize');
+      });
+
       res.status(201).json({
         imageId: image.id,
         originalUrl: image.originalUrl,

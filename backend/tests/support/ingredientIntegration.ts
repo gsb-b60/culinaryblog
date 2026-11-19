@@ -65,6 +65,15 @@ export async function startIngredientIntegration(
       [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
       { cwd: root, env: process.env, stdio: 'pipe', timeout: 60000 },
     );
+    const { ensureRecipeFullTextSearch } = await import('./searchMigration.js');
+    const migrationPrisma = new PrismaClient({
+      datasources: { db: { url: testUrl.toString() } },
+    });
+    try {
+      await ensureRecipeFullTextSearch(migrationPrisma);
+    } finally {
+      await migrationPrisma.$disconnect();
+    }
     const { createContainer, destroyContainer } =
       await import('../../src/presentation/di/container.js');
     stopContainer = destroyContainer;

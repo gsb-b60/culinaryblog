@@ -273,12 +273,13 @@ export function listRecipes(query: RecipeListQuery = {}, signal?: AbortSignal): 
   )
 }
 
-/** Search public recipes with the supplied filters and pagination. */
+/** Search public recipes with full-text ranking, filters and pagination. */
 export function searchRecipes(
   q: string,
   query: Omit<RecipeListQuery, 'searchQuery'> = {},
+  signal?: AbortSignal,
 ): Promise<PagedRecipes> {
-  return request<PagedRecipes>(`/recipes/search${toQuery({ q, ...query })}`)
+  return request<PagedRecipes>(`/recipes/search${toQuery({ q, ...query })}`, { signal })
 }
 
 /** Fetch recipe details by slug, optionally including account credentials. */

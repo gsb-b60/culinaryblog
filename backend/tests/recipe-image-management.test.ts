@@ -26,6 +26,11 @@ vi.mock('../src/presentation/middleware/RateLimitMiddleware.js', () => ({
 
 vi.mock('../src/presentation/di/container.js', () => ({ getContainer: vi.fn() }));
 
+vi.mock('../src/infrastructure/jobs/queues/imageResizeQueue.js', () => ({
+  addImageResizeJob: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { addImageResizeJob } from '../src/infrastructure/jobs/queues/imageResizeQueue.js';
 import { getContainer } from '../src/presentation/di/container.js';
 import { globalErrorHandler } from '../src/presentation/middleware/GlobalErrorHandler.js';
 import recipeRoutes from '../src/presentation/routes/recipeRoutes.js';
@@ -113,6 +118,11 @@ describe('POST /api/v1/recipes/:id/images', () => {
         isPrimary: true,
         orderIndex: 0,
       }),
+    });
+    expect(addImageResizeJob).toHaveBeenCalledWith({
+      recipeId: 'r1',
+      imageId: 'i1',
+      originalUrl: uploadedUrl,
     });
   });
 

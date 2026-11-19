@@ -135,6 +135,10 @@ export const openApiSpec = {
           categoryId: { type: 'string', format: 'uuid' },
           authorId: { type: 'string', format: 'uuid' },
           createdAt: { type: 'string', format: 'date-time' },
+          relevanceScore: {
+            type: 'number',
+            description: 'Full-text ranking score; only present on search results.',
+          },
         },
       },
       UpdateRecipeRequest: {
@@ -669,17 +673,34 @@ export const openApiSpec = {
     '/recipes/search': {
       get: {
         tags: ['recipes'],
-        summary: 'Full-text search',
+        summary: 'Full-text search (Vietnamese unaccent + prefix, ts_rank order)',
         parameters: [
           { name: 'q', in: 'query', required: true, schema: { type: 'string', minLength: 2 } },
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+          { name: 'pageSize', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 50 } },
+          { name: 'categoryId', in: 'query', schema: { type: 'string', format: 'uuid' } },
+          {
+            name: 'difficulty',
+            in: 'query',
+            schema: { type: 'string', enum: ['EASY', 'MEDIUM', 'HARD', 'EXPERT'] },
+          },
+          { name: 'maxCookTime', in: 'query', schema: { type: 'integer', minimum: 0 } },
+          { name: 'minServings', in: 'query', schema: { type: 'integer', minimum: 1 } },
+          {
+            name: 'sort',
+            in: 'query',
+            description: 'Omit to rank by relevance; supply a field to override ranking.',
+            schema: { type: 'string' },
+          },
         ],
         responses: {
           '200': {
-            description: 'OK',
+            description: 'Ranked results; each item includes relevanceScore',
             content: {
               'application/json': { schema: { $ref: '#/components/schemas/PagedRecipes' } },
             },
           },
+          '422': { description: 'Query shorter than 2 characters or invalid filters' },
         },
       },
     },
@@ -800,7 +821,7 @@ export const openApiSpec = {
     '/recipes/{id}/images': {
       post: {
         tags: ['recipes'],
-        summary: 'Upload a recipe image',
+        summary: 'Upload a recipe image; 300x300 and 800x600 variants are generated in the background',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {

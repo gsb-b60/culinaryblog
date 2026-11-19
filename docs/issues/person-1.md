@@ -541,10 +541,10 @@ File deleted from MinIO. Idempotent on repeated calls.
 
 **Acceptance Criteria:**
 
-- [ ] Existing file deleted successfully
-- [ ] Deleting non-existent file does NOT throw (idempotent)
-- [ ] Connection failure triggers BullMQ retry (3 attempts)
-- [ ] Deletion logged via Pino
+- [x] Existing file deleted successfully
+- [x] Deleting non-existent file does NOT throw (idempotent)
+- [x] Connection failure triggers BullMQ retry (3 attempts)
+- [x] Deletion logged via Pino
 
 ---
 
@@ -605,7 +605,7 @@ Images uploaded, primary set, deleted with async MinIO cleanup.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.4 FR-SRCH-001 |
 | Endpoint | `GET /api/v1/recipes/search?q=...&page=1&pageSize=10` |
-| Status | 🔄 Partial |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -631,15 +631,15 @@ Ranked list of published recipes matching the search query.
 
 **Acceptance Criteria:**
 
-- [ ] Valid query returns 200 with ranked results (ts_rank DESC)
-- [ ] Prefix matching works (`pho:` matches "phở bò", "phở gà")
-- [ ] Vietnamese diacritics stripped via `unaccent` (searching "pho" finds "phở")
-- [ ] Only PUBLISHED recipes returned (no Draft/Archived)
-- [ ] Query < 2 chars returns 422
-- [ ] No results returns 200 with empty array
-- [ ] GIN index used on SearchVector column
-- [ ] Pagination params respected (page, pageSize)
-- [ ] relevanceScore included in response
+- [x] Valid query returns 200 with ranked results (ts_rank DESC)
+- [x] Prefix matching works (`pho:` matches "phở bò", "phở gà")
+- [x] Vietnamese diacritics stripped via `unaccent` (searching "pho" finds "phở")
+- [x] Only PUBLISHED recipes returned (no Draft/Archived)
+- [x] Query < 2 chars returns 422
+- [x] No results returns 200 with empty array
+- [x] GIN index used on SearchVector column
+- [x] Pagination params respected (page, pageSize)
+- [x] relevanceScore included in response
 
 ---
 
@@ -655,7 +655,7 @@ Ranked list of published recipes matching the search query.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.6 FR-JOB-002 |
 | Endpoint | BullMQ worker (triggered after FR-RCP-008 image upload) |
-| Status | 🔄 Partial |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -682,12 +682,12 @@ After a recipe image upload succeeds, generate a thumbnail (300×300px) and medi
 
 **Acceptance Criteria:**
 
-- [ ] After upload, BullMQ job enqueued
-- [ ] Thumbnail 300×300 generated and stored on MinIO
-- [ ] Medium 800×600 generated and stored on MinIO
-- [ ] `RecipeImage.thumbnailUrl` and `mediumUrl` updated in DB
-- [ ] Job retries up to 3 times on failure
-- [ ] On total failure, original image still displays (no broken UI)
+- [x] After upload, BullMQ job enqueued
+- [x] Thumbnail 300×300 generated and stored on MinIO
+- [x] Medium 800×600 generated and stored on MinIO
+- [x] `RecipeImage.thumbnailUrl` and `mediumUrl` updated in DB
+- [x] Job retries up to 3 times on failure
+- [x] On total failure, original image still displays (no broken UI)
 
 ---
 **UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)

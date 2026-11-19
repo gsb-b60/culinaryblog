@@ -9,7 +9,7 @@ import {
 import { RecipeRepository } from '../src/infrastructure/persistence/repositories/RecipeRepository.js';
 import recipeRoutes from '../src/presentation/routes/recipeRoutes.js';
 import { globalErrorHandler } from '../src/presentation/middleware/GlobalErrorHandler.js';
-const prisma = { recipe: { findMany: vi.fn(), count: vi.fn() } };
+const prisma = { recipe: { findMany: vi.fn(), count: vi.fn() }, $queryRaw: vi.fn() };
 const app = express();
 app.use('/api/v1/recipes', recipeRoutes);
 app.use(globalErrorHandler);
@@ -17,6 +17,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   prisma.recipe.findMany.mockResolvedValue([]);
   prisma.recipe.count.mockResolvedValue(0);
+  prisma.$queryRaw.mockResolvedValue([]);
   const repository = new RecipeRepository(prisma as never);
   commandBus.registerQueryHandler('GetRecipesQuery', new GetRecipesQueryHandler(repository));
   commandBus.registerQueryHandler('SearchRecipesQuery', new SearchRecipesQueryHandler(repository));
@@ -69,15 +70,9 @@ describe('FR-SRCH-003 HTTP sorting', () => {
     await request(app)
       .get('/api/v1/recipes/search?q=soup&sort=-cookTime&minServings=2')
       .expect(200);
-    expect(prisma.recipe.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        orderBy: [{ cookTime: 'desc' }, { id: 'asc' }],
-        where: expect.objectContaining({
-          status: 'PUBLISHED',
-          isDeleted: false,
-          servings: { gte: 2 },
-        }),
-      }),
-    );
+    const sql = prisma.$queryRaw.mock.calls[0]?.[0] as { sql: string; values: unknown[] };
+    expect(sql.sql).toContain('cook_time');
+    expect(sql.sql).toContain('DESC');
+    expect(sql.values).toEqual(expect.arrayContaining(['soup:*', 'PUBLISHED', 2]));
   });
 });

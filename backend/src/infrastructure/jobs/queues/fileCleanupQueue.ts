@@ -13,6 +13,7 @@ export const fileCleanupQueue = new Queue<FileCleanupJobData>('file-cleanup', {
   prefix: env.BULLMQ_PREFIX,
   connection: fileCleanupConnection,
   defaultJobOptions: {
+    // Initial attempt plus three retries, matching FR-FILE-002.
     attempts: 4,
     backoff: { type: 'exponential', delay: 2000 },
     removeOnComplete: { age: 7 * 24 * 60 * 60 },
