@@ -1,19 +1,21 @@
-import { Worker, Job } from 'bullmq';
+import { PrismaClient } from '@prisma/client';
+import { Job, Worker } from 'bullmq';
 
 import { env } from '../../../config-middleware/config/env.js';
+import { logger } from '../../../config-middleware/config/logger.js';
+import { MinioFileStorageService } from '../../file-storage/MinioFileStorageService.js';
+import { processImageResize } from '../imageResizeProcessor.js';
 import { ImageResizeJobData } from '../queues/imageResizeQueue.js';
+
+const prisma = new PrismaClient();
+const storage = new MinioFileStorageService();
 
 const worker = new Worker<ImageResizeJobData>(
   'image-resize',
   async (job: Job<ImageResizeJobData>) => {
     const { recipeId, imageId } = job.data;
-    console.log(`Processing image resize for recipe ${recipeId}, image ${imageId}`);
-
-    // TODO: Implement actual image processing with sharp
-    // For now, just simulate the work
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    console.log(`Image resize completed for ${imageId}`);
+    logger.debug({ recipeId, imageId, jobId: job.id }, 'Processing image resize');
+    await processImageResize(job.data, { prisma, storage });
   },
   {
     prefix: env.BULLMQ_PREFIX,
@@ -26,11 +28,19 @@ const worker = new Worker<ImageResizeJobData>(
 );
 
 worker.on('completed', (job) => {
-  console.log(`Image resize job ${job.id} completed`);
+  logger.info({ jobId: job.id }, 'Image resize job completed');
 });
 
 worker.on('failed', (job, err) => {
-  console.error(`Image resize job ${job?.id} failed:`, err);
+  logger.error({ jobId: job?.id, err }, 'Image resize job failed');
 });
 
-export { worker as imageResizeWorker };
+worker.on('error', (err) => logger.error({ err }, 'Image resize worker error'));
+
+/** Shut the worker down and release its Prisma connection. */
+export const imageResizeWorker = {
+  async close(): Promise<void> {
+    await worker.close();
+    await prisma.$disconnect();
+  },
+};

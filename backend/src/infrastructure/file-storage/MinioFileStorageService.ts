@@ -53,6 +53,18 @@ export class MinioFileStorageService implements IFileStorageService {
     await this.client.send(command);
   }
 
+  async downloadFile(key: string): Promise<Buffer> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+    });
+    const response = await this.client.send(command);
+    if (!response.Body) {
+      throw new Error(`Object ${key} has no body`);
+    }
+    return Buffer.from(await response.Body.transformToByteArray());
+  }
+
   getFileUrl(key: string): string {
     const endpoint = env.S3_ENDPOINT!.replace(/\/$/, '');
     const encodedKey = key.split('/').map(encodeURIComponent).join('/');

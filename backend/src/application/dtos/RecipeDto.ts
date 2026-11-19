@@ -26,6 +26,8 @@ export interface RecipeSummaryDto {
   authorName?: string;
   publishedAt?: Date;
   createdAt: Date;
+  /** Present on full-text search results; higher values rank first. */
+  relevanceScore?: number;
 }
 
 export interface RecipeDetailDto extends RecipeSummaryDto {

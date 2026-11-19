@@ -1,0 +1,21 @@
+FR-JOB-002 / Issue #25 — end-to-end verification (2026-11-19)
+
+Uploaded a PNG to POST /api/v1/recipes/:id/images on the local stack
+(PostgreSQL + Redis + MinIO + backend worker).
+
+Queue log:
+  Recipe image variants generated
+  Image resize job completed
+
+RecipeImage row after the job:
+  thumbnail_url = .../<uuid>-thumbnail.jpg
+  medium_url    = .../<uuid>-medium.jpg
+
+Downloaded variants from MinIO and inspected with sharp:
+  thumbnail  200 300x300 jpeg
+  medium     200 800x600 jpeg
+
+Automated coverage: backend/tests/image-resize.test.ts (4 tests) asserts the
+generated buffers are exactly 300x300 and 800x600 JPEGs, the URLs are written
+back to the RecipeImage row, and orphaned variants are deleted when the DB
+write fails.

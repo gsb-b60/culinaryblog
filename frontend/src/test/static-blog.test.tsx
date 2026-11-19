@@ -45,7 +45,12 @@ beforeEach(() => {
       const query = new URL(url, "http://localhost");
       const page = Number(query.searchParams.get("page") ?? 1);
       const pageSize = Number(query.searchParams.get("pageSize") ?? 12);
-      const q = query.searchParams.get("searchQuery")?.toLowerCase() ?? "";
+      const q =
+        (
+          query.searchParams.get("searchQuery") ??
+          query.searchParams.get("q") ??
+          ""
+        ).toLowerCase();
       const category = query.searchParams.get("categoryId");
       const filtered = query.pathname.endsWith("/categories")
         ? apiCategories

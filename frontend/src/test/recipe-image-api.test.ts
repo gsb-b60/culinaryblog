@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiError, uploadRecipeImage } from '../lib/api'
+import { ApiError, deleteRecipeImage, setPrimaryRecipeImage, uploadRecipeImage } from '../lib/api'
 
 class FakeUpload {
   addEventListener = vi.fn()
@@ -9,7 +9,12 @@ class FakeUpload {
 class FakeXhr {
   upload = new FakeUpload()
   status = 201
-  responseText = JSON.stringify({ originalUrl: 'http://minio/culinary-blog/recipes/r1/image.jpg' })
+  responseText = JSON.stringify({
+    imageId: 'i1',
+    originalUrl: 'http://minio/culinary-blog/recipes/r1/image.jpg',
+    altText: null,
+    isPrimary: true,
+  })
   open = vi.fn()
   setRequestHeader = vi.fn()
   send = vi.fn(() => {
@@ -30,7 +35,10 @@ describe('uploadRecipeImage', () => {
     const file = new File(['image'], 'cover.jpg', { type: 'image/jpeg' })
 
     await expect(uploadRecipeImage('token', 'recipe/1', file)).resolves.toEqual({
+      imageId: 'i1',
       originalUrl: 'http://minio/culinary-blog/recipes/r1/image.jpg',
+      altText: null,
+      isPrimary: true,
     })
     expect(xhr.open).toHaveBeenCalledWith('POST', expect.stringContaining('/recipes/recipe%2F1/images'))
     expect(xhr.setRequestHeader).toHaveBeenCalledWith('Authorization', 'Bearer token')
@@ -50,5 +58,36 @@ describe('uploadRecipeImage', () => {
     const error = await uploadRecipeImage('token', 'recipe-1', new File(['bad'], 'bad.txt')).catch((reason: unknown) => reason)
     expect(error).toBeInstanceOf(ApiError)
     expect(error).toMatchObject({ status: 400, message: 'Only image files are accepted.' })
+  })
+})
+
+describe('recipe image mutations', () => {
+  it('promotes an image through the primary endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: 'i1', isPrimary: true }), { status: 200 }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await setPrimaryRecipeImage('token', 'r1', 'i1')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/recipes/r1/images/i1/primary'),
+      expect.objectContaining({
+        method: 'PATCH',
+        headers: expect.objectContaining({ Authorization: 'Bearer token' }),
+      }),
+    )
+  })
+
+  it('deletes an image through the image endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await deleteRecipeImage('token', 'r1', 'i1')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/recipes/r1/images/i1'),
+      expect.objectContaining({ method: 'DELETE' }),
+    )
   })
 })

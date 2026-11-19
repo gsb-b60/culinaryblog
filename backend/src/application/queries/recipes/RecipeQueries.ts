@@ -32,7 +32,8 @@ export class SearchRecipesQuery extends Query<import('../../dtos/PagedResult.js'
   constructor(
     public readonly query: string,
     public readonly filters: RecipeFilters,
-    public readonly sort: RecipeSortOptions,
+    /** When omitted, results are ordered by text-search relevance. */
+    public readonly sort: RecipeSortOptions | undefined,
     public readonly page: number,
     public readonly pageSize: number
   ) {

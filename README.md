@@ -1,6 +1,6 @@
 ## 👥 Team & Issue Assignment
 
-**34 issues** across 7 FR modules (AUTH, CAT, RCP, SRCH, FILE, JOB, OBS). **25 done · 5 partial · 4 open** (checked against the backend, Nov 2026). Full issue details: [`docs/issues/`](./docs/issues/).
+**34 issues** across 7 FR modules (AUTH, CAT, RCP, SRCH, FILE, JOB, OBS). **29 done · 2 partial · 3 open** (checked against the backend, Nov 2026). Full issue details: [`docs/issues/`](./docs/issues/).
 
 ### Team Split
 
@@ -24,11 +24,11 @@
 | #7 | FR-AUTH-007: Update Profile | ✅ Done | [#12](https://github.com/gsb-b60/culinaryblog/issues/12) | Nguyen Dinh Hieu |
 | #8 | FR-RCP-003: Create New Recipe ⭐ HARDEST | ✅ Done | [#13](https://github.com/gsb-b60/culinaryblog/issues/13) | Nguyen Dinh Hieu |
 | #9 | FR-RCP-004: Update Recipe (Optimistic Concurrency) | ✅ Done | [#20](https://github.com/gsb-b60/culinaryblog/issues/20) | Nguyen Dinh Hieu |
-| #10 | FR-FILE-001: Upload File to MinIO | 🔄 Partial | [#21](https://github.com/gsb-b60/culinaryblog/issues/21) | Nguyen Dinh Hieu |
+| #10 | FR-FILE-001: Upload File to MinIO | ✅ Done | [#21](https://github.com/gsb-b60/culinaryblog/issues/21) | Nguyen Dinh Hieu |
 | #11 | FR-FILE-002: Delete File from MinIO | ✅ Done | [#22](https://github.com/gsb-b60/culinaryblog/issues/22) | Nguyen Dinh Hieu |
-| #12 | FR-RCP-008: Recipe Image Management | ⬜ Open | [#23](https://github.com/gsb-b60/culinaryblog/issues/23) | Nguyen Dinh Hieu |
-| #13 | FR-SRCH-001: Full-Text Search (Algorithm) | 🔄 Partial | [#24](https://github.com/gsb-b60/culinaryblog/issues/24) | Nguyen Dinh Hieu |
-| #14 | FR-JOB-002: Thumbnail Generation Job (Algorithm) | 🔄 Partial | [#25](https://github.com/gsb-b60/culinaryblog/issues/25) | Nguyen Dinh Hieu |
+| #12 | FR-RCP-008: Recipe Image Management | ✅ Done | [#23](https://github.com/gsb-b60/culinaryblog/issues/23) | Nguyen Dinh Hieu |
+| #13 | FR-SRCH-001: Full-Text Search (Algorithm) | ✅ Done | [#24](https://github.com/gsb-b60/culinaryblog/issues/24) | Nguyen Dinh Hieu |
+| #14 | FR-JOB-002: Thumbnail Generation Job (Algorithm) | ✅ Done | [#25](https://github.com/gsb-b60/culinaryblog/issues/25) | Nguyen Dinh Hieu |
 | #15 | FR-CAT-001: View Category List | ✅ Done | [#2](https://github.com/gsb-b60/culinaryblog/issues/2) | Tran Duc Anh |
 | #16 | FR-CAT-002: View Category Detail and Recipes | ✅ Done | [#26](https://github.com/gsb-b60/culinaryblog/issues/26) | Tran Duc Anh |
 | #17 | FR-CAT-003: Create New Category [Admin] | ⬜ Open | [#27](https://github.com/gsb-b60/culinaryblog/issues/27) | Tran Duc Anh |
@@ -56,10 +56,6 @@
 
 | Issue | Why it is not done |
 |---|---|
-| #10 FR-FILE-001 | `MinioFileStorageService.uploadFile` puts objects and returns a public URL, but there is no upload endpoint, no 5 MB / MIME / magic-byte checks, and filenames are caller-supplied. |
-| #12 FR-RCP-008 | No `POST/PATCH/DELETE /recipes/:id/images` routes. Images are only read and cleaned up when a recipe is deleted. |
-| #13 FR-SRCH-001 | `GET /recipes/search` exists, but ranking is `ILIKE` on title/description — not `tsvector` / `ts_rank` / `unaccent`, and the response has no `relevanceScore`. |
-| #14 FR-JOB-002 | `imageResizeWorker` is registered, but the processor is a `setTimeout` stub (`TODO: sharp`). No 300×300 / 800×600 output and no `thumbnailUrl` write-back. |
 | #17–#19 FR-CAT-003/004/005 | Routes and command classes exist, but no command handlers are registered in the DI container, so admin create/update/delete cannot run. |
 | #31 FR-JOB-003 | Daily BullMQ job is scheduled, but `sitemapWorker` only logs and sleeps (`TODO: Implement actual sitemap generation`). No XML, MinIO upload, or Google ping. |
 | #34 FR-OBS-003 | OpenTelemetry tracing initializes in production only. Metrics (Prometheus or equivalent) are not implemented. |
