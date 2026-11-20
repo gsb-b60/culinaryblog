@@ -28,7 +28,7 @@ export class GetRecipeBySlugQuery extends Query<import('../../dtos/RecipeDto.js'
   constructor(
     public readonly slug: string,
     public readonly userId?: string,
-    public readonly userRole?: string
+    public readonly userRole?: string,
   ) {
     super();
   }
@@ -46,7 +46,7 @@ export class SearchRecipesQuery extends Query<import('../../dtos/PagedResult.js'
     /** When omitted, results are ordered by text-search relevance. */
     public readonly sort: RecipeSortOptions | undefined,
     public readonly page: number,
-    public readonly pageSize: number
+    public readonly pageSize: number,
   ) {
     super();
   }

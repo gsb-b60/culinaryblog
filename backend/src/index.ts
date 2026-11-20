@@ -2,14 +2,13 @@ import cors from 'cors';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import passport from 'passport';
-import { v4 as uuidv4 } from 'uuid';
 import { pinoHttp } from 'pino-http';
+import { v4 as uuidv4 } from 'uuid';
 
 import { env } from './config-middleware/config/env.js';
 import { logger } from './config-middleware/config/logger.js';
 import { disconnectPrisma } from './config-middleware/shared/database/client.js';
 import { initTracing, shutdownTracing } from './config-middleware/shared/tracing/index.js';
-import { requestMetricsMiddleware, renderMetrics } from './infrastructure/observability/metrics.js';
 import { configureGoogleStrategy } from './infrastructure/auth/strategies/GoogleStrategy.js';
 import { configureJwtStrategy } from './infrastructure/auth/strategies/JwtStrategy.js';
 import { configureLocalStrategy } from './infrastructure/auth/strategies/LocalStrategy.js';
@@ -19,6 +18,7 @@ import { startFileCleanupWorker } from './infrastructure/jobs/workers/fileCleanu
 import { imageResizeWorker } from './infrastructure/jobs/workers/imageResizeWorker.js';
 import { sitemapWorker } from './infrastructure/jobs/workers/sitemapWorker.js';
 import { welcomeEmailWorker } from './infrastructure/jobs/workers/welcomeEmailWorker.js';
+import { requestMetricsMiddleware, renderMetrics } from './infrastructure/observability/metrics.js';
 import { containerMiddleware, createContainer, destroyContainer } from './presentation/di/container.js';
 import { setupOpenAPI } from './presentation/docs/openapi.js';
 import { correlationIdMiddleware } from './presentation/middleware/CorrelationIdMiddleware.js';

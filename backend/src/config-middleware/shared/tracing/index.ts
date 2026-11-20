@@ -1,5 +1,6 @@
-import { context, isSpanContextValid, trace } from '@opentelemetry/api';
 import { createRequire } from 'node:module';
+
+import { context, isSpanContextValid, trace } from '@opentelemetry/api';
 
 import { logger } from '../../config/logger.js';
 

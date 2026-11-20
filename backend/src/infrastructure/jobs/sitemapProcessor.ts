@@ -1,8 +1,8 @@
 import { type PrismaClient } from '@prisma/client';
 
+import { type IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { env } from '../../config-middleware/config/env.js';
 import { logger } from '../../config-middleware/config/logger.js';
-import { type IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 
 export interface SitemapDependencies {
   prisma: Pick<PrismaClient, 'recipe' | 'category'>;
@@ -12,7 +12,7 @@ export interface SitemapDependencies {
 }
 
 function escapeXml(value: string): string {
-  return value.replace(/[<>&'\"]/g, (character) => ({
+  return value.replace(/[<>&']/g, (character) => ({
     '<': '&lt;',
     '>': '&gt;',
     '&': '&amp;',
