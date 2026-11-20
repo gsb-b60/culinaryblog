@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -94,6 +94,116 @@ describe('new recipe wizard', () => {
       ingredients: [{ name: 'Bánh phở', quantity: 1 }],
       nutrition: { calories: 450 },
     })
+  }, 15000)
+
+  it('returns to step one after a duplicate-name error and can continue again', async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/categories?page=1&pageSize=50')) {
+        return response({
+          items: [{ id: 'category-1', name: 'Món Việt', slug: 'mon-viet', orderIndex: 0, createdAt: '' }],
+          meta: { page: 1, pageSize: 50, totalCount: 1, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+        })
+      }
+      if (url.endsWith('/recipes') && init?.method === 'POST') {
+        return response({ detail: 'Tên công thức đã tồn tại.' }, 409)
+      }
+      return response({ items: [], meta: { page: 1, pageSize: 12, totalCount: 0, totalPages: 1, hasNextPage: false, hasPreviousPage: false } })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(<QueryClientProvider client={queryClient}><MemoryRouter initialEntries={['/dashboard/recipes/new']}><App /></MemoryRouter></QueryClientProvider>)
+
+    const title = await screen.findByPlaceholderText('Ví dụ: Phở bò Hà Nội')
+    await user.type(title, 'Phở bò đã tồn tại')
+    await user.type(screen.getByPlaceholderText('Món ăn này có gì đặc biệt?'), 'Mô tả món ăn đã tồn tại này.')
+    await user.type(screen.getByRole('combobox', { name: 'Danh mục' }), 'Món Việt')
+    await user.click(screen.getByRole('button', { name: 'Tiếp theo' }))
+    await user.type(screen.getByPlaceholderText('Tên nguyên liệu'), 'Bánh phở')
+    await user.type(screen.getByPlaceholderText('Tên bước'), 'Nấu nước dùng')
+    await user.type(screen.getByPlaceholderText('Mô tả chi tiết bước nấu'), 'Ninh xương trong hai giờ.')
+    await user.click(screen.getByRole('button', { name: 'Tiếp theo' }))
+    await user.click(screen.getByRole('button', { name: 'Lưu bản nháp' }))
+
+    expect(await screen.findByText('Công thức có tiêu đề này đã tồn tại. Hãy đổi tên công thức.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Thông tin cơ bản' })).toBeInTheDocument()
+
+    const titleOnStepOne = screen.getByPlaceholderText('Ví dụ: Phở bò Hà Nội')
+    await user.clear(titleOnStepOne)
+    await user.type(titleOnStepOne, 'Phở bò tên mới')
+    await user.click(screen.getByRole('button', { name: 'Tiếp theo' }))
+    expect(screen.getByRole('heading', { name: 'Nguyên liệu' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Tiếp theo' }))
+    expect(screen.getByText('Ảnh món ăn (không bắt buộc)')).toBeInTheDocument()
+  }, 15000)
+
+  it('supports repeated back-and-forth navigation without losing data or submitting early', async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/categories?page=1&pageSize=50')) {
+        return response({ items: [{ id: 'category-1', name: 'Món Việt', slug: 'mon-viet', orderIndex: 0, createdAt: '' }], meta: { page: 1, pageSize: 50, totalCount: 1, totalPages: 1, hasNextPage: false, hasPreviousPage: false } })
+      }
+      if (url.endsWith('/recipes') && init?.method === 'POST') return response({ id: 'recipe-3', slug: 'pho', status: 'DRAFT' }, 201)
+      return response({ items: [], meta: { page: 1, pageSize: 12, totalCount: 0, totalPages: 1, hasNextPage: false, hasPreviousPage: false } })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(<QueryClientProvider client={queryClient}><MemoryRouter initialEntries={['/dashboard/recipes/new']}><App /></MemoryRouter></QueryClientProvider>)
+
+    await user.type(await screen.findByPlaceholderText('Ví dụ: Phở bò Hà Nội'), 'Phở bò đi lại')
+    await user.type(screen.getByPlaceholderText('Món ăn này có gì đặc biệt?'), 'Mô tả món ăn để kiểm tra chuyển bước.')
+    await user.type(screen.getByRole('combobox', { name: 'Danh mục' }), 'Món Việt')
+    await user.click(screen.getByRole('button', { name: 'Tiếp theo' }))
+    await user.type(screen.getByPlaceholderText('Tên nguyên liệu'), 'Bánh phở')
+    await user.type(screen.getByPlaceholderText('Tên bước'), 'Nấu nước dùng')
+    await user.type(screen.getByPlaceholderText('Mô tả chi tiết bước nấu'), 'Ninh xương trong hai giờ.')
+
+    await user.click(screen.getByRole('button', { name: 'Tiếp theo' }))
+    expect(screen.getByText('Ảnh món ăn (không bắt buộc)')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Quay lại' }))
+    expect(screen.getByRole('heading', { name: 'Nguyên liệu' })).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Bánh phở')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Nấu nước dùng')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Quay lại' }))
+    expect(screen.getByRole('heading', { name: 'Thông tin cơ bản' })).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Phở bò đi lại')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Tiếp theo' }))
+    await user.click(screen.getByRole('button', { name: 'Tiếp theo' }))
+    expect(screen.getByText('Ảnh món ăn (không bắt buộc)')).toBeInTheDocument()
+    expect(fetchMock.mock.calls.some(([, request]) => request?.method === 'POST')).toBe(false)
+
+    await user.click(screen.getByRole('button', { name: 'Lưu bản nháp' }))
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([, request]) => request?.method === 'POST')).toHaveLength(1))
+  }, 15000)
+
+  it('blocks invalid fields on steps 1 and 2 until they are corrected', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith('/categories?page=1&pageSize=50')) return response({ items: [{ id: 'category-1', name: 'Món Việt', slug: 'mon-viet', orderIndex: 0, createdAt: '' }], meta: { page: 1, pageSize: 50, totalCount: 1, totalPages: 1, hasNextPage: false, hasPreviousPage: false } })
+      return response({ items: [], meta: { page: 1, pageSize: 12, totalCount: 0, totalPages: 1, hasNextPage: false, hasPreviousPage: false } })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(<QueryClientProvider client={queryClient}><MemoryRouter initialEntries={['/dashboard/recipes/new']}><App /></MemoryRouter></QueryClientProvider>)
+
+    await user.click(await screen.findByRole('button', { name: 'Tiếp theo' }))
+    expect(screen.getByRole('heading', { name: 'Thông tin cơ bản' })).toBeInTheDocument()
+    expect(screen.getByText('Tên công thức phải có ít nhất 5 ký tự.')).toBeInTheDocument()
+    await user.type(screen.getByPlaceholderText('Ví dụ: Phở bò Hà Nội'), 'Món hợp lệ')
+    await user.type(screen.getByPlaceholderText('Món ăn này có gì đặc biệt?'), 'Mô tả hợp lệ dài hơn mười ký tự.')
+    await user.type(screen.getByRole('combobox', { name: 'Danh mục' }), 'Món Việt')
+    await user.click(screen.getByRole('button', { name: 'Tiếp theo' }))
+    await user.click(screen.getByRole('button', { name: 'Tiếp theo' }))
+    expect(screen.getByRole('heading', { name: 'Nguyên liệu' })).toBeInTheDocument()
+    expect(screen.getAllByText('Hãy nhập tên nguyên liệu 1.').length).toBeGreaterThan(0)
+    await user.type(screen.getByPlaceholderText('Tên nguyên liệu'), 'Cà rốt')
+    await user.type(screen.getByPlaceholderText('Tên bước'), 'Nấu')
+    await user.type(screen.getByPlaceholderText('Mô tả chi tiết bước nấu'), 'Nấu chín nguyên liệu.')
+    await user.click(screen.getByRole('button', { name: 'Tiếp theo' }))
+    expect(screen.getByText('Ảnh món ăn (không bắt buộc)')).toBeInTheDocument()
   }, 15000)
 
   it('does not create the recipe before the final step and uploads the selected image on save', async () => {

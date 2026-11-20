@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useCategories } from "../hooks/useCategories";
@@ -138,12 +137,22 @@ export default function NewRecipePage() {
   const imagePreviewUrlRef = useRef("");
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const activeStepRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     return () => {
       if (imagePreviewUrlRef.current) URL.revokeObjectURL(imagePreviewUrlRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    const heading = activeStepRef.current;
+    if (!heading) return;
+    heading.focus({ preventScroll: true });
+    if (typeof heading.scrollIntoView === "function") {
+      heading.scrollIntoView({ block: "start", behavior: "auto" });
+    }
+  }, [step]);
 
   // DashboardLayout owns the redirect when the session is gone.
   if (!session) return null;
@@ -217,12 +226,16 @@ export default function NewRecipePage() {
     return next;
   };
 
+  function goToStep(nextStep: number) {
+    setStep(Math.max(1, Math.min(nextStep, 3)));
+  }
+
   function showValidation(
     message: string,
     nextStep: number,
     errors: FieldErrors = {},
   ) {
-    setStep(nextStep);
+    goToStep(nextStep);
     setError(message);
     setFieldErrors(errors);
   }
@@ -334,19 +347,16 @@ export default function NewRecipePage() {
   }
 
   function goNext() {
-    if (validateCurrentStep()) {
-      setError("");
-      setFieldErrors({});
-      setStep((current) => Math.min(current + 1, 3));
-    }
+    if (!validateCurrentStep()) return;
+    setError("");
+    setFieldErrors({});
+    goToStep(step + 1);
   }
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    // Only the final step may create a recipe. This guard also protects the
-    // wizard if the browser submits the form via Enter or an unexpected
-    // submit event while the user is on step 1 or 2.
-    if (step !== 3) return;
+  async function submit() {
+    // Saving is deliberately separate from wizard navigation. Only step 3 can
+    // call this function, so step 1/2 can never create a recipe accidentally.
+    if (step !== 3 || saving) return;
     if (!validateCurrentStep()) return;
     setSaving(true);
     setError("");
@@ -413,12 +423,13 @@ export default function NewRecipePage() {
           (key) => key.startsWith("ingredients.") || key.startsWith("steps."),
         )
       )
-        setStep(2);
+        goToStep(2);
       else if (
         Object.keys(errors).length ||
-        (cause instanceof ApiError && cause.status === 422)
+        (cause instanceof ApiError &&
+          (cause.status === 409 || cause.status === 422))
       )
-        setStep(1);
+        goToStep(1);
     } finally {
       setSaving(false);
     }
@@ -495,8 +506,9 @@ export default function NewRecipePage() {
             key={label}
             onClick={() => {
               if (index + 1 <= step) {
-                setStep(index + 1);
+                goToStep(index + 1);
                 setError("");
+                setFieldErrors({});
               }
             }}
             className={`rounded-lg p-3 text-center text-xs font-medium sm:text-sm ${step === index + 1 ? "bg-brand-500 text-white" : step > index + 1 ? "bg-brand-100 text-brand-700" : "bg-surface-100 text-surface-500"}`}
@@ -514,10 +526,19 @@ export default function NewRecipePage() {
           <p className="mt-1">{error}</p>
         </div>
       )}
-      <form onSubmit={submit} className="space-y-6">
+      <form
+        onSubmit={(event) => event.preventDefault()}
+        className="space-y-6"
+      >
         {step === 1 && (
           <section className="rounded-xl border border-surface-200 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="mb-1 font-bold">Thông tin cơ bản</h2>
+            <h2
+              ref={activeStepRef}
+              tabIndex={-1}
+              className="mb-1 font-bold outline-none"
+            >
+              Thông tin cơ bản
+            </h2>
             <p className="mb-5 text-sm text-surface-500">
               Các trường có dấu * là bắt buộc.
             </p>
@@ -711,7 +732,13 @@ export default function NewRecipePage() {
             <section className="rounded-xl border border-surface-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="font-bold">Nguyên liệu</h2>
+                  <h2
+                    ref={activeStepRef}
+                    tabIndex={-1}
+                    className="font-bold outline-none"
+                  >
+                    Nguyên liệu
+                  </h2>
                   <p className="mt-1 text-sm text-surface-500">
                     Nhập tên, số lượng và đơn vị riêng. Ví dụ:{" "}
                     <strong>2</strong> | <strong>củ</strong> |{" "}
@@ -996,7 +1023,13 @@ export default function NewRecipePage() {
         {step === 3 && (
           <div className="space-y-6">
             <section className="rounded-xl border border-surface-200 bg-white p-5 shadow-sm sm:p-6">
-              <h2 className="mb-4 font-bold">Ảnh món ăn (không bắt buộc)</h2>
+              <h2
+                ref={activeStepRef}
+                tabIndex={-1}
+                className="mb-4 font-bold outline-none"
+              >
+                Ảnh món ăn (không bắt buộc)
+              </h2>
               <label className="block rounded-lg border-2 border-dashed border-surface-300 p-6 text-center hover:border-brand-400">
                 <span className="block text-sm text-surface-600">
                   Chọn JPEG, PNG, WebP hoặc AVIF (tối đa 5 MB)
@@ -1183,7 +1216,7 @@ export default function NewRecipePage() {
             type="button"
             disabled={step === 1 || saving}
             onClick={() => {
-              setStep((current) => current - 1);
+              goToStep(step - 1);
               setError("");
               setFieldErrors({});
             }}
@@ -1201,6 +1234,8 @@ export default function NewRecipePage() {
             </button>
           ) : (
             <button
+              type="button"
+              onClick={() => void submit()}
               disabled={saving || categoriesLoading || categories.length === 0}
               className="rounded-lg bg-brand-500 px-6 py-3 font-medium text-white hover:bg-brand-600 disabled:opacity-60"
             >
