@@ -24,6 +24,12 @@ const envSchema = z.object({
   GOOGLE_POST_LOGIN_REDIRECT: z.string().optional(),
 
   CORS_ORIGINS: z.string().default('http://localhost:5173'),
+  FRONTEND_URL: z.string().url().optional(),
+  SITEMAP_BASE_URL: z.string().url().default('http://localhost:5173'),
+  OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
+  OTEL_SERVICE_NAME: z.string().default('lethimcook-api'),
+  SEQ_URL: z.string().url().optional(),
+  LOG_FILE: z.string().optional(),
 
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().optional(),

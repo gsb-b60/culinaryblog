@@ -1,19 +1,18 @@
-import { Worker, Job } from 'bullmq';
+import { PrismaClient } from '@prisma/client';
+import { Job, Worker } from 'bullmq';
 
 import { env } from '../../../config-middleware/config/env.js';
-import { SitemapJobData } from '../queues/sitemapQueue.js';
+import { logger } from '../../../config-middleware/config/logger.js';
+import { MinioFileStorageService } from '../../file-storage/MinioFileStorageService.js';
+import { processSitemap } from '../sitemapProcessor.js';
+import { type SitemapJobData } from '../queues/sitemapQueue.js';
+
+const prisma = new PrismaClient();
+const storage = new MinioFileStorageService();
 
 const worker = new Worker<SitemapJobData>(
   'sitemap',
-  async (job: Job<SitemapJobData>) => {
-    console.log(`Generating sitemap (trigger: ${job.data.trigger})`);
-
-    // TODO: Implement actual sitemap generation
-    // This would fetch all published recipes and generate sitemap.xml
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    console.log('Sitemap generation completed');
-  },
+  async (job: Job<SitemapJobData>) => processSitemapJob(job),
   {
     prefix: env.BULLMQ_PREFIX,
     connection: {
@@ -24,12 +23,19 @@ const worker = new Worker<SitemapJobData>(
   },
 );
 
-worker.on('completed', (job) => {
-  console.log(`Sitemap job ${job.id} completed`);
-});
+worker.on('completed', (job, result) => logger.info({ jobId: job.id, result }, 'Sitemap job completed'));
 
-worker.on('failed', (job, err) => {
-  console.error(`Sitemap job ${job?.id} failed:`, err);
-});
+/** Exposed for isolated tests and alternate worker hosts. */
+export async function processSitemapJob(job: Job<SitemapJobData>): Promise<{ url: string; recipeCount: number; categoryCount: number }> {
+  logger.info({ jobId: job.id, trigger: job.data.trigger }, 'Generating sitemap');
+  return processSitemap(job.data.trigger, { prisma, storage });
+}
+worker.on('failed', (job, err) => logger.error({ jobId: job?.id, err }, 'Sitemap job failed'));
+worker.on('error', (err) => logger.error({ err }, 'Sitemap worker error'));
 
-export { worker as sitemapWorker };
+export const sitemapWorker = {
+  async close(): Promise<void> {
+    await worker.close();
+    await prisma.$disconnect();
+  },
+};

@@ -2,12 +2,14 @@ import cors from 'cors';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import passport from 'passport';
+import { v4 as uuidv4 } from 'uuid';
 import { pinoHttp } from 'pino-http';
 
 import { env } from './config-middleware/config/env.js';
 import { logger } from './config-middleware/config/logger.js';
 import { disconnectPrisma } from './config-middleware/shared/database/client.js';
-import { initTracing } from './config-middleware/shared/tracing/index.js';
+import { initTracing, shutdownTracing } from './config-middleware/shared/tracing/index.js';
+import { requestMetricsMiddleware, renderMetrics } from './infrastructure/observability/metrics.js';
 import { configureGoogleStrategy } from './infrastructure/auth/strategies/GoogleStrategy.js';
 import { configureJwtStrategy } from './infrastructure/auth/strategies/JwtStrategy.js';
 import { configureLocalStrategy } from './infrastructure/auth/strategies/LocalStrategy.js';
@@ -72,12 +74,40 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'If-Match'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'If-Match', 'X-Correlation-ID'],
   }),
 );
 app.use(express.json({ limit: '1mb' }));
-app.use(pinoHttp({ logger }));
+app.use(pinoHttp({
+  logger,
+  genReqId: (req) => req.headers['x-correlation-id'] as string || uuidv4(),
+  customProps: (req) => ({
+    correlationId: (req as typeof req & { correlationId?: string; id?: string }).correlationId
+      || (req as typeof req & { id?: string }).id,
+    userId: (req as typeof req & { user?: { id?: string } }).user?.id,
+  }),
+  customSuccessObject: (req, res, value) => ({
+    ...value,
+    correlationId: (req as typeof req & { correlationId?: string; id?: string }).correlationId
+      || (req as typeof req & { id?: string }).id,
+    method: req.method,
+    path: req.url,
+    statusCode: res.statusCode,
+    elapsedMs: (value as { responseTime?: number }).responseTime,
+    userId: (req as typeof req & { user?: { id?: string } }).user?.id,
+  }),
+  customErrorObject: (req, res, error, value) => ({
+    ...value,
+    correlationId: (req as typeof req & { correlationId?: string; id?: string }).correlationId
+      || (req as typeof req & { id?: string }).id,
+    method: req.method,
+    path: req.url,
+    statusCode: res.statusCode,
+    err: error,
+  }),
+}));
 app.use(correlationIdMiddleware);
+app.use(requestMetricsMiddleware);
 app.use(containerMiddleware);
 app.use(generalRateLimiter);
 
@@ -85,8 +115,8 @@ app.use(generalRateLimiter);
 app.get('/health', async (_req, res) => {
   const container = createContainer();
   const result = await container.healthCheckService.checkAll();
-  const statusCode = result.status === 'healthy' ? 200 : result.status === 'degraded' ? 200 : 503;
-  res.status(statusCode).json(result);
+  const statusCode = result.status === 'healthy' ? 200 : 503;
+  res.status(statusCode).json(container.healthCheckService.toResponse(result));
 });
 
 app.get('/health/live', async (_req, res) => {
@@ -99,7 +129,11 @@ app.get('/health/ready', async (_req, res) => {
   const container = createContainer();
   const result = await container.healthCheckService.checkReadiness();
   const statusCode = result.status === 'healthy' ? 200 : 503;
-  res.status(statusCode).json(result);
+  res.status(statusCode).json(container.healthCheckService.toResponse(result));
+});
+
+app.get('/metrics', (_req, res) => {
+  res.type('text/plain; version=0.0.4').send(renderMetrics());
 });
 
 // API routes
@@ -148,6 +182,7 @@ async function shutdown(signal: string): Promise<void> {
   server.close(async () => {
     await destroyContainer();
     await disconnectPrisma();
+    await shutdownTracing();
     process.exit(0);
   });
   

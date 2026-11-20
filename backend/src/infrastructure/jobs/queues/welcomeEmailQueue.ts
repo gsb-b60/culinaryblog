@@ -9,7 +9,9 @@ export const welcomeEmailQueue = new Queue('welcome-email', {
     port: parseInt(new URL(env.REDIS_URL).port) || 6379,
   },
   defaultJobOptions: {
-    attempts: 3,
+    // BullMQ's attempts value includes the initial delivery attempt.
+    // The contract requires three retries after that initial attempt.
+    attempts: 4,
     backoff: {
       type: 'exponential',
       delay: 1000,
@@ -20,8 +22,8 @@ export const welcomeEmailQueue = new Queue('welcome-email', {
 });
 
 export interface WelcomeEmailJobData {
+  userId: string;
   email: string;
-  displayName: string;
 }
 
 /** Enqueue welcome email delivery in the configured BullMQ namespace. */

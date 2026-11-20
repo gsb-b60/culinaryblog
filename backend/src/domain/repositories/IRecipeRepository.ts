@@ -12,6 +12,8 @@ export interface RecipeFilters {
   maxCookTime?: number;
   minServings?: number;
   searchQuery?: string;
+  viewerId?: string;
+  viewerRole?: 'AUTHOR' | 'ADMIN';
 }
 
 export interface RecipeSortOptions {

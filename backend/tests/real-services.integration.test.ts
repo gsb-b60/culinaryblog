@@ -845,7 +845,7 @@ describe('Real Redis, MinIO, MailHog and job queues', () => {
     expect(await health.checkLiveness()).toEqual({ status: 'alive' });
     expect((await health.checkReadiness()).status).toBe('healthy');
     await container.cacheService.disconnect();
-    expect((await health.checkAll()).status).toBe('degraded');
+    expect((await health.checkAll()).status).toBe('unhealthy');
     expect(container.cacheService.isReady()).toBe(false);
     expect(await container.cacheService.get('disconnected')).toBeNull();
     expect(await container.cacheService.exists('disconnected')).toBe(false);

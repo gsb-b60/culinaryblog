@@ -45,10 +45,10 @@
 | #28 | FR-SRCH-003: Sorting Recipes | ✅ Done | [#36](https://github.com/gsb-b60/culinaryblog/issues/36) | Nguyen Huynh Thanh |
 | #29 | FR-SRCH-004: Pagination | ✅ Done | [#37](https://github.com/gsb-b60/culinaryblog/issues/37) | Nguyen Huynh Thanh |
 | #30 | FR-JOB-001: Welcome Email Job | ✅ Done | [#4](https://github.com/gsb-b60/culinaryblog/issues/4) | Bich Tran |
-| #31 | FR-JOB-003: Sitemap Generation Job | 🔄 Partial | [#38](https://github.com/gsb-b60/culinaryblog/issues/38) | Bich Tran |
+| #31 | FR-JOB-003: Sitemap Generation Job | ✅ Done | [#38](https://github.com/gsb-b60/culinaryblog/issues/38) | Bich Tran |
 | #32 | FR-OBS-001: Health Check Endpoints | ✅ Done | [#5](https://github.com/gsb-b60/culinaryblog/issues/5) | Bich Tran |
 | #33 | FR-OBS-002: Structured Logging | ✅ Done | [#39](https://github.com/gsb-b60/culinaryblog/issues/39) | Bich Tran |
-| #34 | FR-OBS-003: Distributed Tracing & Metrics | 🔄 Partial | [#40](https://github.com/gsb-b60/culinaryblog/issues/40) | Bich Tran |
+| #34 | FR-OBS-003: Distributed Tracing & Metrics | ✅ Done | [#40](https://github.com/gsb-b60/culinaryblog/issues/40) | Bich Tran |
 
 **Status legend:** ✅ Done · 🔄 Partial (wired, but a required piece is missing or stubbed) · ⬜ Open
 
@@ -57,8 +57,6 @@
 | Issue | Why it is not done |
 |---|---|
 | #17–#19 FR-CAT-003/004/005 | Routes and command classes exist, but no command handlers are registered in the DI container, so admin create/update/delete cannot run. |
-| #31 FR-JOB-003 | Daily BullMQ job is scheduled, but `sitemapWorker` only logs and sleeps (`TODO: Implement actual sitemap generation`). No XML, MinIO upload, or Google ping. |
-| #34 FR-OBS-003 | OpenTelemetry tracing initializes in production only. Metrics (Prometheus or equivalent) are not implemented. |
 
 ---
 
