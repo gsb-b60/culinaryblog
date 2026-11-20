@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { Job, Worker } from 'bullmq';
 
-import { type IFileStorageService } from '../../../application/interfaces/IFileStorageService.js';
 import { env } from '../../../config-middleware/config/env.js';
 import { logger } from '../../../config-middleware/config/logger.js';
 import { MinioFileStorageService } from '../../file-storage/MinioFileStorageService.js';

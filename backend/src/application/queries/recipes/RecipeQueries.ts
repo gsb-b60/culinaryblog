@@ -34,6 +34,7 @@ export class GetRecipeBySlugQuery extends Query<import('../../dtos/RecipeDto.js'
   }
 
   getCacheKey(): string { return `recipes:detail:${this.slug}:${this.userId ?? 'guest'}:${this.userRole ?? 'guest'}`; }
+
   getCacheTtl(): number { return 3600; }
 }
 
