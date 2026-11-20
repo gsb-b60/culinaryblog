@@ -34,6 +34,26 @@ describe('file cleanup processor', () => {
     expect(storage.deleteFile).not.toHaveBeenCalled();
   });
 
+  it('treats a missing object as an idempotent success', async () => {
+    const storage = {
+      getFileUrl: vi.fn(() => 'http://minio:9000/recipes-bucket/'),
+      deleteFile: vi.fn().mockRejectedValue(
+        Object.assign(new Error('not found'), {
+          name: 'NoSuchKey',
+          $metadata: { httpStatusCode: 404 },
+        }),
+      ),
+    };
+
+    await expect(
+      processFileCleanup(
+        { recipeId: 'r1', url: 'http://minio:9000/recipes-bucket/recipes/r1/missing.jpg' },
+        storage,
+      ),
+    ).resolves.toBeUndefined();
+    expect(storage.deleteFile).toHaveBeenCalledOnce();
+  });
+
   it('propagates storage failures so BullMQ can retry the job', async () => {
     const storage = {
       getFileUrl: vi.fn(() => 'http://minio:9000/recipes-bucket/'),

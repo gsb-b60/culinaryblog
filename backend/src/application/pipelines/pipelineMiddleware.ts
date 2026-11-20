@@ -1,7 +1,20 @@
+import { logger } from '../../config-middleware/config/logger.js';
 import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
 import { MiddlewareHandler, Query, Command, ICacheable, ICacheInvalidator } from '../command-bus.js';
 
-export const loggingMiddleware: MiddlewareHandler<any, any> = async (_request, next) => next();
+export const loggingMiddleware: MiddlewareHandler<any, any> = async (request, next) => {
+  const started = Date.now();
+  try {
+    const result = await next();
+    const durationMs = Date.now() - started;
+    logger.info({ type: request.type, durationMs }, 'Command/query completed');
+    if (durationMs > 500) logger.warn({ type: request.type, durationMs }, 'Slow command/query');
+    return result;
+  } catch (error) {
+    logger.error({ type: request.type, durationMs: Date.now() - started, err: error }, 'Command/query failed');
+    throw error;
+  }
+};
 
 export const validationMiddleware: MiddlewareHandler<any, any> = async (_request, next) => {
   // Validation is handled in commandBus.executeCommand/Query

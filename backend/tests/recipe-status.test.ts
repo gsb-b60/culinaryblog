@@ -17,7 +17,7 @@ import { UserRole } from '../src/domain/enums/UserRole.js';
 import { globalErrorHandler } from '../src/presentation/middleware/GlobalErrorHandler.js';
 import recipeRoutes from '../src/presentation/routes/recipeRoutes.js';
 
-const prisma = { category: { findUnique: vi.fn() }, recipe: { findUnique: vi.fn(), update: vi.fn(), findMany: vi.fn(), count: vi.fn() } };
+const prisma = { $queryRaw: vi.fn(), category: { findUnique: vi.fn() }, recipe: { findUnique: vi.fn(), update: vi.fn(), findMany: vi.fn(), count: vi.fn() } };
 const cache = { deletePattern: vi.fn().mockResolvedValue(undefined) };
 const archive = new ArchiveRecipeCommandHandler(prisma as never, cache);
 const publish = new PublishRecipeCommandHandler(prisma as never, cache);
@@ -40,6 +40,26 @@ function storedRecipe(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function searchRow(recipe: ReturnType<typeof storedRecipe>) {
+  return {
+    id: recipe.id, title: recipe.title, slug: recipe.slug,
+    description: recipe.description, prepTime: recipe.prepTime,
+    cookTime: recipe.cookTime, servings: recipe.servings,
+    difficulty: recipe.difficulty, status: recipe.status,
+    categoryId: recipe.categoryId, authorId: recipe.authorId,
+    publishedAt: recipe.publishedAt, createdAt: recipe.createdAt,
+    authorName: recipe.author.displayName, categoryName: recipe.category.name,
+    relevanceScore: 0.9,
+  };
+}
+
+/** Emulate the FTS queries: a scalar count query or a paged row query. */
+function mockSearchRows(rows: ReturnType<typeof searchRow>[]) {
+  prisma.$queryRaw.mockImplementation(async (sql: { sql: string }) =>
+    sql.sql.includes('COUNT(*)') ? [{ count: BigInt(rows.length) }] : rows,
+  );
+}
+
 let app: express.Express;
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -50,6 +70,7 @@ beforeEach(() => {
   }));
   prisma.recipe.findMany.mockResolvedValue([storedRecipe()]);
   prisma.recipe.count.mockResolvedValue(1);
+  mockSearchRows([searchRow(storedRecipe({ status: 'PUBLISHED' }))]);
   commandBus.registerQueryHandler(GetManagedRecipesQuery.name, new ManagedRecipeQueryHandler(prisma as never));
   commandBus.registerCommandHandler(ArchiveRecipeCommand.name, archive);
   commandBus.registerCommandHandler(PublishRecipeCommand.name, publish);
@@ -284,6 +305,11 @@ describe('Archived recipe visibility through HTTP, query handlers and repositori
     });
     prisma.recipe.findMany.mockImplementation(async ({ where }) => current.status === where.status ? [current] : []);
     prisma.recipe.count.mockImplementation(async ({ where }) => current.status === where.status ? 1 : 0);
+    prisma.$queryRaw.mockImplementation(async (sql: { sql: string }) => {
+      const matches = current.status === 'PUBLISHED';
+      if (sql.sql.includes('COUNT(*)')) return [{ count: BigInt(matches ? 1 : 0) }];
+      return matches ? [searchRow(current)] : [];
+    });
     prisma.category.findUnique.mockResolvedValue({
       id: 'category-1', name: 'Soup', slug: 'soup-category', description: null, imageUrl: null,
       orderIndex: 0, createdAt: new Date(), updatedAt: new Date(), isDeleted: false, version: 1,
@@ -326,11 +352,18 @@ describe('Archived recipe visibility through HTTP, query handlers and repositori
 
   it.each(['/api/v1/recipes?status=ARCHIVED', '/api/v1/recipes/search?q=soup&status=ARCHIVED'])('ignores forged public status filter: %s', async path => {
     prisma.recipe.findMany.mockResolvedValue([]);
+    mockSearchRows([]);
     const result = await request(app).get(path);
     expect(result.status).toBe(200);
-    expect(prisma.recipe.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: expect.objectContaining({ status: 'PUBLISHED', isDeleted: false }),
-    }));
+    if (path.includes('/search')) {
+      const sql = prisma.$queryRaw.mock.calls[0]?.[0] as { values: unknown[] };
+      expect(sql.values).toEqual(expect.arrayContaining(['PUBLISHED']));
+      expect(sql.values).not.toContain('ARCHIVED');
+    } else {
+      expect(prisma.recipe.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ status: 'PUBLISHED', isDeleted: false }),
+      }));
+    }
   });
 });
 
@@ -340,12 +373,17 @@ describe('Public numeric query parameters', () => {
     const result = await request(app).get(path + separator + 'page=2&pageSize=5&minPrepTime=0&maxPrepTime=20&minCookTime=5&maxCookTime=60');
     expect(result.status).toBe(200);
     expect(result.body.meta).toMatchObject({ page: 2, pageSize: 5 });
-    expect(prisma.recipe.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      skip: 5, take: 5,
-      where: expect.objectContaining({
-        status: 'PUBLISHED', prepTime: { gte: 0, lte: 20 }, cookTime: { gte: 5, lte: 60 },
-      }),
-    }));
+    if (path.includes('/search')) {
+      const sql = prisma.$queryRaw.mock.calls[0]?.[0] as { values: unknown[] };
+      expect(sql.values).toEqual(expect.arrayContaining([0, 20, 5, 60, 5, 5]));
+    } else {
+      expect(prisma.recipe.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        skip: 5, take: 5,
+        where: expect.objectContaining({
+          status: 'PUBLISHED', prepTime: { gte: 0, lte: 20 }, cookTime: { gte: 5, lte: 60 },
+        }),
+      }));
+    }
   });
 
   it.each([

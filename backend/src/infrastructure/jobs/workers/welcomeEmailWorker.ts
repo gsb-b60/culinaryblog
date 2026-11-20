@@ -1,16 +1,30 @@
-import { Worker, Job } from 'bullmq';
+import { PrismaClient } from '@prisma/client';
+import { Job, Worker } from 'bullmq';
 
 import { env } from '../../../config-middleware/config/env.js';
+import { logger } from '../../../config-middleware/config/logger.js';
 import { emailService } from '../../email/NodemailerEmailService.js';
 import { WelcomeEmailJobData } from '../queues/welcomeEmailQueue.js';
 
+const prisma = new PrismaClient();
+
+export async function processWelcomeEmailJob(job: Job<WelcomeEmailJobData>): Promise<void> {
+  const { userId, email } = job.data;
+  const user = await prisma.user.findUnique({
+    where: { id: userId, isDeleted: false },
+    select: { displayName: true },
+  });
+  if (!user) {
+    throw new Error(`Cannot send welcome email: user ${userId} was not found`);
+  }
+
+  await emailService.sendWelcomeEmail(email, user.displayName);
+  logger.info({ email, userId, jobId: job.id }, 'Welcome email sent');
+}
+
 const worker = new Worker<WelcomeEmailJobData>(
   'welcome-email',
-  async (job: Job<WelcomeEmailJobData>) => {
-    const { email, displayName } = job.data;
-    await emailService.sendWelcomeEmail(email, displayName);
-    console.log(`Welcome email sent to ${email}`);
-  },
+  processWelcomeEmailJob,
   {
     prefix: env.BULLMQ_PREFIX,
     connection: {
@@ -22,11 +36,20 @@ const worker = new Worker<WelcomeEmailJobData>(
 );
 
 worker.on('completed', (job) => {
-  console.log(`Welcome email job ${job.id} completed`);
+  logger.info({ jobId: job.id }, 'Welcome email job completed');
 });
 
 worker.on('failed', (job, err) => {
-  console.error(`Welcome email job ${job?.id} failed:`, err);
+  logger.error({ jobId: job?.id, err }, 'Welcome email job failed');
 });
 
-export { worker as welcomeEmailWorker };
+worker.on('error', (err) => {
+  logger.error({ err }, 'Welcome email worker error');
+});
+
+export const welcomeEmailWorker = {
+  async close(): Promise<void> {
+    await worker.close();
+    await prisma.$disconnect();
+  },
+};

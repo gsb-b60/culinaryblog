@@ -11,6 +11,44 @@ import {
 } from '../../../domain/repositories/IRecipeRepository.js';
 import { Slug } from '../../../domain/value-objects/Slug.js';
 
+interface RecipeSearchRow {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  prepTime: number;
+  cookTime: number;
+  servings: number;
+  difficulty: string;
+  status: string;
+  categoryId: string;
+  authorId: string;
+  publishedAt: Date | null;
+  createdAt: Date;
+  authorName: string | null;
+  categoryName: string | null;
+  relevanceScore: number;
+}
+
+/**
+ * Convert user input into a safe prefix tsquery. Diacritics are stripped the
+ * same way the database's `unaccent`-backed search vector strips them, so
+ * "phở bò" and "pho bo" produce identical terms.
+ */
+export function buildPrefixTsQuery(input: string): string {
+  const normalized = input
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd');
+  return normalized
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length > 0)
+    .slice(0, 16)
+    .map((token) => `${token}:*`)
+    .join(' & ');
+}
+
 export class RecipeRepository implements IRecipeRepository {
   /** Bind recipe persistence to the supplied Prisma client. */
   constructor(private prisma: PrismaClient) {}
@@ -115,9 +153,8 @@ export class RecipeRepository implements IRecipeRepository {
     sort: RecipeSortOptions,
     page: number,
     pageSize: number,
-    viewer?: { userId?: string; role?: string; isAdmin?: boolean },
   ): Promise<PagedResult<Recipe>> {
-    const where = this.buildWhereClause(filters, viewer);
+    const where = this.buildWhereClause(filters);
     const orderBy = this.buildOrderBy(sort);
 
     const [items, totalCount] = await Promise.all([
@@ -198,41 +235,120 @@ export class RecipeRepository implements IRecipeRepository {
     return createPagedResult(summaries as any, page, pageSize, totalCount);
   }
 
-  /** Search published recipes using repository filtering and ordering. */
+  /**
+   * Full-text search over the `search_vector` column maintained by the database
+   * trigger. Prefix tsquery terms keep partial words useful, and ranking is
+   * returned to clients as `relevanceScore`.
+   */
   async search(
     query: string,
     filters: RecipeFilters,
-    sort: RecipeSortOptions,
+    sort: RecipeSortOptions | undefined,
     page: number,
     pageSize: number,
   ): Promise<PagedResult<Recipe>> {
-    const where = this.buildWhereClause({ ...filters, searchQuery: query });
-    const orderBy = this.buildOrderBy(sort);
+    const tsQuery = buildPrefixTsQuery(query);
+    if (!tsQuery) return createPagedResult([], page, pageSize, 0);
 
-    const [items, totalCount] = await Promise.all([
-      this.prisma.recipe.findMany({
-        where,
-        orderBy,
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        include: {
-          author: { select: { displayName: true } },
-          category: { select: { name: true } },
-        },
-      }),
-      this.prisma.recipe.count({ where }),
+    const conditions: Prisma.Sql[] = [
+      Prisma.sql`r."is_deleted" = false`,
+      Prisma.sql`r."status" = ${filters.status ?? RecipeStatus.PUBLISHED}::"RecipeStatus"`,
+      Prisma.sql`r."search_vector" @@ to_tsquery('simple', ${tsQuery})`,
+    ];
+    if (filters.categoryId) conditions.push(Prisma.sql`r."category_id" = ${filters.categoryId}`);
+    if (filters.difficulty) {
+      conditions.push(Prisma.sql`r."difficulty" = ${filters.difficulty}::"RecipeDifficulty"`);
+    }
+    if (filters.authorId) conditions.push(Prisma.sql`r."author_id" = ${filters.authorId}`);
+    if (filters.minPrepTime !== undefined) {
+      conditions.push(Prisma.sql`r."prep_time" >= ${filters.minPrepTime}`);
+    }
+    if (filters.maxPrepTime !== undefined) {
+      conditions.push(Prisma.sql`r."prep_time" <= ${filters.maxPrepTime}`);
+    }
+    if (filters.minCookTime !== undefined) {
+      conditions.push(Prisma.sql`r."cook_time" >= ${filters.minCookTime}`);
+    }
+    if (filters.maxCookTime !== undefined) {
+      conditions.push(Prisma.sql`r."cook_time" <= ${filters.maxCookTime}`);
+    }
+    if (filters.minServings !== undefined) {
+      conditions.push(Prisma.sql`r."servings" >= ${filters.minServings}`);
+    }
+
+    const where = Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`;
+    const rank = Prisma.sql`ts_rank(r."search_vector", to_tsquery('simple', ${tsQuery}))`;
+    const sortColumns: Record<RecipeSortOptions['field'], string> = {
+      createdAt: 'created_at',
+      title: 'title',
+      prepTime: 'prep_time',
+      cookTime: 'cook_time',
+      publishedAt: 'published_at',
+    };
+    const orderBy = sort
+      ? Prisma.sql`r.${Prisma.raw(`"${sortColumns[sort.field]}"`)} ${Prisma.raw(
+          sort.order === 'asc' ? 'ASC' : 'DESC',
+        )}, r."id" ASC`
+      : Prisma.sql`${rank} DESC, r."id" ASC`;
+
+    const [rows, countRows] = await Promise.all([
+      this.prisma.$queryRaw<RecipeSearchRow[]>(Prisma.sql`
+        SELECT
+          r."id",
+          r."title",
+          r."slug",
+          r."description",
+          r."prep_time" AS "prepTime",
+          r."cook_time" AS "cookTime",
+          r."servings",
+          r."difficulty",
+          r."status",
+          r."category_id" AS "categoryId",
+          r."author_id" AS "authorId",
+          r."published_at" AS "publishedAt",
+          r."created_at" AS "createdAt",
+          u."display_name" AS "authorName",
+          c."name" AS "categoryName",
+          ${rank} AS "relevanceScore"
+        FROM "recipes" r
+        INNER JOIN "users" u ON u."id" = r."author_id"
+        INNER JOIN "categories" c ON c."id" = r."category_id"
+        ${where}
+        ORDER BY ${orderBy}
+        LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}
+      `),
+      this.prisma.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`
+        SELECT COUNT(*)::bigint AS "count"
+        FROM "recipes" r
+        ${where}
+      `),
     ]);
 
-    const recipes = items.map((r) => this.toDomain(r));
-    const summaries = recipes.map((r) =>
-      this.toSummaryDto(
-        r,
-        (r as any)._categoryName || r.categoryId,
-        (r as any)._authorName || r.authorId,
-      ),
-    );
+    const summaries = rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      slug: row.slug,
+      description: row.description,
+      prepTime: row.prepTime,
+      cookTime: row.cookTime,
+      servings: row.servings,
+      difficulty: row.difficulty as RecipeDifficulty,
+      status: row.status as RecipeStatus,
+      categoryId: row.categoryId,
+      categoryName: row.categoryName ?? row.categoryId,
+      authorId: row.authorId,
+      authorName: row.authorName ?? row.authorId,
+      publishedAt: row.publishedAt ?? undefined,
+      createdAt: row.createdAt,
+      relevanceScore: Number(row.relevanceScore),
+    }));
 
-    return createPagedResult(summaries as any, page, pageSize, totalCount);
+    return createPagedResult(
+      summaries as any,
+      page,
+      pageSize,
+      Number(countRows[0]?.count ?? 0),
+    );
   }
 
   /** Persist recipe scalar fields and foreign keys without mixing relation writes. */
@@ -294,63 +410,53 @@ export class RecipeRepository implements IRecipeRepository {
   }
 
   /** Translate repository filters into a Prisma predicate excluding deleted recipes. */
-  private buildWhereClause(
-    filters: RecipeFilters,
-    viewer?: { userId?: string; role?: string; isAdmin?: boolean },
-  ): Prisma.RecipeWhereInput {
+  private buildWhereClause(filters: RecipeFilters): Prisma.RecipeWhereInput {
+    const { viewerId, viewerRole, ...publicFilters } = filters;
     const where: Prisma.RecipeWhereInput = { isDeleted: false };
 
-    if (filters.categoryId) where.categoryId = filters.categoryId;
-    if (filters.difficulty) where.difficulty = filters.difficulty;
-    if (filters.authorId) where.authorId = filters.authorId;
-    if (filters.minServings !== undefined) where.servings = { gte: filters.minServings };
-    if (filters.minPrepTime !== undefined || filters.maxPrepTime !== undefined) {
-      where.prepTime = {};
-      if (filters.minPrepTime !== undefined) where.prepTime.gte = filters.minPrepTime;
-      if (filters.maxPrepTime !== undefined) where.prepTime.lte = filters.maxPrepTime;
-    }
-    if (filters.minCookTime !== undefined || filters.maxCookTime !== undefined) {
-      where.cookTime = {};
-      if (filters.minCookTime !== undefined) where.cookTime.gte = filters.minCookTime;
-      if (filters.maxCookTime !== undefined) where.cookTime.lte = filters.maxCookTime;
-    }
-    if (filters.searchQuery) {
-      where.OR = [
-        { title: { contains: filters.searchQuery, mode: 'insensitive' } },
-        { description: { contains: filters.searchQuery, mode: 'insensitive' } },
-      ];
-    }
-
-    // Role-based visibility filter (FR-RCP-001)
-    if (viewer?.isAdmin) {
-      // Admin sees all statuses unless a specific status filter is requested
-      if (filters.status) {
-        where.status = filters.status;
-      }
-    } else if (viewer?.userId) {
-      // Author sees Published OR (own Draft / Archived)
-      if (filters.status) {
-        if (filters.status === RecipeStatus.PUBLISHED) {
-          where.status = RecipeStatus.PUBLISHED;
-        } else {
-          where.status = filters.status;
-          where.authorId = viewer.userId;
-        }
-      } else {
-        const authCondition: Prisma.RecipeWhereInput = {
-          OR: [
-            { status: RecipeStatus.PUBLISHED },
-            {
-              status: { in: [RecipeStatus.DRAFT, RecipeStatus.ARCHIVED] },
-              authorId: viewer.userId,
-            },
-          ],
-        };
-        where.AND = [authCondition];
-      }
-    } else {
-      // Guest sees only PUBLISHED
+    if (publicFilters.categoryId) where.categoryId = publicFilters.categoryId;
+    if (publicFilters.difficulty) where.difficulty = publicFilters.difficulty;
+    if (publicFilters.status) where.status = publicFilters.status;
+    const visibilityOr = viewerRole === 'AUTHOR' && viewerId
+      ? [
+          { status: RecipeStatus.PUBLISHED },
+          {
+            status: { in: [RecipeStatus.DRAFT, RecipeStatus.ARCHIVED] },
+            authorId: viewerId,
+          },
+        ]
+      : undefined;
+    if (visibilityOr && publicFilters.status) {
+      where.AND = [{ OR: visibilityOr }, { status: publicFilters.status }];
+    } else if (visibilityOr) {
+      where.AND = [{ OR: visibilityOr }];
+    } else if (viewerRole !== 'ADMIN' && !publicFilters.status) {
       where.status = RecipeStatus.PUBLISHED;
+    }
+    if (publicFilters.authorId) where.authorId = publicFilters.authorId;
+    if (publicFilters.minServings !== undefined) where.servings = { gte: publicFilters.minServings };
+    if (publicFilters.minPrepTime !== undefined || publicFilters.maxPrepTime !== undefined) {
+      where.prepTime = {};
+      if (publicFilters.minPrepTime !== undefined) where.prepTime.gte = publicFilters.minPrepTime;
+      if (publicFilters.maxPrepTime !== undefined) where.prepTime.lte = publicFilters.maxPrepTime;
+    }
+    if (publicFilters.minCookTime !== undefined || publicFilters.maxCookTime !== undefined) {
+      where.cookTime = {};
+      if (publicFilters.minCookTime !== undefined) where.cookTime.gte = publicFilters.minCookTime;
+      if (publicFilters.maxCookTime !== undefined) where.cookTime.lte = publicFilters.maxCookTime;
+    }
+    if (publicFilters.searchQuery) {
+      const searchOr = [
+        { title: { contains: publicFilters.searchQuery, mode: 'insensitive' as const } },
+        { description: { contains: publicFilters.searchQuery, mode: 'insensitive' as const } },
+      ];
+      const existingOr = where.OR;
+      if (existingOr) {
+        delete where.OR;
+        where.AND = [{ OR: existingOr }, { OR: searchOr }];
+      } else {
+        where.OR = searchOr;
+      }
     }
 
     return where;

@@ -28,6 +28,8 @@ export interface RecipeSummary {
   authorName?: string;
   publishedAt?: string;
   createdAt: string;
+  /** Full-text ranking score returned by `/recipes/search`. */
+  relevanceScore?: number;
 }
 
 export interface RecipeStep {

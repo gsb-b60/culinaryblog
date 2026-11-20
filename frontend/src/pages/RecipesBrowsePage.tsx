@@ -9,7 +9,7 @@ import { Pagination } from "../components/common/Pagination";
 import { RecipeCard } from "../components/common/RecipeCard";
 import { Input } from "../components/ui/input";
 import { usePublicCategories } from "../hooks/usePublicCategories";
-import { listRecipes } from "../lib/api";
+import { listRecipes, searchRecipes } from "../lib/api";
 import {
   RECIPE_SORT_OPTIONS,
   type PagedRecipes,
@@ -99,21 +99,21 @@ export default function RecipesBrowsePage() {
     let active = true;
     const timer = window.setTimeout(
       () => {
-        listRecipes(
-          {
-            page,
-            sort,
-            pageSize: PAGE_SIZE,
-            categoryId,
-            searchQuery: search.trim() || undefined,
-            difficulty: difficulty
-              ? (difficulty.toUpperCase() as RecipeDifficulty)
-              : undefined,
-            maxCookTime: maxCookTime === "" ? undefined : Number(maxCookTime),
-            minServings: minServings === "" ? undefined : Number(minServings),
-          },
-          controller.signal,
-        )
+        const filters = {
+          page,
+          sort,
+          pageSize: PAGE_SIZE,
+          categoryId,
+          difficulty: difficulty
+            ? (difficulty.toUpperCase() as RecipeDifficulty)
+            : undefined,
+          maxCookTime: maxCookTime === "" ? undefined : Number(maxCookTime),
+          minServings: minServings === "" ? undefined : Number(minServings),
+        };
+        const request = search.trim()
+          ? searchRecipes(search.trim(), filters, controller.signal)
+          : listRecipes(filters, controller.signal);
+        request
           .then((list) => {
             if (!active) return;
             const lastPage = Math.max(1, list.meta.totalPages);

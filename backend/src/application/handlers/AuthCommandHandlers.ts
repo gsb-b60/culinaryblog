@@ -44,7 +44,7 @@ export interface RegisterHandlerDependencies {
   prisma: PrismaClient;
   jwtService: IJwtService;
   hashPassword: (password: string) => Promise<string>;
-  enqueueWelcomeEmail: (data: { email: string; displayName: string }) => Promise<void>;
+  enqueueWelcomeEmail: (data: { userId: string; email: string }) => Promise<void>;
   accessTokenTtlMs: number;
   refreshTokenTtlMs: number;
 }
@@ -131,7 +131,9 @@ export class RegisterCommandHandler implements ICommandHandler<RegisterCommand, 
     });
 
     try {
-      await this.deps.enqueueWelcomeEmail({ email: user.email, displayName: user.displayName });
+      // Queue delivery is intentionally fire-and-forget: registration succeeds
+      // even when Redis or the email queue is temporarily unavailable.
+      await this.deps.enqueueWelcomeEmail({ userId: user.id, email: user.email });
     } catch (error) {
       logger.warn({ err: error }, 'Failed to enqueue welcome email');
     }
@@ -417,7 +419,7 @@ export interface GoogleAuthHandlerDependencies {
   jwtService: IJwtService;
   googleClientId: string | undefined;
   verifyGoogleToken: (idToken: string) => Promise<GoogleProfile>;
-  enqueueWelcomeEmail: (data: { email: string; displayName: string }) => Promise<void>;
+  enqueueWelcomeEmail: (data: { userId: string; email: string }) => Promise<void>;
   accessTokenTtlMs: number;
   refreshTokenTtlMs: number;
 }
