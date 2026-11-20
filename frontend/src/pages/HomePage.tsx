@@ -51,11 +51,14 @@ function PublicHomePage() {
   const [response, setResponse] = useState<{ revision: number; data?: PagedRecipes; error?: boolean } | null>(null)
   useEffect(() => {
     let active = true
-    const controller = new AbortController()
-    listRecipes({ page: 1, pageSize: 3 }, controller.signal)
+
+    // Keep public landing-page requests alive through React StrictMode's
+    // development-only effect replay. Otherwise Firefox reports the first
+    // request as NS_BINDING_ABORTED even though the API returns successfully.
+    listRecipes({ page: 1, pageSize: 3 })
       .then(data => { if (active) setResponse({ revision, data }) })
       .catch(() => { if (active) setResponse({ revision, error: true }) })
-    return () => { active = false; controller.abort() }
+    return () => { active = false }
   }, [revision])
   const current = response?.revision === revision ? response : null
   const featured = current?.data?.items ?? []

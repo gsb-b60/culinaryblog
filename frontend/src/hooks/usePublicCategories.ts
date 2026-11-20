@@ -7,12 +7,18 @@ export function usePublicCategories() {
   const [revision, setRevision] = useState(0)
   const [response, setResponse] = useState<{ revision: number; data: Category[]; error: boolean } | null>(null)
   useEffect(() => {
-    const controller = new AbortController()
     let active = true
-    listAllCategories(controller.signal)
+
+    // This hook is used by the public landing page. Do not abort the request
+    // during effect cleanup: React StrictMode intentionally mounts effects,
+    // cleans them up, and mounts them again in development. Aborting there
+    // makes Firefox report the first perfectly valid GET as NS_BINDING_ABORTED
+    // even though the API is healthy. The active flag still prevents a late
+    // response from updating an unmounted page.
+    listAllCategories()
       .then(data => { if (active) setResponse({ revision, data, error: false }) })
       .catch(() => { if (active) setResponse({ revision, data: [], error: true }) })
-    return () => { active = false; controller.abort() }
+    return () => { active = false }
   }, [revision])
   const current = response?.revision === revision ? response : null
   return {

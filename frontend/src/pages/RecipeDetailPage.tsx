@@ -128,13 +128,24 @@ export default function RecipeDetailPage() {
         <p className="mt-3 text-base text-surface-600">{recipe.description}</p>
       </header>
 
-      <div
-        className="mt-6 flex h-48 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-100 via-brand-50 to-surface-100 sm:h-64"
-        role="img"
-        aria-label={`Minh họa cho công thức ${recipe.title}`}
-      >
-        <span className="text-sm font-semibold text-brand-700">{recipe.categoryName}</span>
-      </div>
+      {recipe.images.length > 0 ? (
+        <img
+          src={recipe.images.find(image => image.isPrimary)?.mediumUrl
+            ?? recipe.images.find(image => image.isPrimary)?.originalUrl
+            ?? recipe.images[0]?.mediumUrl
+            ?? recipe.images[0]?.originalUrl}
+          alt={recipe.images.find(image => image.isPrimary)?.altText ?? recipe.title}
+          className="mt-6 h-48 w-full rounded-2xl object-cover sm:h-64"
+        />
+      ) : (
+        <div
+          className="mt-6 flex h-48 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-100 via-brand-50 to-surface-100 sm:h-64"
+          role="img"
+          aria-label={`Minh họa cho công thức ${recipe.title}`}
+        >
+          <span className="text-sm font-semibold text-brand-700">{recipe.categoryName}</span>
+        </div>
+      )}
 
       <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border border-surface-200 bg-white p-4">
