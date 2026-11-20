@@ -294,12 +294,13 @@ export function listRecipes(query: RecipeListQuery = {}, signal?: AbortSignal): 
   )
 }
 
-/** Search public recipes with the supplied filters and pagination. */
+/** Search public recipes with full-text ranking, filters and pagination. */
 export function searchRecipes(
   q: string,
   query: Omit<RecipeListQuery, 'searchQuery'> = {},
+  signal?: AbortSignal,
 ): Promise<PagedRecipes> {
-  return request<PagedRecipes>(`/recipes/search${toQuery({ q, ...query })}`)
+  return request<PagedRecipes>(`/recipes/search${toQuery({ q, ...query })}`, { signal })
 }
 
 /** Fetch recipe details by slug, optionally including account credentials. */
@@ -322,14 +323,80 @@ export function createRecipe(
   })
 }
 
+export interface RecipeImageUploadResult {
+  imageId: string
+  originalUrl: string
+  altText?: string | null
+  isPrimary: boolean
+}
+
+/** Upload an image without overriding the browser-generated multipart boundary. */
+export function uploadRecipeImage(
+  accessToken: string,
+  recipeId: string,
+  file: File,
+  onProgress?: (percent: number) => void,
+): Promise<RecipeImageUploadResult> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `${API_BASE}/recipes/${encodeURIComponent(recipeId)}/images`)
+    xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`)
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100))
+    })
+    xhr.addEventListener('load', () => {
+      let body: RecipeImageUploadResult | ProblemDetails | null
+      try { body = xhr.responseText ? JSON.parse(xhr.responseText) as RecipeImageUploadResult | ProblemDetails : null } catch { body = null }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(body as RecipeImageUploadResult)
+      } else {
+        const problem = body as ProblemDetails | null
+        reject(new ApiError(xhr.status, problem?.detail ?? 'Không thể tải ảnh lên.', problem))
+      }
+    })
+    xhr.addEventListener('error', () => reject(new ApiError(0, 'Không thể kết nối máy chủ. Vui lòng thử lại.', null)))
+    const form = new FormData()
+    form.append('file', file)
+    xhr.send(form)
+  })
+}
+
+/**
+ * Promote one uploaded image to the recipe's primary image.
+ */
+export function setPrimaryRecipeImage(
+  accessToken: string,
+  recipeId: string,
+  imageId: string,
+): Promise<void> {
+  return request<void>(
+    `/recipes/${encodeURIComponent(recipeId)}/images/${encodeURIComponent(imageId)}/primary`,
+    { method: 'PATCH', headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+}
+
+/**
+ * Delete one uploaded image. The backend removes the MinIO object asynchronously.
+ */
+export function deleteRecipeImage(
+  accessToken: string,
+  recipeId: string,
+  imageId: string,
+): Promise<void> {
+  return request<void>(
+    `/recipes/${encodeURIComponent(recipeId)}/images/${encodeURIComponent(imageId)}`,
+    { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+}
+
 /** Persist editable recipe fields under backend ownership checks. */
 export function updateRecipe(
   accessToken: string,
   id: string,
   payload: UpdateRecipePayload,
   version?: number,
-): Promise<{ message: string }> {
-  return request<{ message: string }>(`/recipes/${encodeURIComponent(id)}`, {
+): Promise<RecipeDetail> {
+  return request<RecipeDetail>(`/recipes/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${accessToken}`,

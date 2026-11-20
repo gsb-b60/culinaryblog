@@ -249,7 +249,7 @@ Category deleted from database. HTTP 204 returned.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-recipes.md` §FR-RCP-001 |
 | Endpoint | `GET /api/v1/recipes?page=1&pageSize=12&categoryId={guid}&difficulty=Easy&maxCookTime=30&sort=-createdAt` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -305,7 +305,7 @@ Returns a paginated list of recipes. Guests/Authors see Published only; Authors 
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-recipes.md` §FR-RCP-002 |
 | Endpoint | `GET /api/v1/recipes/{slug}` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 

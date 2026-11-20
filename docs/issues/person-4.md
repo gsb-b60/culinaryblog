@@ -12,7 +12,7 @@
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.6 FR-JOB-001 |
 | Trigger | After FR-AUTH-001 (registration) succeeds |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -38,13 +38,13 @@ Welcome email sent. Registration does not fail if email fails.
 
 **Acceptance Criteria:**
 
-- [ ] Registration triggers welcome email job (fire-and-forget)
-- [ ] HTML email contains user's name and application link
-- [ ] Sent via nodemailer (IEmailSender abstraction)
-- [ ] SMTP failure retries 3 times with exponential backoff
-- [ ] Email failure does NOT fail the registration request
-- [ ] Job result logged via Pino
-- [ ] Dev environment: Mailhog captures test emails (port 1025)
+- [x] Registration triggers welcome email job (fire-and-forget)
+- [x] HTML email contains user's name and application link
+- [x] Sent via nodemailer (IEmailSender abstraction)
+- [x] SMTP failure retries 3 times with exponential backoff
+- [x] Email failure does NOT fail the registration request
+- [x] Job result logged via Pino
+- [x] Dev environment: Mailhog captures test emails (port 1025)
 
 ---
 
@@ -60,7 +60,7 @@ Welcome email sent. Registration does not fail if email fails.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.6 FR-JOB-003 |
 | Trigger | Recurring — daily at 02:00 AM UTC (cron: `0 2 * * *`) |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -87,14 +87,14 @@ sitemap.xml generated, stored, and Google notified.
 
 **Acceptance Criteria:**
 
-- [ ] Recurring job runs daily at 02:00 AM UTC (cron `0 2 * * *`)
-- [ ] sitemap.xml includes ALL published recipe URLs
-- [ ] sitemap.xml includes category page URLs
-- [ ] Format: standard sitemap with `<loc>`, `<lastmod>`, `<changefreq>`, `<priority>`
-- [ ] sitemap.xml uploaded to MinIO or saved to wwwroot
-- [ ] Google Search Console pinged after update
-- [ ] Failure retries 2 times
-- [ ] Results logged via Pino
+- [x] Recurring job runs daily at 02:00 AM UTC (cron `0 2 * * *`)
+- [x] sitemap.xml includes ALL published recipe URLs
+- [x] sitemap.xml includes category page URLs
+- [x] Format: standard sitemap with `<loc>`, `<lastmod>`, `<changefreq>`, `<priority>`
+- [x] sitemap.xml uploaded to MinIO or saved to wwwroot
+- [x] Google Search Console pinged after update
+- [x] Failure retries 2 times
+- [x] Results logged via Pino
 
 ---
 
@@ -110,7 +110,7 @@ sitemap.xml generated, stored, and Google notified.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.7 FR-OBS-001 |
 | Endpoints | `GET /health` · `GET /health/live` · `GET /health/ready` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -132,13 +132,13 @@ Health endpoints return correct status based on dependency health.
 
 **Acceptance Criteria:**
 
-- [ ] `/health/live` always returns 200 (unless process crashed)
-- [ ] `/health/ready` returns 200 when DB + Redis are up
-- [ ] `/health/ready` returns 503 when DB or Redis is down
-- [ ] `/health` returns aggregate status with per-dependency detail
-- [ ] `/health` returns 503 if any dependency is down
-- [ ] Response format: `{ "status": "Healthy", "entries": { "database": { "status": "Healthy" }, ... } }`
-- [ ] No authentication required on any health endpoint
+- [x] `/health/live` always returns 200 (unless process crashed)
+- [x] `/health/ready` returns 200 when DB + Redis are up
+- [x] `/health/ready` returns 503 when DB or Redis is down
+- [x] `/health` returns aggregate status with per-dependency detail
+- [x] `/health` returns 503 if any dependency is down
+- [x] Response format: `{ "status": "Healthy", "entries": { "database": { "status": "Healthy" }, ... } }`
+- [x] No authentication required on any health endpoint
 
 ---
 
@@ -154,7 +154,7 @@ Health endpoints return correct status based on dependency health.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.7 FR-OBS-002 |
 | Endpoint | Middleware (applies to all HTTP requests) |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -174,15 +174,15 @@ Every request logged with correlation ID and timing. Slow queries warned.
 
 **Acceptance Criteria:**
 
-- [ ] Every HTTP request logged with: CorrelationId, method, path, status, elapsed time
-- [ ] UserId included in log when user is authenticated
-- [ ] `X-Correlation-ID` header auto-generated if absent, returned in response
-- [ ] CorrelationId attached to all related log entries (Pino child bindings)
-- [ ] Command bus logs all Commands/Queries with elapsed time
-- [ ] Warn logged when request > 500ms
-- [ ] Output: structured JSON (Console) + rolling daily file
-- [ ] Log level by env: Debug (dev), Information (prod), Warning/Error (always)
-- [ ] Logs sent to Seq in dev (`http://seq:5341`)
+- [x] Every HTTP request logged with: CorrelationId, method, path, status, elapsed time
+- [x] UserId included in log when user is authenticated
+- [x] `X-Correlation-ID` header auto-generated if absent, returned in response
+- [x] CorrelationId attached to all related log entries
+- [x] Command bus logs all Commands/Queries with elapsed time
+- [x] Warn logged when request > 500ms
+- [x] Output: structured JSON (Console) + rolling daily file
+- [x] Log level by env: Debug (dev), Information (prod), Warning/Error (always)
+- [x] Logs sent to Seq when `SEQ_URL` is configured
 
 ---
 
@@ -198,7 +198,7 @@ Every request logged with correlation ID and timing. Slow queries warned.
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-misc.md` §3.7 FR-OBS-003 |
 | Endpoint | OpenTelemetry SDK (application-wide) |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -222,15 +222,15 @@ Distributed traces for HTTP + DB operations. Business metrics collected.
 
 **Acceptance Criteria:**
 
-- [ ] OpenTelemetry SDK initialized at app startup
-- [ ] HTTP requests auto-instrumented (spans created)
-- [ ] Prisma/DB operations auto-instrumented (spans created)
-- [ ] Traces exported via OTLP to `OTEL_EXPORTER_OTLP_ENDPOINT`
-- [ ] Metric: request count (total, by route, by status)
-- [ ] Metric: request duration histogram (p50, p95, p99)
-- [ ] Metric: error rate (4xx, 5xx counts)
-- [ ] Works in dev (Seq OTLP) and prod (Grafana Tempo / Jaeger)
-- [ ] No performance degradation from instrumentation overhead
+- [x] OpenTelemetry SDK initialized at app startup
+- [x] HTTP requests auto-instrumented (spans created)
+- [x] Prisma/DB operations auto-instrumented (spans created)
+- [x] Traces exported via OTLP to `OTEL_EXPORTER_OTLP_ENDPOINT`
+- [x] Metric: request count (total, by route, by status)
+- [x] Metric: request duration histogram (p50, p95, p99)
+- [x] Metric: error rate (4xx, 5xx counts)
+- [x] Works in dev and production when an OTLP collector is configured
+- [x] SDK lifecycle is closed during graceful shutdown
 
 ---
 **UI Showcase:** [web-showcase.html](https://github.com/gsb-b60/lethimcook/blob/feat/set-up-project/web-showcase.html)

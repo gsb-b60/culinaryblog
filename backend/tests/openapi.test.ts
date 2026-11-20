@@ -35,6 +35,10 @@ describe('OpenAPI docs and versioning', () => {
     expect(paths).toContain('/recipes/{id}');
     expect(paths).toContain('/recipes/{id}/publish');
     expect(paths).toContain('/recipes/{id}/ingredients');
+    // recipe images (FR-RCP-008)
+    expect(paths).toContain('/recipes/{id}/images');
+    expect(paths).toContain('/recipes/{id}/images/{imageId}/primary');
+    expect(paths).toContain('/recipes/{id}/images/{imageId}');
   });
 
   it('keeps /api-docs alias and /scalar reference UI', async () => {

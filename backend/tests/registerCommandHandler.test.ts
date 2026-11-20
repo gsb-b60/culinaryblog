@@ -99,8 +99,8 @@ describe('RegisterCommandHandler', () => {
     );
 
     expect(mocks.enqueueWelcomeEmail).toHaveBeenCalledWith({
+      userId: createArgs.data.id,
       email: 'an@example.com',
-      displayName: 'Nguyen Van A',
     });
 
     const expiresAt = new Date(result.expiresAt).getTime();

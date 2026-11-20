@@ -9,7 +9,7 @@ export const sitemapQueue = new Queue('sitemap', {
     port: parseInt(new URL(env.REDIS_URL).port) || 6379,
   },
   defaultJobOptions: {
-    attempts: 2,
+    attempts: 3,
     backoff: {
       type: 'exponential',
       delay: 5000,

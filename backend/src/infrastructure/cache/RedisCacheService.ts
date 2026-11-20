@@ -1,6 +1,7 @@
 import { Redis } from 'ioredis';
 
 import { env } from '../../config-middleware/config/env.js';
+import { logger } from '../../config-middleware/config/logger.js';
 
 class RedisCacheService {
   private client: Redis | null = null;
@@ -25,7 +26,7 @@ class RedisCacheService {
 
     this.client.on('error', (err) => {
       this.isConnected = false;
-      console.error('Redis connection error:', err);
+      logger.error({ err }, 'Redis connection error');
     });
 
     await this.client.connect();
@@ -54,7 +55,7 @@ class RedisCacheService {
     try {
       await this.client.setex(key, ttlSeconds, JSON.stringify(value));
     } catch (error) {
-      console.error('Cache set error:', error);
+      logger.warn({ err: error, key }, 'Cache set error');
     }
   }
 
@@ -63,7 +64,7 @@ class RedisCacheService {
     try {
       await this.client.del(key);
     } catch (error) {
-      console.error('Cache delete error:', error);
+      logger.warn({ err: error, key }, 'Cache delete error');
     }
   }
 
@@ -75,7 +76,7 @@ class RedisCacheService {
         await this.client.del(...keys);
       }
     } catch (error) {
-      console.error('Cache delete pattern error:', error);
+      logger.warn({ err: error, pattern }, 'Cache delete pattern error');
     }
   }
 

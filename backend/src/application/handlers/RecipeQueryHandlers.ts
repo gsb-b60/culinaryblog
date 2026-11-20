@@ -29,8 +29,13 @@ export class GetRecipesQueryHandler implements IQueryHandler<
   constructor(private readonly repository: RecipeRepository) {}
 
   async execute(query: GetRecipesQuery): Promise<PagedResult<RecipeSummaryDto>> {
+    const filters = query.viewerRole === 'ADMIN'
+      ? query.filters
+      : query.viewerRole === 'AUTHOR' && query.viewerId
+        ? { ...query.filters, viewerId: query.viewerId, viewerRole: query.viewerRole }
+        : { ...query.filters, status: RecipeStatus.PUBLISHED };
     return (await this.repository.findMany(
-      { ...query.filters, status: RecipeStatus.PUBLISHED },
+      filters,
       query.sort,
       query.page,
       query.pageSize,
