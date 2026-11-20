@@ -106,7 +106,7 @@ Return detailed info for a specific category (by Slug) along with a paginated li
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-catalog.md` §FR-CAT-003 |
 | Endpoint | `POST /api/v1/categories` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -135,13 +135,13 @@ New category created. Category cache deleted. Location header → `/api/v1/categ
 
 **Acceptance Criteria:**
 
-- [ ] Admin can create category → 201 with Location header
-- [ ] Slug auto-generated (lowercase, hyphenated, no diacritics)
-- [ ] Slug collision appends numeric suffix (-2, -3, ...)
-- [ ] Non-admin gets 403
-- [ ] name < 2 or > 50 chars returns 422
-- [ ] HTML in name rejected (422)
-- [ ] Cache key `categories:all` deleted after creation
+- [x] Admin can create category → 201 with Location header
+- [x] Slug auto-generated (lowercase, hyphenated, no diacritics)
+- [x] Slug collision appends numeric suffix (-2, -3, ...)
+- [x] Non-admin gets 403
+- [x] name < 2 or > 50 chars returns 422
+- [x] HTML in name rejected (422)
+- [x] Cache key `categories:all` deleted after creation
 
 ---
 
@@ -157,7 +157,7 @@ New category created. Category cache deleted. Location header → `/api/v1/categ
 | Priority | M – Must Have |
 | Doc reference | `docs/03-fr-catalog.md` §FR-CAT-004 |
 | Endpoint | `PUT /api/v1/categories/{id}` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -183,11 +183,11 @@ Category info updated. Cache invalidated. Slug unchanged.
 
 **Acceptance Criteria:**
 
-- [ ] Admin can update category → 200
-- [ ] Slug does NOT change after name update
-- [ ] Non-admin gets 403
-- [ ] Non-existent ID returns 404
-- [ ] Cache invalidated after update
+- [x] Admin can update category → 200
+- [x] Slug does NOT change after name update
+- [x] Non-admin gets 403
+- [x] Non-existent ID returns 404
+- [x] Cache invalidated after update
 
 ---
 
@@ -203,7 +203,7 @@ Category info updated. Cache invalidated. Slug unchanged.
 | Priority | S – Should Have |
 | Doc reference | `docs/03-fr-catalog.md` §FR-CAT-005 |
 | Endpoint | `DELETE /api/v1/categories/{id}` |
-| Status | ⬜ Open |
+| Status | ✅ Done |
 
 **Description:**
 
@@ -229,11 +229,11 @@ Category deleted from database. HTTP 204 returned.
 
 **Acceptance Criteria:**
 
-- [ ] Empty category deleted → 204
-- [ ] Category with recipes → 409 with recipe count in message
-- [ ] Non-admin gets 403
-- [ ] Non-existent ID returns 404
-- [ ] Cache invalidated after delete
+- [x] Empty category deleted → 204
+- [x] Category with recipes → 409 with recipe count in message
+- [x] Non-admin gets 403
+- [x] Non-existent ID returns 404
+- [x] Cache invalidated after delete
 
 ---
 

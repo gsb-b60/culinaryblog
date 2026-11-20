@@ -55,6 +55,12 @@ export function optionalAuth(req: AuthenticatedRequest, res: Response, next: Nex
     next();
     return;
   }
+
+  const authHeader = req.headers?.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
   passport.authenticate('jwt', { session: false }, (err: Error | null, user: any) => {
     if (!err && user) {
       req.user = user;

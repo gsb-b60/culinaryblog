@@ -7,6 +7,7 @@ import {
   UpdateCategoryCommand, 
   DeleteCategoryCommand 
 } from '../../application/commands/categories/CategoryCommands.js';
+import { CategoryDto } from '../../application/dtos/CategoryDto.js';
 import { 
   GetCategoriesQuery, 
   GetCategoryBySlugQuery 
@@ -29,6 +30,7 @@ import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
 
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
 const router: RouterType = Router();
+export const categoryListRoutes: RouterType = router;
 
 // Public routes
 router.get('/', generalRateLimiter, async (req, res, next) => {
@@ -52,12 +54,15 @@ router.get('/:slug', generalRateLimiter, optionalAuth, async (req, res, next) =>
   try {
     const pagination = paginationSchema.parse(req.query);
 
+    // Optionally read the user from JWT if present (no hard auth requirement)
+    const authReq = req as AuthenticatedRequest;
+
     const query = new GetCategoryBySlugQuery(
       req.params.slug!,
       pagination.page,
       pagination.pageSize,
-      (req as AuthenticatedRequest).user?.id,
-      (req as AuthenticatedRequest).user?.roles[0]
+      authReq.user?.id,
+      authReq.user?.roles[0]
     );
     const result = await commandBus.executeQuery(query);
     
@@ -82,8 +87,9 @@ router.post('/', authenticateJwt, authorize(UserRole.ADMIN), async (req, res, ne
   try {
     const input = createCategorySchema.parse(req.body);
     const command = new CreateCategoryCommand(input);
-    const categoryId = await commandBus.executeCommand(command);
-    res.status(201).json({ id: categoryId, message: 'Category created successfully' });
+    const category = await commandBus.executeCommand<CreateCategoryCommand, CategoryDto>(command);
+    res.setHeader('Location', `/api/v1/categories/${category.slug}`);
+    res.status(201).json(category);
   } catch (error) {
     next(error);
   }
@@ -93,8 +99,8 @@ router.put('/:id', authenticateJwt, authorize(UserRole.ADMIN), async (req, res, 
   try {
     const input = updateCategorySchema.parse(req.body);
     const command = new UpdateCategoryCommand(req.params.id!, input);
-    await commandBus.executeCommand(command);
-    res.json({ message: 'Category updated successfully' });
+    const category = await commandBus.executeCommand<UpdateCategoryCommand, CategoryDto>(command);
+    res.json({ message: 'Category updated successfully', ...category });
   } catch (error) {
     next(error);
   }

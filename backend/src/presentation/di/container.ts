@@ -12,6 +12,9 @@ import {
   RegisterCommand,
   UpdateProfileCommand,
 } from '../../application/commands/auth/AuthCommands.js';
+import { CreateCategoryCommandHandler } from '../../application/commands/categories/CreateCategoryCommandHandler.js';
+import { DeleteCategoryCommandHandler } from '../../application/commands/categories/DeleteCategoryCommandHandler.js';
+import { UpdateCategoryCommandHandler } from '../../application/commands/categories/UpdateCategoryCommandHandler.js';
 import {
   ArchiveRecipeCommand,
   CreateRecipeCommand,
@@ -123,6 +126,19 @@ export function createContainer(): Container {
   const emailService = new NodemailerEmailService();
 
   commandBus.registerCommandHandler(
+    'CreateCategoryCommand',
+    new CreateCategoryCommandHandler(prisma, cacheService),
+  );
+  commandBus.registerCommandHandler(
+    'UpdateCategoryCommand',
+    new UpdateCategoryCommandHandler(prisma, cacheService),
+  );
+  commandBus.registerCommandHandler(
+    'DeleteCategoryCommand',
+    new DeleteCategoryCommandHandler(prisma, cacheService),
+  );
+
+  commandBus.registerCommandHandler(
     CreateRecipeCommand.name,
     new CreateRecipeCommandHandler(prisma, async () => {
       await cacheService.deletePattern('recipes:*');
@@ -201,6 +217,7 @@ export function createContainer(): Container {
     new GetRecipeStepsQueryHandler(prisma),
   );
   commandBus.registerQueryHandler('GetCurrentUserQuery', new GetCurrentUserQueryHandler(prisma));
+
 
   commandBus.registerCommandHandler(
     UpdateProfileCommand.name,

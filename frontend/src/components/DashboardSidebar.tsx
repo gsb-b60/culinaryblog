@@ -2,7 +2,14 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 type Section =
-  'overview' | 'categories' | 'recipes' | 'delete-recipes' | 'archive-recipes' | 'ingredients' | 'steps' | 'profile'
+  | 'overview'
+  | 'categories'
+  | 'recipes'
+  | 'delete-recipes'
+  | 'archive-recipes'
+  | 'ingredients'
+  | 'steps'
+  | 'profile'
 
 /** Render dashboard destinations and indicate the active page. */
 export default function DashboardSidebar({
@@ -128,11 +135,11 @@ export default function DashboardSidebar({
               className="ml-3 space-y-1 border-l border-surface-600 pl-2"
             >
               <Link
-                to="/dashboard/categories?page=1&pageSize=12"
+                to="/dashboard/categories"
                 aria-current={categoriesActive ? 'page' : undefined}
                 className={submenuClass(categoriesActive)}
               >
-                Phân trang
+                Quản trị danh mục
               </Link>
             </div>
           )}

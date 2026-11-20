@@ -13,6 +13,8 @@ import type {
 import type {
   Category,
   CategoryDetail,
+  CategoryDto,
+  CategoryDetailDto,
   CategoryListQuery,
   CreateCategoryPayload,
   UpdateCategoryPayload,
@@ -253,6 +255,25 @@ export function logout(accessToken: string, refreshToken: string): Promise<null>
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify({ refreshToken }),
+  })
+}
+
+export function getCategories(): Promise<PagedResult<CategoryDto>> {
+  return request<PagedResult<CategoryDto>>('/categories', {
+    method: 'GET',
+  })
+}
+
+export function getCategoryDetail(
+  slug: string,
+  page = 1,
+  pageSize = 12,
+  accessToken?: string,
+): Promise<CategoryDetailDto> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+  return request<CategoryDetailDto>(`/categories/${encodeURIComponent(slug)}?${params}`, {
+    method: 'GET',
+    ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {}),
   })
 }
 
@@ -512,8 +533,8 @@ export function getCategoryBySlug(
 export function createCategory(
   accessToken: string,
   payload: CreateCategoryPayload,
-): Promise<{ id: string }> {
-  return request<{ id: string }>('/categories', {
+): Promise<Category> {
+  return request<Category>('/categories', {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(payload),
@@ -525,8 +546,8 @@ export function updateCategory(
   accessToken: string,
   id: string,
   payload: UpdateCategoryPayload,
-): Promise<{ message: string }> {
-  return request<{ message: string }>(`/categories/${encodeURIComponent(id)}`, {
+): Promise<Category> {
+  return request<Category>(`/categories/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(payload),
@@ -584,3 +605,4 @@ export function deleteRecipeIngredient(
     },
   )
 }
+

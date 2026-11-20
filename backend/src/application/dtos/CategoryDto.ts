@@ -15,14 +15,14 @@ export interface CategoryDetailDto extends CategoryDto {
 
 export interface CreateCategoryInput {
   name: string;
-  description?: string;
-  imageUrl?: string;
+  description?: string | null;
+  imageUrl?: string | null;
   orderIndex?: number;
 }
 
 export interface UpdateCategoryInput {
   name?: string;
-  description?: string;
-  imageUrl?: string;
+  description?: string | null;
+  imageUrl?: string | null;
   orderIndex?: number;
 }
