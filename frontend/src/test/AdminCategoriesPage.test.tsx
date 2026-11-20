@@ -11,7 +11,7 @@ vi.mock('../lib/api', async () => {
   const actual = await vi.importActual<typeof import('../lib/api')>('../lib/api')
   return {
     ...actual,
-    listCategories: vi.fn(),
+    listAllCategories: vi.fn(),
     createCategory: vi.fn(),
     updateCategory: vi.fn(),
     deleteCategory: vi.fn(),
@@ -56,17 +56,7 @@ describe('AdminCategoriesPage (Screen M13 — Quản trị danh mục)', () => {
         },
       },
     })
-    vi.mocked(api.listCategories).mockResolvedValue({
-      items: mockCategories,
-      meta: {
-        page: 1,
-        pageSize: 12,
-        totalCount: mockCategories.length,
-        totalPages: 1,
-        hasNextPage: false,
-        hasPreviousPage: false,
-      },
-    })
+    vi.mocked(api.listAllCategories).mockResolvedValue(mockCategories)
   })
 
   it('renders Screen M13 populated with categories table and open dialog button', async () => {
@@ -197,7 +187,15 @@ describe('AdminCategoriesPage (Screen M13 — Quản trị danh mục)', () => {
   })
 
   it('opens edit modal, updates category name while keeping slug unchanged (Issue #18)', async () => {
-    vi.mocked(api.updateCategory).mockResolvedValueOnce({ message: 'Category updated successfully' })
+    vi.mocked(api.updateCategory).mockResolvedValueOnce({
+      id: 'cat-1',
+      name: 'Món Chính Đặc Biệt',
+      slug: 'mon-chinh',
+      description: 'Các món ăn chính trong bữa cơm hàng ngày',
+      orderIndex: 1,
+      recipeCount: 10,
+      createdAt: '2026-11-01T00:00:00.000Z',
+    })
 
     render(
       <MemoryRouter>

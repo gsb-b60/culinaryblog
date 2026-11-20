@@ -107,7 +107,7 @@ export const recipeListCache = apicache.middleware('15 minutes', (req: Request, 
 });
 
 // Public routes
-router.get('/', optionalAuth, recipeListCache, generalRateLimiter, async (req: AuthenticatedRequest, res, next) => {
+router.get('/', generalRateLimiter, optionalAuth, recipeListCache, async (req: AuthenticatedRequest, res, next) => {
   try {
     const filters = recipeFiltersSchema.parse(req.query);
     const sort = recipeSortQuerySchema.parse(req.query);
