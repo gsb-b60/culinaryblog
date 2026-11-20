@@ -478,11 +478,12 @@ export function listCategories(query: CategoryListQuery = {}, signal?: AbortSign
 
 /** Load every public category instead of silently truncating catalogs at the first page. */
 export async function listAllCategories(signal?: AbortSignal): Promise<Category[]> {
-  const first = await listCategories({ page: 1, pageSize: 50 }, signal)
+  const pageSize = 20
+  const first = await listCategories({ page: 1, pageSize }, signal)
   const items = [...first.items]
   for (let page = 2; page <= first.meta.totalPages; page += 1) {
     signal?.throwIfAborted()
-    items.push(...(await listCategories({ page, pageSize: 50 }, signal)).items)
+    items.push(...(await listCategories({ page, pageSize }, signal)).items)
   }
   return items
 }
