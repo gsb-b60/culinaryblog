@@ -147,7 +147,7 @@ pnpm prisma:generate
 # Push schema to database (creates tables)
 pnpm db:push
 
-# Seed database with sample data (20 categories, 100 recipes)
+# Seed database with 80 curated Vietnamese recipes
 pnpm prisma:seed
 ```
 

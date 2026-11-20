@@ -26,6 +26,8 @@ export interface RecipeSummaryDto {
   authorName?: string;
   publishedAt?: Date;
   createdAt: Date;
+  /** Primary recipe image, when one has been uploaded or seeded. */
+  imageUrl?: string;
   /** Present on full-text search results; higher values rank first. */
   relevanceScore?: number;
 }

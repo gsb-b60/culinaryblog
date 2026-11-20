@@ -479,7 +479,7 @@ function AccountIngredientManagementPage() {
             ) : (
               <ul className="divide-y divide-surface-200">
                 {ingredients.map((item) => (
-                  <li key={item.id} className="p-5" aria-label={item.name}>
+                  <li key={item.id} className="scroll-mb-24 p-5" aria-label={item.name}>
                     {editing?.id === item.id ? (
                       <form onSubmit={(event) => void update(event)}>
                         <fieldset disabled={pending} className="space-y-4">

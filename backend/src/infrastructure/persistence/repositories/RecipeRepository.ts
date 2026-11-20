@@ -28,6 +28,7 @@ interface RecipeSearchRow {
   authorName: string | null;
   categoryName: string | null;
   relevanceScore: number;
+  imageUrl: string | null;
 }
 
 /**
@@ -95,6 +96,18 @@ export class RecipeRepository implements IRecipeRepository {
     // Attach author and category names for summary DTO
     (recipe as any)._authorName = prismaRecipe.author?.displayName;
     (recipe as any)._categoryName = prismaRecipe.category?.name;
+    const images = (prismaRecipe as any).images as Array<{
+      originalUrl: string;
+      mediumUrl: string | null;
+      thumbnailUrl: string | null;
+      isPrimary: boolean;
+    }> | undefined;
+    (recipe as any)._imageUrl = images?.find((image) => image.isPrimary)?.thumbnailUrl
+      ?? images?.find((image) => image.isPrimary)?.mediumUrl
+      ?? images?.find((image) => image.isPrimary)?.originalUrl
+      ?? images?.[0]?.thumbnailUrl
+      ?? images?.[0]?.mediumUrl
+      ?? images?.[0]?.originalUrl;
     return recipe;
   }
 
@@ -116,6 +129,7 @@ export class RecipeRepository implements IRecipeRepository {
       authorName,
       publishedAt: recipe.publishedAt,
       createdAt: recipe.createdAt,
+      imageUrl: (recipe as any)._imageUrl,
     };
   }
 
@@ -166,6 +180,7 @@ export class RecipeRepository implements IRecipeRepository {
         include: {
           author: { select: { displayName: true } },
           category: { select: { name: true } },
+          images: { where: { isDeleted: false }, orderBy: { orderIndex: 'asc' } },
         },
       }),
       this.prisma.recipe.count({ where }),
@@ -218,6 +233,7 @@ export class RecipeRepository implements IRecipeRepository {
         include: {
           author: { select: { displayName: true } },
           category: { select: { name: true } },
+          images: { where: { isDeleted: false }, orderBy: { orderIndex: 'asc' } },
         },
       }),
       this.prisma.recipe.count({ where }),
@@ -309,6 +325,13 @@ export class RecipeRepository implements IRecipeRepository {
           r."created_at" AS "createdAt",
           u."display_name" AS "authorName",
           c."name" AS "categoryName",
+          (
+            SELECT COALESCE(ri."thumbnail_url", ri."medium_url", ri."original_url")
+            FROM "recipe_images" ri
+            WHERE ri."recipe_id" = r."id" AND ri."is_deleted" = false
+            ORDER BY ri."is_primary" DESC, ri."order_index" ASC
+            LIMIT 1
+          ) AS "imageUrl",
           ${rank} AS "relevanceScore"
         FROM "recipes" r
         INNER JOIN "users" u ON u."id" = r."author_id"
@@ -340,6 +363,7 @@ export class RecipeRepository implements IRecipeRepository {
       authorName: row.authorName ?? row.authorId,
       publishedAt: row.publishedAt ?? undefined,
       createdAt: row.createdAt,
+      imageUrl: row.imageUrl ?? undefined,
       relevanceScore: Number(row.relevanceScore),
     }));
 
