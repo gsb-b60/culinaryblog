@@ -30,7 +30,7 @@ export class GetRecipesQueryHandler implements IQueryHandler<
 
   async execute(query: GetRecipesQuery): Promise<PagedResult<RecipeSummaryDto>> {
     const filters = query.viewerRole === 'ADMIN'
-      ? query.filters
+      ? { ...query.filters, viewerRole: 'ADMIN' as const }
       : query.viewerRole === 'AUTHOR' && query.viewerId
         ? { ...query.filters, viewerId: query.viewerId, viewerRole: query.viewerRole }
         : { ...query.filters, status: RecipeStatus.PUBLISHED };

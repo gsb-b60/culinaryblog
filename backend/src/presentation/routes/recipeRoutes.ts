@@ -1,3 +1,4 @@
+import apicache from 'apicache';
 import {
   Router,
   type Router as RouterType,
@@ -131,8 +132,12 @@ router.get('/manage', authenticateJwt, async (req: AuthenticatedRequest, res, ne
   }
 });
 
+export const recipeListCache = apicache.middleware('15 minutes', (req: Request, res: Response) => {
+  return res.statusCode === 200 && !(req as AuthenticatedRequest).user;
+});
+
 // Public routes
-router.get('/', generalRateLimiter, optionalAuth, async (req: AuthenticatedRequest, res, next) => {
+router.get('/', generalRateLimiter, optionalAuth, recipeListCache, async (req: AuthenticatedRequest, res, next) => {
   try {
     const filters = recipeFiltersSchema.parse(req.query);
     const sort = recipeSortQuerySchema.parse(req.query);
@@ -144,7 +149,11 @@ router.get('/', generalRateLimiter, optionalAuth, async (req: AuthenticatedReque
       pagination.page,
       pagination.pageSize,
       req.user?.id,
-      req.user?.roles.includes(UserRole.ADMIN) ? UserRole.ADMIN : req.user?.roles.includes(UserRole.AUTHOR) ? UserRole.AUTHOR : undefined,
+      req.user?.roles.includes(UserRole.ADMIN)
+        ? UserRole.ADMIN
+        : req.user?.roles.includes(UserRole.AUTHOR)
+          ? UserRole.AUTHOR
+          : undefined,
     );
     const result = await commandBus.executeQuery(query);
     res.json(result);
@@ -215,6 +224,7 @@ router.post(
       const input = createRecipeSchema.parse(req.body);
       const command = new CreateRecipeCommand(req.user!.id, input);
       const recipe = await commandBus.executeCommand(command);
+      apicache.clear();
       res.status(201).json(recipe);
     } catch (error) {
       next(error);
@@ -239,6 +249,7 @@ router.put('/:id', authenticateJwt, async (req: AuthenticatedRequest, res, next)
       req.user!.roles.includes(UserRole.ADMIN),
     );
     const recipe = await commandBus.executeCommand(command);
+    apicache.clear();
     res.status(200).json(recipe);
   } catch (error) {
     next(error);
@@ -253,6 +264,7 @@ router.patch('/:id/publish', authenticateJwt, async (req: AuthenticatedRequest, 
       req.user!.roles.includes(UserRole.ADMIN),
     );
     const recipe = await commandBus.executeCommand(command);
+    apicache.clear();
     res.status(200).json(recipe);
   } catch (error) {
     next(error);
@@ -267,6 +279,7 @@ router.patch('/:id/unpublish', authenticateJwt, async (req: AuthenticatedRequest
       req.user!.roles.includes(UserRole.ADMIN),
     );
     const recipe = await commandBus.executeCommand(command);
+    apicache.clear();
     res.status(200).json(recipe);
   } catch (error) {
     next(error);
@@ -280,7 +293,9 @@ router.patch('/:id/archive', authenticateJwt, async (req: AuthenticatedRequest, 
       req.user!.id,
       req.user!.roles.includes(UserRole.ADMIN),
     );
-    res.status(200).json(await commandBus.executeCommand(command));
+    const result = await commandBus.executeCommand(command);
+    apicache.clear();
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -294,6 +309,7 @@ router.delete('/:id', authenticateJwt, async (req: AuthenticatedRequest, res, ne
       req.user!.roles.includes(UserRole.ADMIN),
     );
     await commandBus.executeCommand(command);
+    apicache.clear();
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -370,6 +386,7 @@ router.post(
         altText: image.altText,
         isPrimary: image.isPrimary,
       });
+      apicache.clear();
     } catch (error) {
       next(error);
     }
@@ -410,6 +427,7 @@ router.patch(
         isPrimary: updated.isPrimary,
         orderIndex: updated.orderIndex,
       });
+      apicache.clear();
     } catch (error) {
       next(error);
     }
@@ -459,6 +477,7 @@ router.delete(
           }
         }
       });
+      apicache.clear();
       res.status(204).send();
     } catch (error) {
       next(error);

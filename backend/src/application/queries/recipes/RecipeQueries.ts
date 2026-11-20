@@ -15,6 +15,14 @@ export class GetRecipesQuery extends Query<import('../../dtos/PagedResult.js').P
     super();
   }
 
+  get userId(): string | undefined {
+    return this.viewerId;
+  }
+
+  get userRole(): string | undefined {
+    return this.viewerRole;
+  }
+
   getCacheKey(): string {
     return `recipes:list:${JSON.stringify({ filters: this.filters, sort: this.sort, page: this.page, pageSize: this.pageSize, viewerId: this.viewerId, viewerRole: this.viewerRole })}`;
   }

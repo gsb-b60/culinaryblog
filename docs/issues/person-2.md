@@ -281,15 +281,15 @@ Returns a paginated list of recipes. Guests/Authors see Published only; Authors 
 
 **Acceptance Criteria:**
 
-- [ ] Returns 200 with paginated recipe list
-- [ ] Guests only see PUBLISHED recipes
-- [ ] Author sees own DRAFT recipes additionally
-- [ ] Admin sees all statuses
-- [ ] Filters combine with AND (categoryId + difficulty + maxCookTime)
-- [ ] Sort: `-field` = descending, default `-createdAt`
-- [ ] Pagination metadata correct (totalCount, totalPages, hasNext, hasPrev)
-- [ ] pageSize > 50 or page < 1 returns 422
-- [ ] Results cached (15-min TTL)
+- [x] Returns 200 with paginated recipe list
+- [x] Guests only see PUBLISHED recipes
+- [x] Author sees own DRAFT recipes additionally
+- [x] Admin sees all statuses
+- [x] Filters combine with AND (categoryId + difficulty + maxCookTime)
+- [x] Sort: `-field` = descending, default `-createdAt`
+- [x] Pagination metadata correct (totalCount, totalPages, hasNext, hasPrev)
+- [x] pageSize > 50 or page < 1 returns 422
+- [x] Results cached (15-min TTL)
 
 ---
 

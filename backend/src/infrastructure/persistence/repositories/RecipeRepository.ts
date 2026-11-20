@@ -442,12 +442,18 @@ export class RecipeRepository implements IRecipeRepository {
     if (publicFilters.difficulty) where.difficulty = publicFilters.difficulty;
     if (publicFilters.status) where.status = publicFilters.status;
     const visibilityOr = viewerRole === 'AUTHOR' && viewerId
-      ? [{ status: RecipeStatus.PUBLISHED }, { status: RecipeStatus.DRAFT, authorId: viewerId }]
+      ? [
+          { status: RecipeStatus.PUBLISHED },
+          {
+            status: { in: [RecipeStatus.DRAFT, RecipeStatus.ARCHIVED] },
+            authorId: viewerId,
+          },
+        ]
       : undefined;
     if (visibilityOr && publicFilters.status) {
       where.AND = [{ OR: visibilityOr }, { status: publicFilters.status }];
     } else if (visibilityOr) {
-      where.OR = visibilityOr;
+      where.AND = [{ OR: visibilityOr }];
     } else if (viewerRole !== 'ADMIN' && !publicFilters.status) {
       where.status = RecipeStatus.PUBLISHED;
     }

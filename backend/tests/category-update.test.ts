@@ -94,6 +94,49 @@ describe('Update Category Feature (Issue #18 — FR-CAT-004)', () => {
       expect(result.description).toBe('Mô tả mới');
     });
 
+    it('clears description when description is null or empty string (P2-1)', async () => {
+      const existingCategory = {
+        id: 'cat-1',
+        name: 'Món Bò',
+        slug: 'mon-bo',
+        description: 'Mô tả cũ',
+        imageUrl: null,
+        orderIndex: 5,
+        isDeleted: false,
+        createdAt: new Date('2026-10-01'),
+        _count: { recipes: 3 },
+      };
+
+      const updatedCategory = {
+        ...existingCategory,
+        description: null,
+      };
+
+      const prisma = {
+        category: {
+          findUnique: vi.fn().mockResolvedValue(existingCategory),
+          update: vi.fn().mockResolvedValue(updatedCategory),
+        },
+      } as any;
+
+      const handler = new UpdateCategoryCommandHandler(prisma, cache);
+      const result = await handler.execute(
+        new UpdateCategoryCommand('cat-1', {
+          description: null,
+        }),
+      );
+
+      expect(prisma.category.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'cat-1' },
+          data: expect.objectContaining({
+            description: null,
+          }),
+        }),
+      );
+      expect(result.description).toBeUndefined();
+    });
+
     it('preserves existing slug unchanged when name changes (AC2)', async () => {
       const existingCategory = {
         id: 'cat-1',

@@ -205,13 +205,13 @@ export default function RecipesBrowsePage() {
         <div
           role="group"
           aria-label="Lọc theo danh mục"
-          className="flex flex-wrap gap-2"
+          className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]"
         >
           <button
             type="button"
             aria-pressed={!categoryId && !legacyCategory}
             onClick={() => updateFilter("categoryId", null)}
-            className={chipClasses(!categoryId && !legacyCategory)}
+            className={`${chipClasses(!categoryId && !legacyCategory)} shrink-0 whitespace-nowrap`}
           >
             Tất cả
           </button>
@@ -221,7 +221,7 @@ export default function RecipesBrowsePage() {
               type="button"
               aria-pressed={categoryId === category.id}
               onClick={() => updateFilter("categoryId", category.id)}
-              className={chipClasses(categoryId === category.id)}
+              className={`${chipClasses(categoryId === category.id)} shrink-0 whitespace-nowrap`}
             >
               {category.name}
             </button>
