@@ -1,18 +1,17 @@
 import { PrismaClient } from '@prisma/client';
-import NodeCache from 'node-cache';
 
 import { AppError, NotFoundError } from '../../../config-middleware/shared/errors/AppError.js';
 import { ICommandHandler } from '../../command-bus.js';
 
 import { DeleteCategoryCommand } from './CategoryCommands.js';
-import { CategoryCache } from './CreateCategoryCommandHandler.js';
+import { CacheService } from './CreateCategoryCommandHandler.js';
 
 export class DeleteCategoryCommandHandler
   implements ICommandHandler<DeleteCategoryCommand, void>
 {
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly cache: CategoryCache | NodeCache,
+    private readonly cache: CacheService,
   ) {}
 
   async execute(command: DeleteCategoryCommand): Promise<void> {
@@ -66,12 +65,6 @@ export class DeleteCategoryCommandHandler
       await runDelete(this.prisma);
     }
 
-    // Invalidate categories cache (AC5)
-    if (typeof (this.cache as any)?.deletePattern === 'function') {
-      await (this.cache as any).deletePattern('categories:*');
-    }
-    if (typeof (this.cache as any)?.del === 'function') {
-      (this.cache as any).del('categories:all');
-    }
+    await this.cache.deletePattern('categories:*');
   }
 }

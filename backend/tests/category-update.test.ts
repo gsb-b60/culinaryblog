@@ -1,5 +1,4 @@
 import express from 'express';
-import NodeCache from 'node-cache';
 import passport from 'passport';
 import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,10 +36,10 @@ class TestJwtStrategy extends passport.Strategy {
 }
 
 describe('Update Category Feature (Issue #18 — FR-CAT-004)', () => {
-  let cache: NodeCache;
+  let cache: { deletePattern: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    cache = new NodeCache();
+    cache = { deletePattern: vi.fn().mockResolvedValue(undefined) };
   });
 
   describe('UpdateCategoryCommandHandler', () => {
@@ -71,7 +70,6 @@ describe('Update Category Feature (Issue #18 — FR-CAT-004)', () => {
         },
       } as any;
 
-      cache.set('categories:all', [{ id: 'old' }]);
       const handler = new UpdateCategoryCommandHandler(prisma, cache);
 
       const result = await handler.execute(
@@ -175,15 +173,12 @@ describe('Update Category Feature (Issue #18 — FR-CAT-004)', () => {
         },
       } as any;
 
-      cache.set('categories:all', [{ id: 'cat-1' }]);
-      expect(cache.get('categories:all')).toBeDefined();
-
       const handler = new UpdateCategoryCommandHandler(prisma, cache);
       await handler.execute(
         new UpdateCategoryCommand('cat-1', { name: 'Món Lẩu Cay' }),
       );
 
-      expect(cache.get('categories:all')).toBeUndefined();
+      expect(cache.deletePattern).toHaveBeenCalledWith('categories:*');
     });
 
     it('maps unique constraint P2002 to 409 Conflict when name is duplicate', async () => {

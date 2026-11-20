@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import NodeCache from 'node-cache';
 import slugify from 'slugify';
 
 import { AppError } from '../../../config-middleware/shared/errors/AppError.js';
@@ -8,9 +7,8 @@ import { CategoryDto } from '../../dtos/CategoryDto.js';
 
 import { CreateCategoryCommand } from './CategoryCommands.js';
 
-export interface CategoryCache {
-  deletePattern?(pattern: string): Promise<void>;
-  del?(key: string): void;
+export interface CacheService {
+  deletePattern(pattern: string): Promise<void>;
 }
 
 export class CreateCategoryCommandHandler
@@ -18,7 +16,7 @@ export class CreateCategoryCommandHandler
 {
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly cache: CategoryCache | NodeCache,
+    private readonly cache: CacheService,
   ) {}
 
   async execute(command: CreateCategoryCommand): Promise<CategoryDto> {
@@ -48,13 +46,7 @@ export class CreateCategoryCommandHandler
           },
         });
 
-        // Invalidate category cache (AC7)
-        if (typeof (this.cache as any)?.deletePattern === 'function') {
-          await (this.cache as any).deletePattern('categories:*');
-        }
-        if (typeof (this.cache as any)?.del === 'function') {
-          (this.cache as any).del('categories:all');
-        }
+        await this.cache.deletePattern('categories:*');
 
         return {
           id: category.id,
