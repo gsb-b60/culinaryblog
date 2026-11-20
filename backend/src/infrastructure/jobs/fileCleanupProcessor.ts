@@ -30,6 +30,21 @@ export function getRecipeFileKey(url: string, recipeId: string, baseUrl: string)
   return key;
 }
 
+function isMissingObject(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const candidate = error as {
+    name?: string;
+    Code?: string;
+    $metadata?: { httpStatusCode?: number };
+  };
+  return (
+    candidate.name === 'NoSuchKey' ||
+    candidate.name === 'NotFound' ||
+    candidate.Code === 'NoSuchKey' ||
+    candidate.$metadata?.httpStatusCode === 404
+  );
+}
+
 export async function processFileCleanup(
   data: FileCleanupJobData,
   storage: IFileStorageService,
@@ -39,5 +54,19 @@ export async function processFileCleanup(
     logger.warn({ recipeId: data.recipeId }, 'Skipping cleanup for a URL outside recipe storage');
     return;
   }
-  await storage.deleteFile(key);
+
+  try {
+    await storage.deleteFile(key);
+    logger.info({ recipeId: data.recipeId, key }, 'Deleted recipe file');
+  } catch (error) {
+    if (isMissingObject(error)) {
+      logger.info(
+        { recipeId: data.recipeId, key },
+        'Recipe file already missing; cleanup is idempotent',
+      );
+      return;
+    }
+    // Unknown storage errors propagate so BullMQ can retry the job.
+    throw error;
+  }
 }

@@ -13,7 +13,9 @@ import {
   CreateBucketCommand,
   DeleteBucketCommand,
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
 } from '@aws-sdk/client-s3';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -109,6 +111,15 @@ beforeAll(async () => {
     [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
     { env: process.env, stdio: 'pipe', timeout: 60000 },
   );
+  const { ensureRecipeFullTextSearch } = await import('./support/searchMigration.js');
+  const migrationPrisma = new PrismaClient({
+    datasources: { db: { url: testUrl.toString() } },
+  });
+  try {
+    await ensureRecipeFullTextSearch(migrationPrisma);
+  } finally {
+    await migrationPrisma.$disconnect();
+  }
   s3 = new S3Client({
     endpoint: process.env.S3_ENDPOINT,
     region: process.env.S3_REGION ?? 'us-east-1',
@@ -170,10 +181,10 @@ beforeAll(async () => {
   workers.push(welcomeEmailWorker, imageResizeWorker, sitemapWorker);
   const { welcomeEmailQueue } =
     await import('../src/infrastructure/jobs/queues/welcomeEmailQueue.js');
-  const { imageResizeQueue } =
+  const { getImageResizeQueue } =
     await import('../src/infrastructure/jobs/queues/imageResizeQueue.js');
   const { sitemapQueue } = await import('../src/infrastructure/jobs/queues/sitemapQueue.js');
-  queues.push(welcomeEmailQueue, imageResizeQueue, sitemapQueue);
+  queues.push(welcomeEmailQueue, getImageResizeQueue(), sitemapQueue);
   const { default: authRoutes } = await import('../src/presentation/routes/authRoutes.js');
   const { default: recipeRoutes } = await import('../src/presentation/routes/recipeRoutes.js');
   const { default: categoryRoutes } = await import('../src/presentation/routes/categoryRoutes.js');
@@ -217,7 +228,14 @@ afterAll(async () => {
   if (redis) await clean(() => redis.quit());
   for (const key of objectKeys)
     if (s3) await clean(() => s3.send(new DeleteObjectCommand({ Bucket: prefix, Key: key })));
-  if (bucketCreated) await clean(() => s3.send(new DeleteBucketCommand({ Bucket: prefix })));
+  if (bucketCreated)
+    await clean(async () => {
+      const objects = await s3.send(new ListObjectsV2Command({ Bucket: prefix }));
+      const keys = objects.Contents?.flatMap((object) => object.Key ? [{ Key: object.Key }] : []) ?? [];
+      if (keys.length)
+        await s3.send(new DeleteObjectsCommand({ Bucket: prefix, Delete: { Objects: keys } }));
+      await s3.send(new DeleteBucketCommand({ Bucket: prefix }));
+    });
   s3?.destroy();
   for (const id of mailIds)
     await clean(async () => {
@@ -818,7 +836,7 @@ describe('Real Redis, MinIO, MailHog and job queues', () => {
         imageId: 'integration-image',
         originalUrl: 'https://example.invalid/test.png',
       });
-      const jobs = await images.imageResizeQueue.getJobs(['waiting', 'active', 'completed']);
+      const jobs = await images.getImageResizeQueue().getJobs(['waiting', 'active', 'completed']);
       expect(jobs).toHaveLength(1);
       await jobs[0].waitUntilFinished(events, 15000);
       expect(await jobs[0].getState()).toBe('completed');
@@ -836,7 +854,7 @@ describe('Real Redis, MinIO, MailHog and job queues', () => {
     expect(await health.checkLiveness()).toEqual({ status: 'alive' });
     expect((await health.checkReadiness()).status).toBe('healthy');
     await container.cacheService.disconnect();
-    expect((await health.checkAll()).status).toBe('degraded');
+    expect((await health.checkAll()).status).toBe('unhealthy');
     expect(container.cacheService.isReady()).toBe(false);
     expect(await container.cacheService.get('disconnected')).toBeNull();
     expect(await container.cacheService.exists('disconnected')).toBe(false);

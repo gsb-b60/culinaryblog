@@ -69,6 +69,7 @@ import { UpdateRecipeCommandHandler } from '../../application/handlers/UpdateRec
 import { IEmailService } from '../../application/interfaces/IEmailService.js';
 import { IFileStorageService } from '../../application/interfaces/IFileStorageService.js';
 import { IJwtService } from '../../application/interfaces/IJwtService.js';
+import { cachingMiddleware, loggingMiddleware } from '../../application/pipelines/pipelineMiddleware.js';
 import { GetManagedRecipesQuery } from '../../application/queries/recipes/GetManagedRecipesQuery.js';
 import { GetRecipeOverviewQuery } from '../../application/queries/recipes/GetRecipeOverviewQuery.js';
 import { env } from '../../config-middleware/config/env.js';
@@ -102,10 +103,17 @@ export interface Container {
 }
 
 let container: Container | null = null;
+let pipelineConfigured = false;
 
 /** Wire repositories, services and command/query handlers for Express. */
 export function createContainer(): Container {
   if (container) return container;
+
+  if (!pipelineConfigured) {
+    commandBus.use(loggingMiddleware);
+    commandBus.use(cachingMiddleware);
+    pipelineConfigured = true;
+  }
 
   const prisma = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
