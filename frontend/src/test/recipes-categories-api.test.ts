@@ -127,14 +127,14 @@ describe('categories api client (typed)', () => {
   it('loads the entire category catalog across API pages', async () => {
     const category = { id: 'c', name: 'Category', slug: 'cat', orderIndex: 0, createdAt: '' }
     fetchMock.mockResolvedValueOnce(json({
-      items: Array.from({ length: 50 }, (_, i) => ({ ...category, id: 'c' + i })),
-      meta: { page: 1, pageSize: 50, totalCount: 51, totalPages: 2, hasNextPage: true, hasPreviousPage: false },
+      items: Array.from({ length: 20 }, (_, i) => ({ ...category, id: 'c' + i })),
+      meta: { page: 1, pageSize: 20, totalCount: 21, totalPages: 2, hasNextPage: true, hasPreviousPage: false },
     })).mockResolvedValueOnce(json({
-      items: [{ ...category, id: 'c50' }],
-      meta: { page: 2, pageSize: 50, totalCount: 51, totalPages: 2, hasNextPage: false, hasPreviousPage: true },
+      items: [{ ...category, id: 'c20' }],
+      meta: { page: 2, pageSize: 20, totalCount: 21, totalPages: 2, hasNextPage: false, hasPreviousPage: true },
     }))
-    expect(await listAllCategories()).toHaveLength(51)
-    expect(fetchMock.mock.calls[1][0]).toContain('/categories?page=2&pageSize=50')
+    expect(await listAllCategories()).toHaveLength(21)
+    expect(fetchMock.mock.calls[1][0]).toContain('/categories?page=2&pageSize=20')
   })
 
   it('lists, details, and mutates with auth', async () => {

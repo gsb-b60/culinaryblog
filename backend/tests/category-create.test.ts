@@ -1,5 +1,4 @@
 import express from 'express';
-import NodeCache from 'node-cache';
 import passport from 'passport';
 import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,10 +36,10 @@ class TestJwtStrategy extends passport.Strategy {
 }
 
 describe('Create Category Feature (Issue #17 — FR-CAT-003)', () => {
-  let cache: NodeCache;
+  let cache: { deletePattern: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    cache = new NodeCache();
+    cache = { deletePattern: vi.fn().mockResolvedValue(undefined) };
   });
 
   describe('CreateCategoryCommandHandler', () => {
@@ -62,7 +61,6 @@ describe('Create Category Feature (Issue #17 — FR-CAT-003)', () => {
         },
       } as any;
 
-      cache.set('categories:all', [{ id: 'old' }]);
       const handler = new CreateCategoryCommandHandler(prisma, cache);
 
       const result = await handler.execute(
@@ -94,8 +92,8 @@ describe('Create Category Feature (Issue #17 — FR-CAT-003)', () => {
         recipeCount: 0,
       });
 
-      // Cache categories:all must be invalidated (AC7)
-      expect(cache.get('categories:all')).toBeUndefined();
+      // Cache categories:* must be invalidated (AC7)
+      expect(cache.deletePattern).toHaveBeenCalledWith('categories:*');
     });
 
     it('appends numeric suffix when slug collision occurs (-2, -3) (AC3)', async () => {

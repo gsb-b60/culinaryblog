@@ -28,7 +28,21 @@ export function RecipeCard({
   const Heading = `h${headingLevel}` as 'h2' | 'h3'
 
   return (
-    <Card className="h-full transition-shadow hover:shadow-md">
+    <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
+      {recipe.imageUrl ? (
+        <Link to={`/recipes/${recipe.slug}`} aria-label={`Xem ${recipe.title}`}>
+          <img
+            src={recipe.imageUrl}
+            alt={recipe.title}
+            loading="lazy"
+            className="h-44 w-full object-cover"
+          />
+        </Link>
+      ) : (
+        <div className="flex h-44 items-center justify-center bg-gradient-to-br from-brand-100 via-brand-50 to-surface-100 text-sm font-semibold text-brand-700">
+          {recipe.categoryName ?? 'Món ăn Việt'}
+        </div>
+      )}
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">

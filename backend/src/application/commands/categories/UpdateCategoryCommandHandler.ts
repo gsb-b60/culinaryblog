@@ -1,18 +1,18 @@
 import { PrismaClient } from '@prisma/client';
-import NodeCache from 'node-cache';
 
 import { AppError, NotFoundError } from '../../../config-middleware/shared/errors/AppError.js';
 import { ICommandHandler } from '../../command-bus.js';
 import { CategoryDto } from '../../dtos/CategoryDto.js';
 
 import { UpdateCategoryCommand } from './CategoryCommands.js';
+import { CacheService } from './CreateCategoryCommandHandler.js';
 
 export class UpdateCategoryCommandHandler
   implements ICommandHandler<UpdateCategoryCommand, CategoryDto>
 {
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly cache: NodeCache,
+    private readonly cache: CacheService,
   ) {}
 
   async execute(command: UpdateCategoryCommand): Promise<CategoryDto> {
@@ -35,7 +35,7 @@ export class UpdateCategoryCommandHandler
       const updated = await this.prisma.category.update({
         where: { id: categoryId },
         data: {
-          ...(input.name !== undefined ? { name: input.name } : {}),
+          ...(input.name !== undefined ? { name: input.name.trim() } : {}),
           ...(input.description !== undefined
             ? { description: input.description === '' ? null : input.description }
             : {}),
@@ -50,8 +50,7 @@ export class UpdateCategoryCommandHandler
         },
       });
 
-      // Invalidate category cache (AC5)
-      this.cache.del('categories:all');
+      await this.cache.deletePattern('categories:*');
 
       return {
         id: updated.id,

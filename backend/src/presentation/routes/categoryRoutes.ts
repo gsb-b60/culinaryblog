@@ -1,5 +1,5 @@
+import apicache from 'apicache';
 import { Router, type Router as RouterType } from 'express';
-
 
 import { commandBus } from '../../application/command-bus.js';
 import { 
@@ -27,6 +27,7 @@ import {
   optionalAuth,
 } from '../middleware/AuthMiddleware.js';
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
+import { getContainer } from '../di/container.js';
 
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
 const router: RouterType = Router();
@@ -88,6 +89,7 @@ router.post('/', authenticateJwt, authorize(UserRole.ADMIN), async (req, res, ne
     const input = createCategorySchema.parse(req.body);
     const command = new CreateCategoryCommand(input);
     const category = await commandBus.executeCommand<CreateCategoryCommand, CategoryDto>(command);
+    apicache.clear();
     res.setHeader('Location', `/api/v1/categories/${category.slug}`);
     res.status(201).json(category);
   } catch (error) {
@@ -100,6 +102,8 @@ router.put('/:id', authenticateJwt, authorize(UserRole.ADMIN), async (req, res, 
     const input = updateCategorySchema.parse(req.body);
     const command = new UpdateCategoryCommand(req.params.id!, input);
     const category = await commandBus.executeCommand<UpdateCategoryCommand, CategoryDto>(command);
+    await getContainer().cacheService.deletePattern('recipes:*');
+    apicache.clear();
     res.json({ message: 'Category updated successfully', ...category });
   } catch (error) {
     next(error);
@@ -110,6 +114,7 @@ router.delete('/:id', authenticateJwt, authorize(UserRole.ADMIN), async (req, re
   try {
     const command = new DeleteCategoryCommand(req.params.id!);
     await commandBus.executeCommand(command);
+    apicache.clear();
     res.status(204).send();
   } catch (error) {
     next(error);

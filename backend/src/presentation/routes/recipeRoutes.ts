@@ -392,6 +392,7 @@ router.post(
         altText: image.altText,
         isPrimary: image.isPrimary,
       });
+      apicache.clear();
     } catch (error) {
       next(error);
     }
@@ -432,6 +433,7 @@ router.patch(
         isPrimary: updated.isPrimary,
         orderIndex: updated.orderIndex,
       });
+      apicache.clear();
     } catch (error) {
       next(error);
     }
@@ -481,6 +483,7 @@ router.delete(
           }
         }
       });
+      apicache.clear();
       res.status(204).send();
     } catch (error) {
       next(error);
