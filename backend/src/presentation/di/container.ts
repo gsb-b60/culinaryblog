@@ -75,7 +75,6 @@ import { IRecipeRepository } from '../../domain/repositories/IRecipeRepository.j
 import { IUserRepository } from '../../domain/repositories/IUserRepository.js';
 import { JwtService } from '../../infrastructure/auth/JwtService.js';
 import { PasswordService } from '../../infrastructure/auth/PasswordService.js';
-import { categoryCache } from '../../infrastructure/cache/CategoryCache.js';
 import { cacheService } from '../../infrastructure/cache/RedisCacheService.js';
 import { NodemailerEmailService } from '../../infrastructure/email/NodemailerEmailService.js';
 import { MinioFileStorageService } from '../../infrastructure/file-storage/MinioFileStorageService.js';
@@ -110,7 +109,7 @@ export function createContainer(): Container {
   });
 
   const recipeRepository = new RecipeRepository(prisma);
-  const categoryRepository = new CategoryRepository(prisma);
+  const categoryRepository = new CategoryRepository(prisma, cacheService);
   const userRepository = new UserRepository(prisma);
   const jwtService = new JwtService();
   const fileStorageService = new MinioFileStorageService();
@@ -118,15 +117,15 @@ export function createContainer(): Container {
 
   commandBus.registerCommandHandler(
     'CreateCategoryCommand',
-    new CreateCategoryCommandHandler(prisma, categoryCache),
+    new CreateCategoryCommandHandler(prisma, cacheService),
   );
   commandBus.registerCommandHandler(
     'UpdateCategoryCommand',
-    new UpdateCategoryCommandHandler(prisma, categoryCache),
+    new UpdateCategoryCommandHandler(prisma, cacheService),
   );
   commandBus.registerCommandHandler(
     'DeleteCategoryCommand',
-    new DeleteCategoryCommandHandler(prisma, categoryCache),
+    new DeleteCategoryCommandHandler(prisma, cacheService),
   );
 
   commandBus.registerCommandHandler(

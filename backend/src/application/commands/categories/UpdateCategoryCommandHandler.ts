@@ -6,13 +6,14 @@ import { ICommandHandler } from '../../command-bus.js';
 import { CategoryDto } from '../../dtos/CategoryDto.js';
 
 import { UpdateCategoryCommand } from './CategoryCommands.js';
+import { CategoryCache } from './CreateCategoryCommandHandler.js';
 
 export class UpdateCategoryCommandHandler
   implements ICommandHandler<UpdateCategoryCommand, CategoryDto>
 {
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly cache: NodeCache,
+    private readonly cache: CategoryCache | NodeCache,
   ) {}
 
   async execute(command: UpdateCategoryCommand): Promise<CategoryDto> {
@@ -35,8 +36,10 @@ export class UpdateCategoryCommandHandler
       const updated = await this.prisma.category.update({
         where: { id: categoryId },
         data: {
-          ...(input.name !== undefined ? { name: input.name } : {}),
-          ...(input.description !== undefined ? { description: input.description } : {}),
+          ...(input.name !== undefined ? { name: input.name.trim() } : {}),
+          ...(input.description !== undefined
+            ? { description: input.description === '' ? null : input.description }
+            : {}),
           ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
           ...(input.orderIndex !== undefined ? { orderIndex: input.orderIndex } : {}),
           // IMPORTANT (AC2): slug is deliberately NOT changed when name updates (prevent broken links)
@@ -49,7 +52,12 @@ export class UpdateCategoryCommandHandler
       });
 
       // Invalidate category cache (AC5)
-      this.cache.del('categories:all');
+      if (typeof (this.cache as any)?.deletePattern === 'function') {
+        await (this.cache as any).deletePattern('categories:*');
+      }
+      if (typeof (this.cache as any)?.del === 'function') {
+        (this.cache as any).del('categories:all');
+      }
 
       return {
         id: updated.id,

@@ -56,7 +56,7 @@ describe('Delete Category Feature (Issue #19 — FR-CAT-005)', () => {
       const prisma = {
         category: {
           findUnique: vi.fn().mockResolvedValue(existingCategory),
-          delete: vi.fn().mockResolvedValue(existingCategory),
+          update: vi.fn().mockResolvedValue({ ...existingCategory, isDeleted: true }),
         },
       } as any;
 
@@ -66,10 +66,62 @@ describe('Delete Category Feature (Issue #19 — FR-CAT-005)', () => {
       const handler = new DeleteCategoryCommandHandler(prisma, cache);
       await handler.execute(new DeleteCategoryCommand('cat-empty'));
 
-      expect(prisma.category.delete).toHaveBeenCalledWith({
+      expect(prisma.category.update).toHaveBeenCalledWith({
         where: { id: 'cat-empty' },
+        data: { isDeleted: true },
       });
       expect(cache.get('categories:all')).toBeUndefined();
+    });
+
+    it('catches P2003 foreign key constraint race and throws 409 Conflict', async () => {
+      const existingCategory = {
+        id: 'cat-empty',
+        name: 'Món Chay Mới',
+        slug: 'mon-chay-moi',
+        isDeleted: false,
+        _count: { recipes: 0 },
+      };
+
+      const prisma = {
+        category: {
+          findUnique: vi.fn().mockResolvedValue(existingCategory),
+          update: vi.fn().mockRejectedValue({ code: 'P2003' }),
+        },
+      } as any;
+
+      const handler = new DeleteCategoryCommandHandler(prisma, cache);
+      await expect(
+        handler.execute(new DeleteCategoryCommand('cat-empty')),
+      ).rejects.toMatchObject({
+        statusCode: 409,
+        code: 'CATEGORY_HAS_RECIPES',
+      });
+    });
+
+    it('invalidates categories cache using deletePattern when available', async () => {
+      const existingCategory = {
+        id: 'cat-empty',
+        name: 'Món Chay Mới',
+        slug: 'mon-chay-moi',
+        isDeleted: false,
+        _count: { recipes: 0 },
+      };
+
+      const prisma = {
+        category: {
+          findUnique: vi.fn().mockResolvedValue(existingCategory),
+          update: vi.fn().mockResolvedValue({ ...existingCategory, isDeleted: true }),
+        },
+      } as any;
+
+      const mockCacheService = {
+        deletePattern: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const handler = new DeleteCategoryCommandHandler(prisma, mockCacheService as any);
+      await handler.execute(new DeleteCategoryCommand('cat-empty'));
+
+      expect(mockCacheService.deletePattern).toHaveBeenCalledWith('categories:*');
     });
 
     it('throws 409 Conflict with recipe count in message when category contains recipes (AC2)', async () => {

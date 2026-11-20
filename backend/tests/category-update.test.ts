@@ -291,5 +291,100 @@ describe('Update Category Feature (Issue #18 — FR-CAT-004)', () => {
 
       expect(res.status).toBe(422);
     });
+
+    it('returns 422 when no mutable field is provided (PUT {})', async () => {
+      const res = await request(app)
+        .put('/api/v1/categories/cat-1')
+        .set('Authorization', 'Bearer admin-token')
+        .send({});
+
+      expect(res.status).toBe(422);
+    });
+
+    it('returns 422 when name is whitespace only', async () => {
+      const res = await request(app)
+        .put('/api/v1/categories/cat-1')
+        .set('Authorization', 'Bearer admin-token')
+        .send({ name: '     ' });
+
+      expect(res.status).toBe(422);
+    });
+  });
+
+  describe('Clearing description & Cache invalidation', () => {
+    it('clears description when description is null or empty string (regression test)', async () => {
+      const existingCategory = {
+        id: 'cat-1',
+        name: 'Món Bò',
+        slug: 'mon-bo',
+        description: 'Mô tả cũ',
+        imageUrl: null,
+        orderIndex: 5,
+        isDeleted: false,
+        createdAt: new Date('2026-10-01'),
+        _count: { recipes: 3 },
+      };
+
+      const updatedCategory = {
+        ...existingCategory,
+        description: null,
+      };
+
+      const prisma = {
+        category: {
+          findUnique: vi.fn().mockResolvedValue(existingCategory),
+          update: vi.fn().mockResolvedValue(updatedCategory),
+        },
+      } as any;
+
+      const handler = new UpdateCategoryCommandHandler(prisma, cache);
+      const result = await handler.execute(
+        new UpdateCategoryCommand('cat-1', {
+          description: null,
+        }),
+      );
+
+      expect(prisma.category.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'cat-1' },
+          data: expect.objectContaining({
+            description: null,
+          }),
+        }),
+      );
+      expect(result.description).toBeUndefined();
+    });
+
+    it('invalidates categories cache with deletePattern if available', async () => {
+      const existingCategory = {
+        id: 'cat-1',
+        name: 'Món Bò',
+        slug: 'mon-bo',
+        description: 'Mô tả cũ',
+        imageUrl: null,
+        orderIndex: 5,
+        isDeleted: false,
+        createdAt: new Date('2026-10-01'),
+        _count: { recipes: 3 },
+      };
+
+      const prisma = {
+        category: {
+          findUnique: vi.fn().mockResolvedValue(existingCategory),
+          update: vi.fn().mockResolvedValue(existingCategory),
+        },
+      } as any;
+
+      const mockCacheService = {
+        deletePattern: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const handler = new UpdateCategoryCommandHandler(prisma, mockCacheService as any);
+      await handler.execute(
+        new UpdateCategoryCommand('cat-1', { name: 'Món Bò Mới' }),
+      );
+
+      expect(mockCacheService.deletePattern).toHaveBeenCalledWith('categories:*');
+    });
   });
 });

@@ -14,7 +14,7 @@ import {
   XIcon,
 } from 'lucide-react'
 
-import { ApiError, createCategory, deleteCategory, listCategories, updateCategory } from '@/lib/api'
+import { ApiError, createCategory, deleteCategory, listAllCategories, updateCategory } from '@/lib/api'
 import { useAuthStore } from '@/store'
 import type { Category, CreateCategoryPayload, UpdateCategoryPayload } from '@/types/category'
 
@@ -100,10 +100,10 @@ export default function AdminCategoriesPage() {
 
   useEffect(() => {
     let active = true
-    listCategories()
+    listAllCategories()
       .then((data) => {
         if (!active) return
-        setCategories(Array.isArray(data) ? data : (data as { items?: Category[] })?.items ?? [])
+        setCategories(data)
       })
       .catch((err) => {
         if (!active) return
@@ -232,19 +232,17 @@ export default function AdminCategoriesPage() {
       } else if (editingCategory) {
         const payload: UpdateCategoryPayload = {
           name: trimmedName,
-          description: description.trim() || undefined,
+          description: description.trim() !== '' ? description.trim() : null,
           orderIndex,
         }
-        await updateCategory(session.accessToken, editingCategory.id, payload)
+        const updated = await updateCategory(session.accessToken, editingCategory.id, payload)
         setCategories((prev) =>
           prev.map((c) =>
             c.id === editingCategory.id
               ? {
                   ...c,
-                  name: trimmedName,
-                  description: description.trim() || undefined,
-                  orderIndex,
-                  slug: c.slug, // Slug does NOT change when name updates (AC2)
+                  ...updated,
+                  description: updated.description ?? undefined,
                 }
               : c,
           ),

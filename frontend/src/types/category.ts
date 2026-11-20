@@ -27,8 +27,8 @@ export interface CreateCategoryPayload {
 
 export interface UpdateCategoryPayload {
   name?: string
-  description?: string
-  imageUrl?: string
+  description?: string | null
+  imageUrl?: string | null
   orderIndex?: number
 }
 
@@ -61,8 +61,7 @@ export interface RecipeSummaryDto {
   createdAt: string;
 }
 
-export interface CategoryDetailDto {
-  category: CategoryDto;
+export interface CategoryDetailDto extends CategoryDto {
   recipes: {
     items: RecipeSummaryDto[];
     totalCount: number;

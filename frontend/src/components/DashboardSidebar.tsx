@@ -253,16 +253,6 @@ export default function DashboardSidebar({
           Danh mục
         </button>
         <Link
-          to="/dashboard/categories"
-          aria-current={active === 'categories' ? 'page' : undefined}
-          className={
-            'flex-1 text-center text-xs ' +
-            (active === 'categories' ? 'font-medium text-brand-600' : 'text-surface-400')
-          }
-        >
-          Danh mục
-        </Link>
-        <Link
           to="/profile"
           aria-current={active === 'profile' ? 'page' : undefined}
           className={
