@@ -13,7 +13,9 @@ import {
   CreateBucketCommand,
   DeleteBucketCommand,
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
 } from '@aws-sdk/client-s3';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -226,7 +228,14 @@ afterAll(async () => {
   if (redis) await clean(() => redis.quit());
   for (const key of objectKeys)
     if (s3) await clean(() => s3.send(new DeleteObjectCommand({ Bucket: prefix, Key: key })));
-  if (bucketCreated) await clean(() => s3.send(new DeleteBucketCommand({ Bucket: prefix })));
+  if (bucketCreated)
+    await clean(async () => {
+      const objects = await s3.send(new ListObjectsV2Command({ Bucket: prefix }));
+      const keys = objects.Contents?.flatMap((object) => object.Key ? [{ Key: object.Key }] : []) ?? [];
+      if (keys.length)
+        await s3.send(new DeleteObjectsCommand({ Bucket: prefix, Delete: { Objects: keys } }));
+      await s3.send(new DeleteBucketCommand({ Bucket: prefix }));
+    });
   s3?.destroy();
   for (const id of mailIds)
     await clean(async () => {
