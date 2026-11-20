@@ -6,10 +6,7 @@ import { ICategoryRepository, CategoryFilters } from '../../../domain/repositori
 import { Slug } from '../../../domain/value-objects/Slug.js';
 
 export class CategoryRepository implements ICategoryRepository {
-  constructor(
-    private prisma: PrismaClient,
-    private cache?: any,
-  ) {}
+  constructor(private prisma: PrismaClient) {}
 
   private toDomain(prismaCategory: PrismaCategory & { _count?: { recipes: number } }): Category {
     const props: CategoryProps = {
@@ -90,10 +87,6 @@ export class CategoryRepository implements ICategoryRepository {
   }
 
   async findAll(): Promise<Category[]> {
-    if (this.cache) {
-      const cached = this.cache.get ? this.cache.get('categories:all') : null;
-      if (cached) return cached;
-    }
     const categories = await this.prisma.category.findMany({
       where: { isDeleted: false },
       orderBy: [{ orderIndex: 'asc' }, { id: 'asc' }],
@@ -103,13 +96,9 @@ export class CategoryRepository implements ICategoryRepository {
         },
       },
     });
-    const domainCategories = categories.map((c) => {
+    return categories.map((c) => {
       return this.toDomain(c); // Could add recipeCount if needed
     });
-    if (this.cache && this.cache.set) {
-      this.cache.set('categories:all', domainCategories);
-    }
-    return domainCategories;
   }
 
   async save(category: Category): Promise<Category> {
