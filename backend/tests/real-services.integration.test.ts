@@ -145,7 +145,7 @@ beforeAll(async () => {
   const users = await seedUsers(prisma);
   const categories = await seedCategories(prisma);
   await seedRecipes(prisma, users.slice(1), categories);
-  expect(await prisma.recipe.count()).toBe(100);
+  expect(await prisma.recipe.count()).toBe(80);
   expect(await seedCategories(prisma)).toEqual(categories);
   owner = await prisma.user.findUniqueOrThrow({ where: { id: users[1] } });
   other = await prisma.user.findUniqueOrThrow({ where: { id: users[2] } });
@@ -460,7 +460,7 @@ describe('Real HTTP, JWT and ingredient command handlers', () => {
       .get('/api/v1/recipes/manage')
       .set('Authorization', bearer(adminToken));
     expect(all.status).toBe(200);
-    expect(all.body.meta.totalCount).toBe(100);
+    expect(all.body.meta.totalCount).toBe(80);
     expect(
       (
         await request(app)

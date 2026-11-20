@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import NodeCache from 'node-cache';
 import slugify from 'slugify';
 
 import { AppError } from '../../../config-middleware/shared/errors/AppError.js';
@@ -8,19 +7,23 @@ import { CategoryDto } from '../../dtos/CategoryDto.js';
 
 import { CreateCategoryCommand } from './CategoryCommands.js';
 
+export interface CacheService {
+  deletePattern(pattern: string): Promise<void>;
+}
+
 export class CreateCategoryCommandHandler
   implements ICommandHandler<CreateCategoryCommand, CategoryDto>
 {
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly cache: NodeCache,
+    private readonly cache: CacheService,
   ) {}
 
   async execute(command: CreateCategoryCommand): Promise<CategoryDto> {
     const { name, description, imageUrl, orderIndex } = command.input;
 
     const baseSlug =
-      slugify(name, { lower: true, strict: true, locale: 'vi' }) || 'category';
+      slugify(name.trim(), { lower: true, strict: true, locale: 'vi' }) || 'category';
 
     let finalSlug = baseSlug;
     let counter = 2;
@@ -35,7 +38,7 @@ export class CreateCategoryCommandHandler
       try {
         const category = await this.prisma.category.create({
           data: {
-            name,
+            name: name.trim(),
             slug: finalSlug,
             description: description ?? null,
             imageUrl: imageUrl ?? null,
@@ -43,8 +46,7 @@ export class CreateCategoryCommandHandler
           },
         });
 
-        // Invalidate category cache (AC7)
-        this.cache.del('categories:all');
+        await this.cache.deletePattern('categories:*');
 
         return {
           id: category.id,
@@ -58,7 +60,6 @@ export class CreateCategoryCommandHandler
         };
       } catch (error: unknown) {
         if ((error as { code?: string })?.code === 'P2002') {
-          // Distinguish slug collision (concurrent create) from name uniqueness violation
           const target = (error as { meta?: { target?: string[] } })?.meta?.target ?? [];
           if (target.includes('slug') && attempt < MAX_RETRIES) {
             finalSlug = `${baseSlug}-${counter}`;

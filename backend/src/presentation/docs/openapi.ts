@@ -135,6 +135,7 @@ export const openApiSpec = {
           categoryId: { type: 'string', format: 'uuid' },
           authorId: { type: 'string', format: 'uuid' },
           createdAt: { type: 'string', format: 'date-time' },
+          imageUrl: { type: 'string', format: 'uri', nullable: true },
           relevanceScore: {
             type: 'number',
             description: 'Full-text ranking score; only present on search results.',

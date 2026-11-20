@@ -51,14 +51,16 @@ export function authenticateJwt(
 export function optionalAuth(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
   // Some route-level tests mount the router without passport.initialize().
   // Treat that as an anonymous request; the application mounts Passport globally.
-  if (!('_passport' in req) && !req.headers?.authorization) {
+  if (!('_passport' in req) && !req.headers.authorization) {
     next();
     return;
   }
+
   const authHeader = req.headers?.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return next();
   }
+
   passport.authenticate('jwt', { session: false }, (err: Error | null, user: any) => {
     if (!err && user) {
       req.user = user;

@@ -1,5 +1,4 @@
 import express from 'express';
-import NodeCache from 'node-cache';
 import passport from 'passport';
 import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,10 +36,10 @@ class TestJwtStrategy extends passport.Strategy {
 }
 
 describe('Delete Category Feature (Issue #19 — FR-CAT-005)', () => {
-  let cache: NodeCache;
+  let cache: { deletePattern: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    cache = new NodeCache();
+    cache = { deletePattern: vi.fn().mockResolvedValue(undefined) };
   });
 
   describe('DeleteCategoryCommandHandler', () => {
@@ -60,9 +59,6 @@ describe('Delete Category Feature (Issue #19 — FR-CAT-005)', () => {
         },
       } as any;
 
-      cache.set('categories:all', [{ id: 'cat-empty' }]);
-      expect(cache.get('categories:all')).toBeDefined();
-
       const handler = new DeleteCategoryCommandHandler(prisma, cache);
       await handler.execute(new DeleteCategoryCommand('cat-empty'));
 
@@ -70,7 +66,58 @@ describe('Delete Category Feature (Issue #19 — FR-CAT-005)', () => {
         where: { id: 'cat-empty' },
         data: { isDeleted: true },
       });
-      expect(cache.get('categories:all')).toBeUndefined();
+      expect(cache.deletePattern).toHaveBeenCalledWith('categories:*');
+    });
+
+    it('catches P2003 foreign key constraint race and throws 409 Conflict', async () => {
+      const existingCategory = {
+        id: 'cat-empty',
+        name: 'Món Chay Mới',
+        slug: 'mon-chay-moi',
+        isDeleted: false,
+        _count: { recipes: 0 },
+      };
+
+      const prisma = {
+        category: {
+          findUnique: vi.fn().mockResolvedValue(existingCategory),
+          update: vi.fn().mockRejectedValue({ code: 'P2003' }),
+        },
+      } as any;
+
+      const handler = new DeleteCategoryCommandHandler(prisma, cache);
+      await expect(
+        handler.execute(new DeleteCategoryCommand('cat-empty')),
+      ).rejects.toMatchObject({
+        statusCode: 409,
+        code: 'CATEGORY_HAS_RECIPES',
+      });
+    });
+
+    it('invalidates categories cache using deletePattern when available', async () => {
+      const existingCategory = {
+        id: 'cat-empty',
+        name: 'Món Chay Mới',
+        slug: 'mon-chay-moi',
+        isDeleted: false,
+        _count: { recipes: 0 },
+      };
+
+      const prisma = {
+        category: {
+          findUnique: vi.fn().mockResolvedValue(existingCategory),
+          update: vi.fn().mockResolvedValue({ ...existingCategory, isDeleted: true }),
+        },
+      } as any;
+
+      const mockCacheService = {
+        deletePattern: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const handler = new DeleteCategoryCommandHandler(prisma, mockCacheService as any);
+      await handler.execute(new DeleteCategoryCommand('cat-empty'));
+
+      expect(mockCacheService.deletePattern).toHaveBeenCalledWith('categories:*');
     });
 
     it('throws 409 Conflict with recipe count in message when category contains recipes (AC2)', async () => {

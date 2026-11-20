@@ -28,6 +28,8 @@ export interface RecipeSummary {
   authorName?: string;
   publishedAt?: string;
   createdAt: string;
+  /** Primary image URL returned for recipe cards and lists. */
+  imageUrl?: string;
   /** Full-text ranking score returned by `/recipes/search`. */
   relevanceScore?: number;
 }
