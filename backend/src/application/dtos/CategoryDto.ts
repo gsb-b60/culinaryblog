@@ -22,7 +22,7 @@ export interface CreateCategoryInput {
 
 export interface UpdateCategoryInput {
   name?: string;
-  description?: string;
-  imageUrl?: string;
+  description?: string | null;
+  imageUrl?: string | null;
   orderIndex?: number;
 }

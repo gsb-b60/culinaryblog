@@ -30,40 +30,59 @@ export class CreateCategoryCommandHandler
       counter++;
     }
 
-    try {
-      const category = await this.prisma.category.create({
-        data: {
-          name,
-          slug: finalSlug,
-          description: description ?? null,
-          imageUrl: imageUrl ?? null,
-          orderIndex: orderIndex ?? 0,
-        },
-      });
+    const MAX_RETRIES = 5;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const category = await this.prisma.category.create({
+          data: {
+            name,
+            slug: finalSlug,
+            description: description ?? null,
+            imageUrl: imageUrl ?? null,
+            orderIndex: orderIndex ?? 0,
+          },
+        });
 
-      // Invalidate category cache (AC7)
-      this.cache.del('categories:all');
+        // Invalidate category cache (AC7)
+        this.cache.del('categories:all');
 
-      return {
-        id: category.id,
-        name: category.name,
-        slug: category.slug,
-        description: category.description ?? undefined,
-        imageUrl: category.imageUrl ?? undefined,
-        orderIndex: category.orderIndex,
-        recipeCount: 0,
-        createdAt: category.createdAt,
-      };
-    } catch (error: unknown) {
-      if ((error as { code?: string })?.code === 'P2002') {
-        throw new AppError(
-          409,
-          'Danh mục với tên này đã tồn tại',
-          'CATEGORY_NAME_EXISTS',
-          { title: 'Conflict' },
-        );
+        return {
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+          description: category.description ?? undefined,
+          imageUrl: category.imageUrl ?? undefined,
+          orderIndex: category.orderIndex,
+          recipeCount: 0,
+          createdAt: category.createdAt,
+        };
+      } catch (error: unknown) {
+        if ((error as { code?: string })?.code === 'P2002') {
+          // Distinguish slug collision (concurrent create) from name uniqueness violation
+          const target = (error as { meta?: { target?: string[] } })?.meta?.target ?? [];
+          if (target.includes('slug') && attempt < MAX_RETRIES) {
+            finalSlug = `${baseSlug}-${counter}`;
+            counter++;
+            continue;
+          }
+          if (target.includes('slug')) {
+            throw new AppError(
+              409,
+              'Xung đột đường dẫn định danh (slug) của danh mục',
+              'CATEGORY_SLUG_CONFLICT',
+              { title: 'Conflict' },
+            );
+          }
+          throw new AppError(
+            409,
+            'Danh mục với tên này đã tồn tại',
+            'CATEGORY_NAME_EXISTS',
+            { title: 'Conflict' },
+          );
+        }
+        throw error;
       }
-      throw error;
     }
+    throw new Error('Unexpected end of category creation loop');
   }
 }

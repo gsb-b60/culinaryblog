@@ -112,7 +112,7 @@ export function createContainer(): Container {
   });
 
   const recipeRepository = new RecipeRepository(prisma);
-  const categoryRepository = new CategoryRepository(prisma);
+  const categoryRepository = new CategoryRepository(prisma, categoryCache);
   const userRepository = new UserRepository(prisma);
   const jwtService = new JwtService();
   const fileStorageService = new MinioFileStorageService();

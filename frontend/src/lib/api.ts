@@ -258,8 +258,8 @@ export function logout(accessToken: string, refreshToken: string): Promise<null>
   })
 }
 
-export function getCategories(): Promise<CategoryDto[]> {
-  return request<CategoryDto[]>('/categories', {
+export function getCategories(): Promise<PagedResult<CategoryDto>> {
+  return request<PagedResult<CategoryDto>>('/categories', {
     method: 'GET',
   })
 }
@@ -513,8 +513,8 @@ export function updateCategory(
   accessToken: string,
   id: string,
   payload: UpdateCategoryPayload,
-): Promise<{ message: string }> {
-  return request<{ message: string }>(`/categories/${encodeURIComponent(id)}`, {
+): Promise<Category> {
+  return request<Category>(`/categories/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(payload),

@@ -36,7 +36,9 @@ export class UpdateCategoryCommandHandler
         where: { id: categoryId },
         data: {
           ...(input.name !== undefined ? { name: input.name } : {}),
-          ...(input.description !== undefined ? { description: input.description } : {}),
+          ...(input.description !== undefined
+            ? { description: input.description === '' ? null : input.description }
+            : {}),
           ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
           ...(input.orderIndex !== undefined ? { orderIndex: input.orderIndex } : {}),
           // IMPORTANT (AC2): slug is deliberately NOT changed when name updates (prevent broken links)

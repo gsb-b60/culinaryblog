@@ -40,8 +40,9 @@ export class DeleteCategoryCommandHandler
       );
     }
 
-    await this.prisma.category.delete({
+    await this.prisma.category.update({
       where: { id: categoryId },
+      data: { isDeleted: true },
     });
 
     // Invalidate categories cache (AC5)

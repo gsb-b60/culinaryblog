@@ -111,7 +111,7 @@ export const recipeDetailCache = apicache.middleware('60 minutes', (req: Request
 });
 
 // Public routes
-router.get('/', optionalAuth, recipeListCache, generalRateLimiter, async (req: AuthenticatedRequest, res, next) => {
+router.get('/', generalRateLimiter, optionalAuth, recipeListCache, async (req: AuthenticatedRequest, res, next) => {
   try {
     const filters = recipeFiltersSchema.parse(req.query);
     const sort = recipeSortQuerySchema.parse(req.query);
@@ -157,7 +157,7 @@ router.get('/search', generalRateLimiter, async (req, res, next) => {
   }
 });
 
-router.get('/:slug', optionalAuth, recipeDetailCache, generalRateLimiter, async (req, res, next) => {
+router.get('/:slug', generalRateLimiter, optionalAuth, recipeDetailCache, async (req, res, next) => {
   try {
     const isAdmin = Boolean(
       (req as AuthenticatedRequest).user?.roles?.includes(UserRole.ADMIN),

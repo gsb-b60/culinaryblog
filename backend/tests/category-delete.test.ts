@@ -56,7 +56,7 @@ describe('Delete Category Feature (Issue #19 — FR-CAT-005)', () => {
       const prisma = {
         category: {
           findUnique: vi.fn().mockResolvedValue(existingCategory),
-          delete: vi.fn().mockResolvedValue(existingCategory),
+          update: vi.fn().mockResolvedValue({ ...existingCategory, isDeleted: true }),
         },
       } as any;
 
@@ -66,8 +66,9 @@ describe('Delete Category Feature (Issue #19 — FR-CAT-005)', () => {
       const handler = new DeleteCategoryCommandHandler(prisma, cache);
       await handler.execute(new DeleteCategoryCommand('cat-empty'));
 
-      expect(prisma.category.delete).toHaveBeenCalledWith({
+      expect(prisma.category.update).toHaveBeenCalledWith({
         where: { id: 'cat-empty' },
+        data: { isDeleted: true },
       });
       expect(cache.get('categories:all')).toBeUndefined();
     });

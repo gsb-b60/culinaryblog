@@ -24,8 +24,8 @@ export const updateCategorySchema = z.object({
       message: 'HTML tags are not allowed in name',
     })
     .optional(),
-  description: z.string().max(2000).optional(),
-  imageUrl: z.string().url().max(500).optional(),
+  description: z.string().max(2000).nullable().optional(),
+  imageUrl: z.string().url().max(500).nullable().optional(),
   orderIndex: z.number().int().nonnegative().optional(),
 });
 
