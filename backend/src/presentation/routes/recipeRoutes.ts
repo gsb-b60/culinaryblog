@@ -132,13 +132,20 @@ router.get('/manage', authenticateJwt, async (req: AuthenticatedRequest, res, ne
 });
 
 // Public routes
-router.get('/', generalRateLimiter, async (req, res, next) => {
+router.get('/', generalRateLimiter, optionalAuth, async (req: AuthenticatedRequest, res, next) => {
   try {
     const filters = recipeFiltersSchema.parse(req.query);
     const sort = recipeSortQuerySchema.parse(req.query);
     const pagination = paginationSchema.parse(req.query);
 
-    const query = new GetRecipesQuery(filters, sort, pagination.page, pagination.pageSize);
+    const query = new GetRecipesQuery(
+      filters,
+      sort,
+      pagination.page,
+      pagination.pageSize,
+      req.user?.id,
+      req.user?.roles.includes(UserRole.ADMIN) ? UserRole.ADMIN : req.user?.roles.includes(UserRole.AUTHOR) ? UserRole.AUTHOR : undefined,
+    );
     const result = await commandBus.executeQuery(query);
     res.json(result);
   } catch (error) {

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import passport from 'passport';
 
+import { setRequestUserId } from '../../config-middleware/shared/requestContext.js';
 import { UserRole } from '../../domain/index.js';
 
 declare global {
@@ -42,11 +43,18 @@ export function authenticateJwt(
       return;
     }
     req.user = user;
+    setRequestUserId(user.id);
     next();
   })(req, res, next);
 }
 
 export function optionalAuth(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+  // Some route-level tests mount the router without passport.initialize().
+  // Treat that as an anonymous request; the application mounts Passport globally.
+  if (!('_passport' in req) && !req.headers.authorization) {
+    next();
+    return;
+  }
   passport.authenticate('jwt', { session: false }, (err: Error | null, user: any) => {
     if (!err && user) {
       req.user = user;

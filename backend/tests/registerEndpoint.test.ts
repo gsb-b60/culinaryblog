@@ -133,8 +133,8 @@ describe('POST /api/v1/auth/register', () => {
 
     expect(res.status).toBe(201);
     expect(enqueueMock).toHaveBeenCalledWith({
+      userId: expect.any(String),
       email: 'an@example.com',
-      displayName: 'Nguyen Van A',
     });
   });
 

@@ -411,28 +411,46 @@ export class RecipeRepository implements IRecipeRepository {
 
   /** Translate repository filters into a Prisma predicate excluding deleted recipes. */
   private buildWhereClause(filters: RecipeFilters): Prisma.RecipeWhereInput {
+    const { viewerId, viewerRole, ...publicFilters } = filters;
     const where: Prisma.RecipeWhereInput = { isDeleted: false };
 
-    if (filters.categoryId) where.categoryId = filters.categoryId;
-    if (filters.difficulty) where.difficulty = filters.difficulty;
-    if (filters.status) where.status = filters.status;
-    if (filters.authorId) where.authorId = filters.authorId;
-    if (filters.minServings !== undefined) where.servings = { gte: filters.minServings };
-    if (filters.minPrepTime !== undefined || filters.maxPrepTime !== undefined) {
+    if (publicFilters.categoryId) where.categoryId = publicFilters.categoryId;
+    if (publicFilters.difficulty) where.difficulty = publicFilters.difficulty;
+    if (publicFilters.status) where.status = publicFilters.status;
+    const visibilityOr = viewerRole === 'AUTHOR' && viewerId
+      ? [{ status: RecipeStatus.PUBLISHED }, { status: RecipeStatus.DRAFT, authorId: viewerId }]
+      : undefined;
+    if (visibilityOr && publicFilters.status) {
+      where.AND = [{ OR: visibilityOr }, { status: publicFilters.status }];
+    } else if (visibilityOr) {
+      where.OR = visibilityOr;
+    } else if (viewerRole !== 'ADMIN' && !publicFilters.status) {
+      where.status = RecipeStatus.PUBLISHED;
+    }
+    if (publicFilters.authorId) where.authorId = publicFilters.authorId;
+    if (publicFilters.minServings !== undefined) where.servings = { gte: publicFilters.minServings };
+    if (publicFilters.minPrepTime !== undefined || publicFilters.maxPrepTime !== undefined) {
       where.prepTime = {};
-      if (filters.minPrepTime !== undefined) where.prepTime.gte = filters.minPrepTime;
-      if (filters.maxPrepTime !== undefined) where.prepTime.lte = filters.maxPrepTime;
+      if (publicFilters.minPrepTime !== undefined) where.prepTime.gte = publicFilters.minPrepTime;
+      if (publicFilters.maxPrepTime !== undefined) where.prepTime.lte = publicFilters.maxPrepTime;
     }
-    if (filters.minCookTime !== undefined || filters.maxCookTime !== undefined) {
+    if (publicFilters.minCookTime !== undefined || publicFilters.maxCookTime !== undefined) {
       where.cookTime = {};
-      if (filters.minCookTime !== undefined) where.cookTime.gte = filters.minCookTime;
-      if (filters.maxCookTime !== undefined) where.cookTime.lte = filters.maxCookTime;
+      if (publicFilters.minCookTime !== undefined) where.cookTime.gte = publicFilters.minCookTime;
+      if (publicFilters.maxCookTime !== undefined) where.cookTime.lte = publicFilters.maxCookTime;
     }
-    if (filters.searchQuery) {
-      where.OR = [
-        { title: { contains: filters.searchQuery, mode: 'insensitive' } },
-        { description: { contains: filters.searchQuery, mode: 'insensitive' } },
+    if (publicFilters.searchQuery) {
+      const searchOr = [
+        { title: { contains: publicFilters.searchQuery, mode: 'insensitive' as const } },
+        { description: { contains: publicFilters.searchQuery, mode: 'insensitive' as const } },
       ];
+      const existingOr = where.OR;
+      if (existingOr) {
+        delete where.OR;
+        where.AND = [{ OR: existingOr }, { OR: searchOr }];
+      } else {
+        where.OR = searchOr;
+      }
     }
 
     return where;

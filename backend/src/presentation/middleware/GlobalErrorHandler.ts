@@ -6,7 +6,7 @@ import { AppError } from '../../config-middleware/shared/errors/AppError.js';
 
 export function globalErrorHandler(
   err: Error,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction,
 ): void {
@@ -46,7 +46,7 @@ export function globalErrorHandler(
   }
 
   // Unknown errors
-  logger.error({ err }, 'Unhandled error');
+  logger.error({ err, path: req.path, method: req.method }, 'Unhandled error');
   res.status(500).type('application/problem+json').json({
     type: 'about:blank',
     title: 'Internal Server Error',
