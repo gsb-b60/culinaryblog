@@ -55,7 +55,7 @@ export function DashboardLayout() {
   return (
     <div className="min-h-screen bg-surface-50 md:flex">
       <DashboardSidebar active={active} onLogout={() => setShowLogoutModal(true)} />
-      <main className="min-w-0 flex-1 p-5 pb-24 sm:p-8 md:pb-8">
+      <main className="min-w-0 flex-1 p-5 pb-40 sm:p-8 md:pb-8">
         <ErrorBoundary resetKey={location.pathname}>
           <Outlet />
         </ErrorBoundary>
