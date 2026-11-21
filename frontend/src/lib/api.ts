@@ -115,7 +115,9 @@ async function request<T>(path: string, init?: RequestInit, retried = false): Pr
 
   let text: string
   try {
-    res = await fetch(`${API_BASE}${path}`, { ...init, headers })
+    // The backend invalidates its recipe cache after Author mutations. Do not
+    // allow the browser to keep an older public response after that happens.
+    res = await fetch(`${API_BASE}${path}`, { ...init, headers, cache: 'no-store' })
     text = await res.text()
   } catch (reason) {
     if (reason instanceof DOMException && reason.name === 'AbortError') throw reason

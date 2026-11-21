@@ -27,14 +27,14 @@ export function initTracing(): void {
     const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
     const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-http');
     const { PeriodicExportingMetricReader } = require('@opentelemetry/sdk-metrics');
-    const { Resource } = require('@opentelemetry/resources');
+    const { resourceFromAttributes } = require('@opentelemetry/resources');
     const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
     /* eslint-enable @typescript-eslint/no-var-requires */
 
     const traceEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318/v1/traces';
     const metricEndpoint = traceEndpoint.replace(/\/v1\/traces\/?$/, '/v1/metrics');
     const sdk = new NodeSDK({
-      resource: new Resource({
+      resource: resourceFromAttributes({
         [SemanticResourceAttributes.SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'lethimcook-api',
       }),
       traceExporter: new OTLPTraceExporter({ url: traceEndpoint }),

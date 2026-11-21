@@ -59,9 +59,10 @@ describe('recipes api client (typed)', () => {
     const result = await listRecipes({ page: 1, pageSize: 12, difficulty: 'MEDIUM' })
     expect(result.items[0]?.slug).toBe('pho-bo')
     expect(result.meta.totalCount).toBe(1)
-    const [url] = fetchMock.mock.calls[0] as [string]
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(url).toContain('/recipes?')
     expect(url).toContain('difficulty=MEDIUM')
+    expect(init.cache).toBe('no-store')
   })
 
   it('creates a recipe with nested steps and ingredients using the authenticated request', async () => {

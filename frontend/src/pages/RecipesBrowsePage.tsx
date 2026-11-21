@@ -35,11 +35,15 @@ export default function RecipesBrowsePage() {
   const [params, setParams] = useSearchParams();
   const catalog = usePublicCategories();
   const search = params.get("q") ?? "";
-  const requestedPage = Number(params.get("page") ?? 1);
+  const requestedPageParam = params.get("page");
+  const requestedPage = Number(requestedPageParam ?? 1);
   const page =
     Number.isSafeInteger(requestedPage) && requestedPage > 0
       ? requestedPage
       : 1;
+  const hasInvalidPage =
+    requestedPageParam !== null &&
+    (!Number.isSafeInteger(requestedPage) || requestedPage <= 0);
   const legacyCategory = params.get("category");
   const categoryId =
     params.get("categoryId") ??
@@ -91,6 +95,20 @@ export default function RecipesBrowsePage() {
     page,
     revision,
   ]);
+
+  // Keep a malformed page query in sync with the safe page used for rendering.
+  // Without this, `/recipes?page=-1` rendered page 1 while leaving `-1` in the URL.
+  useEffect(() => {
+    if (!hasInvalidPage) return;
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set("page", "1");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [hasInvalidPage, setParams]);
 
   useEffect(() => {
     if (shortSearch || unresolvedCategory || unknownCategory || invalidFilters)
