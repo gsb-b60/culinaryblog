@@ -191,6 +191,30 @@ describe("RecipesBrowsePage", () => {
     expect(screen.getByLabelText("Sắp xếp")).toHaveValue("-createdAt");
   });
 
+  it.each(["-1", "0", "abc"])(
+    "replaces invalid page %s with page 1 in the URL",
+    async (invalidPage) => {
+      renderBrowsePage(`/recipes?page=${invalidPage}&sort=-cookTime`);
+
+      await screen.findByRole("heading", { name: "Phở bò tái nạm" });
+      const params = new URLSearchParams(
+        screen.getByTestId("location").textContent!.split("?")[1],
+      );
+      expect(params.get("page")).toBe("1");
+      expect(params.get("sort")).toBe("-cookTime");
+    },
+  );
+
+  it("replaces a page beyond the last page with the last valid page", async () => {
+    renderBrowsePage("/recipes?page=99");
+
+    await screen.findByRole("heading", { name: "Công thức trang hai" });
+    const params = new URLSearchParams(
+      screen.getByTestId("location").textContent!.split("?")[1],
+    );
+    expect(params.get("page")).toBe("2");
+  });
+
   it("lists the first page of recipes with a pagination summary", async () => {
     renderBrowsePage();
 

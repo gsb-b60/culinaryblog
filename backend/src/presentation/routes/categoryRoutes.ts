@@ -20,6 +20,7 @@ import {
 } from '../../application/validators/categoryValidators.js';
 import { paginationSchema } from '../../application/validators/paginationValidators.js';
 import { UserRole } from '../../domain/enums/UserRole.js';
+import { getContainer } from '../di/container.js';
 import {
   authenticateJwt,
   AuthenticatedRequest,
@@ -27,7 +28,6 @@ import {
   optionalAuth,
 } from '../middleware/AuthMiddleware.js';
 import { generalRateLimiter } from '../middleware/RateLimitMiddleware.js';
-import { getContainer } from '../di/container.js';
 
 // Explicit annotation avoids TS2742 when emitting declarations on CI.
 const router: RouterType = Router();

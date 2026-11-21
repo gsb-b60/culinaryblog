@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -37,7 +35,9 @@ services:
       retries: 5
 
   minio:
-    image: quay.io/minio/minio:latest
+    # The upstream MinIO community image is no longer anonymously pullable
+    # from Quay. Silo is S3/MinIO API-compatible for local development.
+    image: pgsty/silo:latest
     container_name: lethimcook-minio
     ports:
       - "9000:9000"
