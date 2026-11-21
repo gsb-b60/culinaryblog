@@ -3,9 +3,9 @@ import { PrismaClient, RecipeStatus } from '@prisma/client';
 import { Slug } from '../../../domain/value-objects/Slug.js';
 
 import { ADDITIONAL_REAL_RECIPES } from './additional-recipe-data.js';
+import { REAL_RECIPE_DATA, type RealRecipeSeed } from './recipe-data.js';
 import { getSeedRecipeImage } from './recipe-image-data.js';
 import { addRecipeStepDetails } from './recipe-step-enhancements.js';
-import { REAL_RECIPE_DATA, type RealRecipeSeed } from './recipe-data.js';
 
 const CURATED_RECIPES = [...REAL_RECIPE_DATA, ...ADDITIONAL_REAL_RECIPES];
 
