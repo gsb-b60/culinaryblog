@@ -323,6 +323,21 @@ describe("RecipesBrowsePage", () => {
     );
   });
 
+  it("keeps the category chips horizontally scrollable on narrow screens", async () => {
+    renderBrowsePage();
+
+    await screen.findByRole("heading", { name: "Phở bò tái nạm" });
+
+    const filter = screen.getByTestId("recipe-category-filter-scroll");
+    expect(filter).toHaveClass("overflow-x-auto", "pr-12", "snap-x");
+    const chips = filter.querySelectorAll("button");
+    expect(chips).toHaveLength(apiCategories.length + 1);
+    expect(chips[chips.length - 1]).toHaveClass(
+      "shrink-0",
+      "whitespace-nowrap",
+    );
+  });
+
   it("drops the category when the list is opened again while still mounted", async () => {
     renderBrowsePage("/recipes?category=M%C3%B3n%20n%C6%B0%E1%BB%9Bng");
 
