@@ -24,19 +24,17 @@ export function DashboardLayout() {
 
   const active = location.pathname.startsWith('/dashboard/categories')
     ? 'categories'
-    : location.pathname.startsWith('/dashboard/recipes/delete')
-    ? 'delete-recipes'
     : location.pathname.startsWith('/dashboard/recipes/archive')
       ? 'archive-recipes'
       : location.pathname.startsWith('/dashboard/ingredients')
         ? 'ingredients'
         : location.pathname.startsWith('/dashboard/steps')
           ? 'steps'
-        : location.pathname.startsWith('/dashboard/recipes')
-          ? 'recipes'
-          : location.pathname.startsWith('/profile')
-            ? 'profile'
-            : 'overview'
+          : location.pathname.startsWith('/dashboard/recipes')
+            ? 'recipes'
+            : location.pathname.startsWith('/profile')
+              ? 'profile'
+              : 'overview'
 
   const handleLogout = () => {
     setShowLogoutModal(false)

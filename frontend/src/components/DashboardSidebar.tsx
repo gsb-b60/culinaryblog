@@ -5,7 +5,6 @@ type Section =
   | 'overview'
   | 'categories'
   | 'recipes'
-  | 'delete-recipes'
   | 'archive-recipes'
   | 'ingredients'
   | 'steps'
@@ -31,7 +30,6 @@ export default function DashboardSidebar({
   }
   const recipesActive =
     active === 'recipes' ||
-    active === 'delete-recipes' ||
     active === 'archive-recipes' ||
     active === 'ingredients' ||
     active === 'steps'
@@ -101,13 +99,6 @@ export default function DashboardSidebar({
                 className={submenuClass(active === 'steps')}
               >
                 Các bước nấu
-              </Link>
-              <Link
-                to="/dashboard/recipes/delete"
-                aria-current={active === 'delete-recipes' ? 'page' : undefined}
-                className={submenuClass(active === 'delete-recipes')}
-              >
-                Xóa công thức
               </Link>
               <Link
                 to="/dashboard/recipes/archive"
@@ -188,13 +179,6 @@ export default function DashboardSidebar({
               className={submenuClass(active === 'steps')}
             >
               Các bước nấu
-            </Link>
-            <Link
-              to="/dashboard/recipes/delete"
-              aria-current={active === 'delete-recipes' ? 'page' : undefined}
-              className={submenuClass(active === 'delete-recipes')}
-            >
-              Xóa công thức
             </Link>
             <Link
               to="/dashboard/recipes/archive"

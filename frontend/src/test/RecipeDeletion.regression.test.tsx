@@ -2,7 +2,7 @@ import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import DeleteRecipesPage from '../pages/DeleteRecipesPage'
+import RecipesPage from '../pages/RecipesPage'
 import { ApiError, deleteRecipe, getManagedRecipes } from '../lib/api'
 import { useAuthStore } from '../store'
 import type { Recipe, RecipePage } from '../types/recipe'
@@ -51,10 +51,14 @@ function page(items = rows.slice(0, 12), totalCount = 13, currentPage = 1): Reci
 function open() {
   render(
     <MemoryRouter>
-      <DeleteRecipesPage />
+      <RecipesPage />
     </MemoryRouter>,
   )
   return userEvent.setup()
+}
+async function chooseDelete(user: ReturnType<typeof userEvent.setup>, item: HTMLElement) {
+  await user.click(within(item).getByRole('button', { name: `Thao tác ${item.getAttribute('aria-label')}` }))
+  await user.click(within(item).getByRole('button', { name: 'Xóa' }))
 }
 beforeEach(() => {
   vi.mocked(getManagedRecipes).mockReset()
@@ -74,7 +78,7 @@ describe('Recipe deletion regressions', () => {
     const user = open()
     await screen.findByRole('article', { name: rows[0].title })
     const item = await screen.findByRole('article', { name: rows[0].title })
-    await user.click(within(item).getByRole('button', { name: 'Xóa' }))
+    await chooseDelete(user, item)
     await user.click(within(item).getByRole('button', { name: 'Xác nhận xóa' }))
     await waitFor(() =>
       expect(screen.queryByRole('article', { name: rows[0].title })).not.toBeInTheDocument(),
@@ -82,7 +86,7 @@ describe('Recipe deletion regressions', () => {
     expect(remaining).toHaveLength(12)
     // The database still has recipe 13, which should remain visible or reachable.
     expect(await screen.findByRole('article', { name: rows[12].title })).toBeInTheDocument()
-    expect(screen.getByText('Trang 1/1 · 12 công thức')).toBeInTheDocument()
+    expect(screen.getAllByText('Trang 1/1 · 12 công thức')).toHaveLength(2)
   })
   it('reloads and clears previous data after the authenticated account changes', async () => {
     vi.mocked(getManagedRecipes).mockImplementation(async (token) =>
@@ -129,10 +133,10 @@ describe('Account and pagination lifecycle', () => {
     await screen.findByRole('article', { name: rows[0].title })
     await user.click(screen.getByRole('button', { name: 'Trang sau' }))
     const item = await screen.findByRole('article', { name: rows[12].title })
-    await user.click(within(item).getByRole('button', { name: 'Xóa' }))
+    await chooseDelete(user, item)
     await user.click(within(item).getByRole('button', { name: 'Xác nhận xóa' }))
     expect(await screen.findByRole('article', { name: rows[0].title })).toBeInTheDocument()
-    expect(screen.getByText('Trang 1/1 · 12 công thức')).toBeInTheDocument()
+    expect(screen.getAllByText('Trang 1/1 · 12 công thức')).toHaveLength(2)
     expect(remaining).toHaveLength(12)
   })
   it('clamps the current page when concurrent deletions make it invalid', async () => {
@@ -181,7 +185,7 @@ describe('Account and pagination lifecycle', () => {
     )
     const user = open()
     const item = await screen.findByRole('article', { name: rows[0].title })
-    await user.click(within(item).getByRole('button', { name: 'Xóa' }))
+    await chooseDelete(user, item)
     await user.click(within(item).getByRole('button', { name: 'Xác nhận xóa' }))
     act(() =>
       useAuthStore.getState().setSession({

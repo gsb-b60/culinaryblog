@@ -58,6 +58,12 @@ function openPage(path = '/dashboard/recipes') {
   )
 }
 
+async function showAction(name: string, title = draft.title) {
+  const trigger = await screen.findByRole('button', { name: `Thao tác ${title}` })
+  if (trigger.getAttribute('aria-expanded') !== 'true') await userEvent.click(trigger)
+  return screen.getByRole('button', { name })
+}
+
 beforeEach(() => {
   localStorage.clear()
   sessionStorage.clear()
@@ -92,13 +98,13 @@ describe('Recipe management through UI and API client', () => {
     await userEvent.click(screen.getAllByRole('button', { name: 'Công thức' })[0])
     await userEvent.click(screen.getAllByRole('link', { name: 'Quản lý công thức' })[0])
     const article = await screen.findByRole('article', { name: draft.title })
-    await userEvent.click(within(article).getByRole('button', { name: 'Xuất bản' }))
+    await userEvent.click(await showAction('Xuất bản'))
     expect(await screen.findByText('Đã xuất bản công thức.')).toBeInTheDocument()
     expect(within(article).getByText('Đã xuất bản')).toBeInTheDocument()
-    await userEvent.click(within(article).getByRole('button', { name: 'Chuyển về bản nháp' }))
+    await userEvent.click(await showAction('Chuyển về bản nháp'))
     expect(await screen.findByText('Đã chuyển công thức về bản nháp.')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Tải lại' }))
-    expect(await screen.findByRole('button', { name: 'Xuất bản' })).toBeEnabled()
+    expect(await showAction('Xuất bản')).toBeEnabled()
     const mutations = fetchMock.mock.calls.filter(([, init]) => init.method === 'PATCH')
     expect(mutations.map(([url]) => url.split('/').at(-1))).toEqual(['publish', 'unpublish'])
   })
@@ -113,7 +119,7 @@ describe('Recipe management through UI and API client', () => {
       ),
     )
     openPage()
-    expect(await screen.findByRole('button', { name: 'Xuất bản' })).toBeDisabled()
+    expect(await showAction('Xuất bản')).toBeDisabled()
     expect(
       screen.getByText('Cần ít nhất một bước thực hiện trước khi xuất bản.'),
     ).toBeInTheDocument()
@@ -122,7 +128,7 @@ describe('Recipe management through UI and API client', () => {
     expect(
       archivedArticle.queryByRole('button', { name: 'Chuyển về bản nháp' }),
     ).not.toBeInTheDocument()
-    expect(archivedArticle.queryByRole('button', { name: 'Xóa' })).not.toBeInTheDocument()
+    expect(await showAction('Xóa', 'Món đã lưu trữ')).toBeEnabled()
   })
 
   it.each([403, 404, 409, 422, 500])(
@@ -132,10 +138,10 @@ describe('Recipe management through UI and API client', () => {
         .mockResolvedValueOnce(response(recipePage()))
         .mockResolvedValueOnce(response({ errors: { steps: ['Missing steps'] } }, status))
       openPage()
-      await userEvent.click(await screen.findByRole('button', { name: 'Xuất bản' }))
+      await userEvent.click(await showAction('Xuất bản'))
       expect(await screen.findByRole('alert')).not.toBeEmptyDOMElement()
       expect(screen.getByText('Bản nháp')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Xuất bản' })).toBeEnabled()
+      expect(await showAction('Xuất bản')).toBeEnabled()
       expect(screen.queryByText('Đã xuất bản công thức.')).not.toBeInTheDocument()
     },
   )
@@ -149,11 +155,11 @@ describe('Recipe management through UI and API client', () => {
         }),
     )
     openPage()
-    await userEvent.click(await screen.findByRole('button', { name: 'Xuất bản' }))
-    expect(screen.getByRole('button', { name: 'Đang cập nhật...' })).toBeDisabled()
+    await userEvent.click(await showAction('Xuất bản'))
+    expect(screen.getByRole('button', { name: `Thao tác ${draft.title}` })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Tải lại' })).toBeDisabled()
     finish(response({ ...draft, status: 'PUBLISHED' }))
-    expect(await screen.findByRole('button', { name: 'Chuyển về bản nháp' })).toBeEnabled()
+    expect(await showAction('Chuyển về bản nháp')).toBeEnabled()
   })
 
   it('paginates using the protected management API', async () => {
@@ -282,19 +288,33 @@ describe('Recipe management through UI and API client', () => {
   it('allows Admin to manage another author recipe', async () => {
     saveSession({ ...session, user: { ...session.user, id: 'admin-1', roles: ['ADMIN'] } })
     openPage()
-    expect(await screen.findByRole('button', { name: 'Xuất bản' })).toBeEnabled()
+    expect(await showAction('Xuất bản')).toBeEnabled()
     expect(screen.getByRole('heading', { name: 'Quản lý công thức' })).toBeInTheDocument()
   })
 
-  it('provides a separate Dashboard destination for recipe deletion', async () => {
+  it('provides deletion inside recipe management without a separate menu item', async () => {
     openPage()
-    const article = await screen.findByRole('article', { name: draft.title })
+    await screen.findByRole('article', { name: draft.title })
+    expect(await showAction('Xóa')).toBeEnabled()
+    expect(screen.queryByRole('link', { name: 'Xóa công thức' })).not.toBeInTheDocument()
+  })
 
-    expect(within(article).queryByRole('button', { name: 'Xóa' })).not.toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: 'Xóa công thức' })[0]).toHaveAttribute(
+  it('shows recipe links in the dropdown and closes on Escape or outside click', async () => {
+    const user = userEvent.setup()
+    openPage()
+    const trigger = await screen.findByRole('button', { name: `Thao tác ${draft.title}` })
+    await user.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('link', { name: 'Chỉnh sửa' })).toHaveAttribute(
       'href',
-      '/dashboard/recipes/delete',
+      `/dashboard/recipes/${draft.slug}/edit`,
     )
+    expect(screen.getByRole('link', { name: 'Xem chi tiết' })).toHaveAttribute('href', `/recipes/${draft.slug}`)
+    await user.keyboard('{Escape}')
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    await user.click(trigger)
+    await user.click(screen.getByRole('heading', { name: 'Công thức của tôi' }))
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('redirects signed-out visitors without requesting private data', () => {
@@ -331,7 +351,7 @@ describe('Recipe management through UI and API client', () => {
       .mockResolvedValueOnce(response({ ...session, accessToken: 'rotated' }))
       .mockResolvedValueOnce(response({ errors: { steps: ['Missing steps'] } }, 422))
     openPage()
-    await userEvent.click(await screen.findByRole('button', { name: 'Xuất bản' }))
+    await userEvent.click(await showAction('Xuất bản'))
     expect(await screen.findByRole('alert')).toHaveTextContent('Cần ít nhất một bước')
     expect(loadSession()?.accessToken).toBe('rotated')
     expect(screen.getByRole('heading', { name: 'Công thức của tôi' })).toBeInTheDocument()
@@ -409,7 +429,8 @@ describe('Archive through recipe management', () => {
 it('links archived recipes to their live detail page', async () => {
   fetchMock.mockResolvedValue(response(recipePage([{ ...draft, status: 'ARCHIVED' }])))
   openPage()
-  expect(await screen.findByRole('link', { name: 'Xem chi tiết' })).toHaveAttribute(
+  await userEvent.click(await screen.findByRole('button', { name: `Thao tác ${draft.title}` }))
+  expect(screen.getByRole('link', { name: 'Xem chi tiết' })).toHaveAttribute(
     'href',
     '/recipes/' + draft.slug,
   )
@@ -430,16 +451,14 @@ describe('Separate archive destination in Dashboard', () => {
       'aria-current',
       'page',
     )
-    expect(menu.getByRole('link', { name: 'Xóa công thức' }).nextElementSibling).toHaveTextContent(
-      'Lưu trữ công thức',
-    )
+    expect(menu.queryByRole('link', { name: 'Xóa công thức' })).not.toBeInTheDocument()
   })
 
   it('keeps archive actions out of the publish/unpublish list', async () => {
     openPage()
     await screen.findByRole('article', { name: draft.title })
     expect(screen.queryByRole('button', { name: 'Lưu trữ' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Xuất bản' })).toBeInTheDocument()
+    expect(await showAction('Xuất bản')).toBeInTheDocument()
     const mobile = within(screen.getByRole('navigation', { name: 'Mobile navigation' }))
     expect(mobile.getByRole('link', { name: 'Lưu trữ công thức' })).toHaveAttribute(
       'href',
