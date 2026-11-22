@@ -68,6 +68,7 @@ describe('Recipe pagination context and identity regressions', () => {
     await screen.findByRole('article', { name: 'Recipe 1' })
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Số công thức mỗi trang' }), String(size))
     const item = await screen.findByRole('article', { name: 'Recipe 20' })
+    await userEvent.click(within(item).getByRole('button', { name: 'Thao tác Recipe 20' }))
     const shortcut = within(item).getByRole('link', { name: 'Nguyên liệu' })
     expect(shortcut).toHaveAttribute('href', '/dashboard/ingredients?recipeId=r20&page=1&pageSize=' + size)
     await userEvent.click(shortcut)
@@ -92,6 +93,7 @@ describe('Recipe pagination context and identity regressions', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
     await screen.findByRole('alert')
     const item = screen.getByRole('article', { name: 'Recipe 13' })
+    await userEvent.click(within(item).getByRole('button', { name: 'Thao tác Recipe 13' }))
     expect(within(item).getByRole('link', { name: 'Nguyên liệu' })).toHaveAttribute(
       'href', '/dashboard/ingredients?recipeId=r13&page=2&pageSize=12',
     )
