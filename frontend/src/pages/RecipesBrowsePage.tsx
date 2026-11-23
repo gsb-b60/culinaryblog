@@ -223,7 +223,8 @@ export default function RecipesBrowsePage() {
         <div
           role="group"
           aria-label="Lọc theo danh mục"
-          className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]"
+          data-testid="recipe-category-filter-scroll"
+          className="flex w-full max-w-full snap-x snap-mandatory items-center gap-2 overflow-x-auto px-1 pb-3 pr-12 [scroll-padding-inline:0.25rem] [-webkit-overflow-scrolling:touch]"
         >
           <button
             type="button"
