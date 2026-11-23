@@ -1,11 +1,10 @@
-import { Link, Route, Routes } from 'react-router-dom'
+import { Link, Navigate, Route, Routes } from 'react-router-dom'
 
 import AppLayout from './components/layout/AppLayout'
 import DashboardLayout from './components/layout/DashboardLayout'
 import AdminCategoriesPage from './pages/AdminCategoriesPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import RecipesPage from './pages/RecipesPage'
-import DeleteRecipesPage from './pages/DeleteRecipesPage'
 import IngredientManagementPage from './pages/IngredientManagementPage'
 import RecipeStepsPage from './pages/RecipeStepsPage'
 import RecipesBrowsePage from './pages/RecipesBrowsePage'
@@ -70,7 +69,7 @@ export default function App() {
         <Route path="/dashboard/categories/:slug" element={<CategoryDetailPage />} />
         <Route path="/dashboard/recipes/new" element={<NewRecipePage />} />
         <Route path="/dashboard/recipes/:slug/edit" element={<EditRecipePage />} />
-        <Route path="/dashboard/recipes/delete" element={<DeleteRecipesPage />} />
+        <Route path="/dashboard/recipes/delete" element={<Navigate to="/dashboard/recipes" replace />} />
         <Route
           path="/dashboard/recipes/archive"
           element={<RecipesPage key="archive" mode="archive" />}

@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import DeleteRecipesPage from '../pages/DeleteRecipesPage'
+import RecipesPage from '../pages/RecipesPage'
 import { saveSession } from '../lib/tokenStorage'
 
 const session = {
@@ -48,13 +48,14 @@ afterEach(() => vi.unstubAllGlobals())
 function open() {
   render(
     <MemoryRouter>
-      <DeleteRecipesPage />
+      <RecipesPage />
     </MemoryRouter>,
   )
   return userEvent.setup()
 }
 async function confirm(user: ReturnType<typeof userEvent.setup>) {
   const article = await screen.findByRole('article', { name: recipe.title })
+  await user.click(within(article).getByRole('button', { name: `Thao tác ${recipe.title}` }))
   await user.click(within(article).getByRole('button', { name: 'Xóa' }))
   await user.click(within(article).getByRole('button', { name: 'Xác nhận xóa' }))
 }

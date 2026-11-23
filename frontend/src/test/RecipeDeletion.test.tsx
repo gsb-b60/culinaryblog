@@ -50,12 +50,17 @@ function response(body: unknown, status = 200) {
   })
 }
 
-function openDashboard() {
+function openDashboard(path = '/dashboard/recipes') {
   render(
-    <MemoryRouter initialEntries={['/dashboard/recipes']}>
+    <MemoryRouter initialEntries={[path]}>
       <App />
     </MemoryRouter>,
   )
+}
+
+async function chooseDelete(user: ReturnType<typeof userEvent.setup>, article: HTMLElement) {
+  await user.click(within(article).getByRole('button', { name: `Thao tác ${recipe.title}` }))
+  await user.click(within(article).getByRole('button', { name: 'Xóa' }))
 }
 
 beforeEach(() => {
@@ -71,9 +76,25 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Dashboard recipe deletion page', () => {
-  it('opens from its separate Dashboard menu item and deletes after confirmation', async () => {
-    fetchMock.mockResolvedValueOnce(response(recipePage))
+describe('Recipe deletion in management', () => {
+  it('redirects the old deletion URL to recipe management', async () => {
+    openDashboard('/dashboard/recipes/delete')
+    expect(await screen.findByRole('article', { name: recipe.title })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Công thức của tôi' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Xóa công thức' })).not.toBeInTheDocument()
+  })
+
+  it('cancels deletion without calling the API', async () => {
+    openDashboard()
+    const user = userEvent.setup()
+    const article = await screen.findByRole('article', { name: recipe.title })
+    await chooseDelete(user, article)
+    await user.click(within(article).getByRole('button', { name: 'Hủy' }))
+    expect(within(article).queryByRole('button', { name: 'Xác nhận xóa' })).not.toBeInTheDocument()
+    expect(fetchMock.mock.calls.filter(([, init]) => init.method === 'DELETE')).toHaveLength(0)
+  })
+
+  it('deletes from the management list after confirmation', async () => {
     fetchMock.mockResolvedValueOnce(response(recipePage))
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }))
     fetchMock.mockResolvedValueOnce(
@@ -85,15 +106,9 @@ describe('Dashboard recipe deletion page', () => {
     openDashboard()
     const user = userEvent.setup()
 
-    await user.click(screen.getAllByRole('link', { name: 'Xóa công thức' })[0])
-
-    expect(await screen.findByRole('heading', { name: 'Xóa công thức' })).toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: 'Xóa công thức' })[0]).toHaveAttribute(
-      'aria-current',
-      'page',
-    )
     const article = await screen.findByRole('article', { name: recipe.title })
-    await user.click(within(article).getByRole('button', { name: 'Xóa' }))
+    expect(screen.queryByRole('link', { name: 'Xóa công thức' })).not.toBeInTheDocument()
+    await chooseDelete(user, article)
     expect(
       within(article).getByRole('group', { name: `Xác nhận xóa ${recipe.title}` }),
     ).toBeInTheDocument()
@@ -103,8 +118,9 @@ describe('Dashboard recipe deletion page', () => {
 
     expect(await screen.findByText('Đã xóa công thức.')).toBeInTheDocument()
     expect(screen.queryByRole('article', { name: recipe.title })).not.toBeInTheDocument()
-    expect(fetchMock.mock.calls[2][0]).toContain('/recipes/recipe-1')
-    expect(fetchMock.mock.calls[2][1]).toMatchObject({
+    const deletion = fetchMock.mock.calls.find(([, init]) => init.method === 'DELETE')
+    expect(deletion?.[0]).toContain('/recipes/recipe-1')
+    expect(deletion?.[1]).toMatchObject({
       method: 'DELETE',
       headers: { Authorization: 'Bearer access' },
     })
@@ -112,14 +128,12 @@ describe('Dashboard recipe deletion page', () => {
 
   it('keeps the recipe visible when deletion is rejected', async () => {
     fetchMock.mockResolvedValueOnce(response(recipePage))
-    fetchMock.mockResolvedValueOnce(response(recipePage))
     fetchMock.mockResolvedValueOnce(response({ detail: 'Forbidden' }, 403))
     openDashboard()
     const user = userEvent.setup()
 
-    await user.click(screen.getAllByRole('link', { name: 'Xóa công thức' })[0])
     const article = await screen.findByRole('article', { name: recipe.title })
-    await user.click(within(article).getByRole('button', { name: 'Xóa' }))
+    await chooseDelete(user, article)
     await user.click(within(article).getByRole('button', { name: 'Xác nhận xóa' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('không có quyền xóa')

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { ChevronDown, FilePenLine, Info, Layers3, Leaf, Pencil, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { EmptyState } from '../components/common/EmptyState'
@@ -7,6 +8,7 @@ import { Pagination } from '../components/common/Pagination'
 import {
   ApiError,
   archiveRecipe,
+  deleteRecipe,
   getManagedRecipes,
   publishRecipe,
   unpublishRecipe,
@@ -15,6 +17,7 @@ import { useAuthStore } from '../store'
 import type { Recipe, RecipePage } from '../types/recipe'
 
 const labels = { DRAFT: 'Bản nháp', PUBLISHED: 'Đã xuất bản', ARCHIVED: 'Đã lưu trữ' }
+const menuItemClass = 'flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-100 disabled:cursor-not-allowed disabled:opacity-50'
 
 /** Translate API and validation failures into a message suitable for the user. */
 function errorMessage(reason: unknown): string {
@@ -30,6 +33,14 @@ function errorMessage(reason: unknown): string {
   }
   if (reason.status === 0) return 'Không thể kết nối máy chủ. Vui lòng thử lại.'
   return 'Máy chủ gặp lỗi. Vui lòng thử lại sau.'
+}
+
+function deleteErrorMessage(reason: unknown): string {
+  if (!(reason instanceof ApiError)) return 'Không thể xóa công thức. Vui lòng thử lại.'
+  if (reason.status === 403) return 'Bạn không có quyền xóa công thức này.'
+  if (reason.status === 404) return 'Công thức không còn tồn tại. Hãy tải lại danh sách.'
+  if (reason.status === 0) return 'Không thể kết nối máy chủ. Vui lòng thử lại.'
+  return 'Không thể xóa công thức. Vui lòng thử lại sau.'
 }
 
 /**
@@ -55,10 +66,13 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
   const [data, setData] = useState<RecipePage | null>(null)
   const [loading, setLoading] = useState(true)
   const [pending, setPending] = useState<string | null>(null)
+  const [confirming, setConfirming] = useState<string | null>(null)
+  const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const busy = useRef(false)
   const mounted = useRef(true)
+  const menuRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     mounted.current = true
@@ -66,6 +80,22 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
       mounted.current = false
     }
   }, [])
+
+  useEffect(() => {
+    if (!openMenu) return
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setOpenMenu(null)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpenMenu(null)
+    }
+    document.addEventListener('pointerdown', closeOnOutsideClick)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideClick)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [openMenu])
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -102,7 +132,11 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
           return
         }
         if (!active) return
-        setError(errorMessage(reason))
+        setError(
+          reason instanceof ApiError && reason.status === 0
+            ? errorMessage(reason)
+            : 'Không thể tải danh sách công thức. Vui lòng thử lại.',
+        )
       })
       .finally(() => {
         if (active && !correctingPage) setLoading(false)
@@ -121,6 +155,8 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
     setLoading(true)
     setError('')
     setSuccess('')
+    setConfirming(null)
+    setOpenMenu(null)
     setRevision((value) => value + 1)
   }
 
@@ -128,6 +164,8 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
     setLoading(true)
     setError('')
     setSuccess('')
+    setConfirming(null)
+    setOpenMenu(null)
     setPage(next)
     // The target page may already be selected after a failed request.
     setRevision((value) => value + 1)
@@ -167,6 +205,39 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
         navigate('/auth/login', { replace: true })
       } else {
         setError(errorMessage(reason))
+      }
+    } finally {
+      busy.current = false
+      if (mounted.current) setPending(null)
+    }
+  }
+
+  const remove = async (recipe: Recipe) => {
+    if (busy.current) return
+    busy.current = true
+    setPending(recipe.id)
+    setError('')
+    setSuccess('')
+    try {
+      const token = useAuthStore.getState().session?.accessToken ?? session.accessToken
+      await deleteRecipe(token, recipe.id)
+      if (!mounted.current) return
+      setConfirming(null)
+      setSuccess('Đã xóa công thức.')
+      // Refetch after deletion so the next item fills the page and metadata stays accurate.
+      setData(null)
+      setLoading(true)
+      setRevision((value) => value + 1)
+    } catch (reason) {
+      if (!mounted.current) return
+      if (reason instanceof ApiError && reason.status === 401) {
+        const current = useAuthStore.getState().session
+        if (!current || current.user.id === session.user.id) {
+          signOut()
+          navigate('/auth/login', { replace: true })
+        }
+      } else {
+        setError(deleteErrorMessage(reason))
       }
     } finally {
       busy.current = false
@@ -295,7 +366,7 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
                       {recipe.steps.length} bước thực hiện · Cập nhật{' '}
                       {new Date(recipe.updatedAt).toLocaleString('vi-VN')}
                     </p>
-                    {canManage && (
+                    {archiveMode && canManage && (
                       <Link
                         to={`/dashboard/recipes/${encodeURIComponent(recipe.slug)}/edit`}
                         className="rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold text-brand-700"
@@ -303,7 +374,7 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
                         Chỉnh sửa
                       </Link>
                     )}
-                    {canManage && (
+                    {archiveMode && canManage && (
                       <Link
                         to={'/recipes/' + encodeURIComponent(recipe.slug)}
                         className="rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold text-brand-700"
@@ -311,7 +382,7 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
                         Xem chi tiết
                       </Link>
                     )}
-                    {canManage && (
+                    {archiveMode && canManage && (
                       <Link
                         to={`/dashboard/ingredients?recipeId=${encodeURIComponent(recipe.id)}&page=${data?.meta.page ?? 1}&pageSize=${data?.meta.pageSize ?? 12}`}
                         className="rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold text-brand-700"
@@ -319,7 +390,7 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
                         Nguyên liệu
                       </Link>
                     )}
-                    {canManage && (
+                    {archiveMode && canManage && (
                       <Link
                         to={`/dashboard/steps?recipeId=${encodeURIComponent(recipe.id)}&page=${data?.meta.page ?? 1}&pageSize=${data?.meta.pageSize ?? 12}`}
                         className="rounded-lg border border-surface-300 px-4 py-2 text-sm font-semibold text-brand-700"
@@ -327,23 +398,116 @@ function AccountRecipesPage({ mode }: { mode: 'publish' | 'archive' }) {
                         Các bước nấu
                       </Link>
                     )}
-                    {!archiveMode && canManage && !archived && (
-                      <button
-                        type="button"
-                        disabled={pending !== null || noSteps}
-                        onClick={() => {
-                          void changeStatus(recipe)
-                        }}
-                        className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {pending === recipe.id
-                          ? 'Đang cập nhật...'
-                          : recipe.status === 'DRAFT'
-                            ? 'Xuất bản'
-                            : 'Chuyển về bản nháp'}
-                      </button>
+                    {!archiveMode && canManage && (
+                      <div className="relative ml-auto" ref={openMenu === recipe.id ? menuRef : null}>
+                        <button
+                          type="button"
+                          aria-label={`Thao tác ${recipe.title}`}
+                          aria-expanded={openMenu === recipe.id}
+                          aria-controls={`recipe-actions-${recipe.id}`}
+                          disabled={pending !== null}
+                          onClick={() => setOpenMenu((current) => current === recipe.id ? null : recipe.id)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-brand-300 px-3 py-2 text-sm font-semibold text-brand-700 disabled:opacity-50"
+                        >
+                          Thao tác <ChevronDown aria-hidden="true" size={14} />
+                        </button>
+                        {openMenu === recipe.id && (
+                          <div
+                            id={`recipe-actions-${recipe.id}`}
+                            aria-label={`Thao tác cho ${recipe.title}`}
+                            className="absolute right-0 top-full z-20 mt-2 w-56 rounded-lg border border-surface-200 bg-white p-1.5 shadow-lg sm:right-full sm:top-1/2 sm:mr-2 sm:mt-0 sm:-translate-y-1/2"
+                          >
+                            <Link
+                              to={`/dashboard/recipes/${encodeURIComponent(recipe.slug)}/edit`}
+                              onClick={() => setOpenMenu(null)}
+                              className={menuItemClass + ' text-surface-700'}
+                            >
+                              <Pencil aria-hidden="true" size={16} />
+                              Chỉnh sửa
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setConfirming(recipe.id)
+                                setOpenMenu(null)
+                              }}
+                              className={menuItemClass + ' text-red-600 hover:bg-red-50'}
+                            >
+                              <Trash2 aria-hidden="true" size={16} />
+                              Xóa
+                            </button>
+                            <Link
+                              to={'/recipes/' + encodeURIComponent(recipe.slug)}
+                              onClick={() => setOpenMenu(null)}
+                              className={menuItemClass + ' text-surface-700'}
+                            >
+                              <Info aria-hidden="true" size={16} />
+                              Xem chi tiết
+                            </Link>
+                            <Link
+                              to={`/dashboard/ingredients?recipeId=${encodeURIComponent(recipe.id)}&page=${data?.meta.page ?? 1}&pageSize=${data?.meta.pageSize ?? 12}`}
+                              onClick={() => setOpenMenu(null)}
+                              className={menuItemClass + ' text-surface-700'}
+                            >
+                              <Leaf aria-hidden="true" size={16} />
+                              Nguyên liệu
+                            </Link>
+                            <Link
+                              to={`/dashboard/steps?recipeId=${encodeURIComponent(recipe.id)}&page=${data?.meta.page ?? 1}&pageSize=${data?.meta.pageSize ?? 12}`}
+                              onClick={() => setOpenMenu(null)}
+                              className={menuItemClass + ' text-surface-700'}
+                            >
+                              <Layers3 aria-hidden="true" size={16} />
+                              Các bước nấu
+                            </Link>
+                            {!archived && (
+                              <button
+                                type="button"
+                                disabled={noSteps}
+                                onClick={() => {
+                                  setOpenMenu(null)
+                                  void changeStatus(recipe)
+                                }}
+                                className={menuItemClass + ' font-semibold text-brand-700 hover:bg-brand-50'}
+                              >
+                                <FilePenLine aria-hidden="true" size={16} />
+                                {recipe.status === 'DRAFT' ? 'Xuất bản' : 'Chuyển về bản nháp'}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
+                  {!archiveMode && canManage && confirming === recipe.id && (
+                    <div
+                      role="group"
+                      aria-label={`Xác nhận xóa ${recipe.title}`}
+                      className="mt-3 rounded-lg border border-red-200 bg-red-50 p-4"
+                    >
+                      <p className="text-sm text-red-800">
+                        Xóa vĩnh viễn công thức “{recipe.title}” và dữ liệu liên quan?
+                      </p>
+                      <div className="mt-3 flex gap-3">
+                        <button
+                          type="button"
+                          disabled={pending !== null}
+                          onClick={() => void remove(recipe)}
+                          className="rounded-lg bg-red-600 px-3 py-2 text-sm text-white disabled:opacity-50"
+                        >
+                          {pending === recipe.id ? 'Đang xóa...' : 'Xác nhận xóa'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pending !== null}
+                          onClick={() => setConfirming(null)}
+                          className="px-3 py-2 text-sm"
+                        >
+                          Hủy
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   {archiveMode && canManage && !archived && (
                     <button
                       type="button"
